@@ -1,0 +1,18 @@
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "stratospy"
+version = "0.1.0"
+description = "Python client helpers for the STRATOSDRONE open-source Tello-class drone"
+readme = "README.md"
+license = {text = "MIT"}
+requires-python = ">=3.9"
+dependencies = ["djitellopy>=2.5"]
+
+[tool.setuptools.packages.find]
+include = ["stratospy*"]
+
+[tool.ruff]
+line-length = 100

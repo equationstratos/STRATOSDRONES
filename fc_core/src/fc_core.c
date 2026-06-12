@@ -76,7 +76,7 @@ void fc_core_get_telemetry(fc_core_t *fc, fc_telemetry_t *t)
     t->tof_cm = fc->tof_valid ? (int)(fc->tof_m * 100.0f) : 0;
     t->h_cm = (int)(fc->kfz.z * 100.0f);
     t->bat_pct = (int)fc->bat_pct;
-    t->baro_m = fc->baro_alt_m - fc->baro_ref;
+    t->baro_m = fc->baro_alt_m; /* already relative to the first sample */
     t->time_s = (int)fc->flight_time_s;
 
     /* body accel in 0.001 g, Tello z reports ~-1000 at rest (z down sign) */
