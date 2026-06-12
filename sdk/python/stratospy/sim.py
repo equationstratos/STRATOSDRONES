@@ -2,9 +2,35 @@
 import os
 import shutil
 import signal
+import socket
 import subprocess
 import time
 from dataclasses import dataclass
+
+
+def wait_drone_ready(ip: str, timeout: float = 30.0) -> bool:
+    """Probe <ip>:8889 with 'command' until the drone answers 'ok'.
+
+    Use this after starting a simulator (SITL or Gazebo) and before creating
+    djitellopy objects: it absorbs the simulator's cold-start latency on a
+    throwaway socket, so djitellopy's first command gets a fresh, fast reply
+    and its response queue never goes out of sync with late replies.
+    """
+    deadline = time.monotonic() + timeout
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    s.settimeout(0.5)
+    try:
+        while time.monotonic() < deadline:
+            try:
+                s.sendto(b"command", (ip, 8889))
+                data, _ = s.recvfrom(64)
+                if data.strip() == b"ok":
+                    return True
+            except socket.timeout:
+                continue
+    finally:
+        s.close()
+    return False
 
 
 def _default_binary() -> str:

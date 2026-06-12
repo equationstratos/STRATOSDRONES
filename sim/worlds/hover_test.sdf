@@ -1,0 +1,41 @@
+<?xml version="1.0"?>
+<!-- Headless CI world: one STRATOSDRONE on 127.0.0.2, unthrottled physics.
+     Run:  gz sim -s -r hover_test.sdf   (server only, no GUI needed)
+     SPDX-License-Identifier: MIT -->
+<sdf version="1.9">
+  <world name="hover_test">
+    <physics name="fast" type="ignored">
+      <max_step_size>0.001</max_step_size>
+      <real_time_factor>4</real_time_factor>
+    </physics>
+    <plugin filename="gz-sim-physics-system" name="gz::sim::systems::Physics"/>
+    <plugin filename="gz-sim-user-commands-system" name="gz::sim::systems::UserCommands"/>
+    <plugin filename="gz-sim-scene-broadcaster-system" name="gz::sim::systems::SceneBroadcaster"/>
+
+    <gravity>0 0 -9.80665</gravity>
+
+    <model name="ground">
+      <static>true</static>
+      <link name="ground_link">
+        <collision name="c">
+          <geometry><plane><normal>0 0 1</normal><size>50 50</size></plane></geometry>
+          <surface><friction><ode><mu>1.0</mu><mu2>1.0</mu2></ode></friction></surface>
+        </collision>
+        <visual name="v">
+          <geometry><plane><normal>0 0 1</normal><size>50 50</size></plane></geometry>
+          <material><ambient>0.6 0.6 0.6 1</ambient><diffuse>0.7 0.7 0.7 1</diffuse></material>
+        </visual>
+      </link>
+    </model>
+
+    <include>
+      <uri>model://stratosdrone</uri>
+      <name>drone_1</name>
+      <pose>0 0 0.025 0 0 0</pose>
+      <plugin filename="StratosFcSystem" name="stratos::StratosFcSystem">
+        <bind_ip>127.0.0.2</bind_ip>
+        <seed>7</seed>
+      </plugin>
+    </include>
+  </world>
+</sdf>

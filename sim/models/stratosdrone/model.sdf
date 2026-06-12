@@ -1,0 +1,84 @@
+<?xml version="1.0"?>
+<!-- STRATOSDRONE rigid-body model. Mass/inertia mirror fc_core/test/sil_plant.c
+     (the host SIL plant) so simulation results transfer. Body frame FLU.
+     SPDX-License-Identifier: MIT -->
+<sdf version="1.9">
+  <model name="stratosdrone">
+    <link name="base_link">
+      <inertial>
+        <mass>0.092</mass>
+        <inertia>
+          <ixx>1.1e-4</ixx><iyy>1.1e-4</iyy><izz>2.0e-4</izz>
+          <ixy>0</ixy><ixz>0</ixz><iyz>0</iyz>
+        </inertia>
+      </inertial>
+
+      <collision name="hull">
+        <geometry><box><size>0.13 0.13 0.041</size></box></geometry>
+        <surface>
+          <friction><ode><mu>0.8</mu><mu2>0.8</mu2></ode></friction>
+        </surface>
+      </collision>
+
+      <visual name="body">
+        <pose>0 0 0.004 0 0 0</pose>
+        <geometry><box><size>0.075 0.075 0.028</size></box></geometry>
+        <material><ambient>0.15 0.15 0.18 1</ambient><diffuse>0.15 0.15 0.18 1</diffuse></material>
+      </visual>
+      <visual name="canopy">
+        <pose>0.025 0 0.02 0 0.25 0</pose>
+        <geometry><box><size>0.05 0.05 0.012</size></box></geometry>
+        <material><ambient>0.9 0.45 0.05 1</ambient><diffuse>0.9 0.45 0.05 1</diffuse></material>
+      </visual>
+      <visual name="battery">
+        <pose>-0.01 0 -0.014 0 0 0</pose>
+        <geometry><box><size>0.055 0.026 0.013</size></box></geometry>
+        <material><ambient>0.1 0.1 0.1 1</ambient><diffuse>0.1 0.1 0.1 1</diffuse></material>
+      </visual>
+
+      <!-- arms + motors + prop disks at the four 41.7 mm offsets -->
+      <visual name="arm_fr"><pose>0.0295 -0.0295 0 0 0 -0.785</pose>
+        <geometry><box><size>0.062 0.011 0.007</size></box></geometry>
+        <material><ambient>0.2 0.2 0.22 1</ambient><diffuse>0.2 0.2 0.22 1</diffuse></material></visual>
+      <visual name="arm_br"><pose>-0.0295 -0.0295 0 0 0 0.785</pose>
+        <geometry><box><size>0.062 0.011 0.007</size></box></geometry>
+        <material><ambient>0.2 0.2 0.22 1</ambient><diffuse>0.2 0.2 0.22 1</diffuse></material></visual>
+      <visual name="arm_bl"><pose>-0.0295 0.0295 0 0 0 -0.785</pose>
+        <geometry><box><size>0.062 0.011 0.007</size></box></geometry>
+        <material><ambient>0.2 0.2 0.22 1</ambient><diffuse>0.2 0.2 0.22 1</diffuse></material></visual>
+      <visual name="arm_fl"><pose>0.0295 0.0295 0 0 0 0.785</pose>
+        <geometry><box><size>0.062 0.011 0.007</size></box></geometry>
+        <material><ambient>0.2 0.2 0.22 1</ambient><diffuse>0.2 0.2 0.22 1</diffuse></material></visual>
+
+      <visual name="motor_fr"><pose>0.0417 -0.0417 0.008 0 0 0</pose>
+        <geometry><cylinder><radius>0.00425</radius><length>0.02</length></cylinder></geometry>
+        <material><ambient>0.35 0.35 0.38 1</ambient><diffuse>0.35 0.35 0.38 1</diffuse></material></visual>
+      <visual name="motor_br"><pose>-0.0417 -0.0417 0.008 0 0 0</pose>
+        <geometry><cylinder><radius>0.00425</radius><length>0.02</length></cylinder></geometry>
+        <material><ambient>0.35 0.35 0.38 1</ambient><diffuse>0.35 0.35 0.38 1</diffuse></material></visual>
+      <visual name="motor_bl"><pose>-0.0417 0.0417 0.008 0 0 0</pose>
+        <geometry><cylinder><radius>0.00425</radius><length>0.02</length></cylinder></geometry>
+        <material><ambient>0.35 0.35 0.38 1</ambient><diffuse>0.35 0.35 0.38 1</diffuse></material></visual>
+      <visual name="motor_fl"><pose>0.0417 0.0417 0.008 0 0 0</pose>
+        <geometry><cylinder><radius>0.00425</radius><length>0.02</length></cylinder></geometry>
+        <material><ambient>0.35 0.35 0.38 1</ambient><diffuse>0.35 0.35 0.38 1</diffuse></material></visual>
+
+      <visual name="prop_fr"><pose>0.0417 -0.0417 0.0185 0 0 0</pose>
+        <geometry><cylinder><radius>0.0381</radius><length>0.002</length></cylinder></geometry>
+        <material><ambient>0.9 0.45 0.05 0.5</ambient><diffuse>0.9 0.45 0.05 0.5</diffuse></material>
+        <transparency>0.45</transparency></visual>
+      <visual name="prop_br"><pose>-0.0417 -0.0417 0.0185 0 0 0</pose>
+        <geometry><cylinder><radius>0.0381</radius><length>0.002</length></cylinder></geometry>
+        <material><ambient>0.2 0.2 0.22 0.5</ambient><diffuse>0.2 0.2 0.22 0.5</diffuse></material>
+        <transparency>0.45</transparency></visual>
+      <visual name="prop_bl"><pose>-0.0417 0.0417 0.0185 0 0 0</pose>
+        <geometry><cylinder><radius>0.0381</radius><length>0.002</length></cylinder></geometry>
+        <material><ambient>0.2 0.2 0.22 0.5</ambient><diffuse>0.2 0.2 0.22 0.5</diffuse></material>
+        <transparency>0.45</transparency></visual>
+      <visual name="prop_fl"><pose>0.0417 0.0417 0.0185 0 0 0</pose>
+        <geometry><cylinder><radius>0.0381</radius><length>0.002</length></cylinder></geometry>
+        <material><ambient>0.9 0.45 0.05 0.5</ambient><diffuse>0.9 0.45 0.05 0.5</diffuse></material>
+        <transparency>0.45</transparency></visual>
+    </link>
+  </model>
+</sdf>

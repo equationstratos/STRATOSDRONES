@@ -10,7 +10,7 @@ works as-is over Wi-Fi. This package adds:
   * sim helpers     — spawn/stop local SITL instances for tests and demos
 """
 from .stratos import StratosDrone, enable_sim
-from .sim import SitlInstance, spawn_sitl
+from .sim import SitlInstance, spawn_sitl, wait_drone_ready
 
-__all__ = ["StratosDrone", "enable_sim", "SitlInstance", "spawn_sitl"]
+__all__ = ["StratosDrone", "enable_sim", "SitlInstance", "spawn_sitl", "wait_drone_ready"]
 __version__ = "0.1.0"
