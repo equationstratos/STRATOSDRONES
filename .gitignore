@@ -1,0 +1,33 @@
+# builds
+build/
+*.o
+*.a
+*.so
+__pycache__/
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+
+# ESP-IDF
+firmware/build/
+firmware/sdkconfig
+firmware/sdkconfig.old
+firmware/managed_components/
+firmware/dependencies.lock
+
+# KiCad
+*.kicad_prl
+*-backups/
+*.bak
+*.kicad_sch-bak
+*.kicad_pcb-bak
+fp-info-cache
+~*.lck
+
+# CAD exports are committed on release; intermediates are not
+hardware/frame/*.echo
+hardware/frame/*.csg
+
+# misc
+*.log
+.DS_Store
