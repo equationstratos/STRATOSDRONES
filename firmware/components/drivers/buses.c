@@ -1,6 +1,7 @@
 /* Shared SPI/I2C bus bring-up. SPDX-License-Identifier: MIT */
 #include "driver/i2c_master.h"
 #include "driver/spi_master.h"
+#include "esp_check.h"
 #include "board_pinmap.h"
 #include "drivers.h"
 #include "esp_log.h"

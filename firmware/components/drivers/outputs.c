@@ -7,6 +7,7 @@
 #include "led_strip.h"
 #include "board_pinmap.h"
 #include "drivers.h"
+#include "esp_check.h"
 #include "esp_log.h"
 
 static const char *TAG = "outputs";

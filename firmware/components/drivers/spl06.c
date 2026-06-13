@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: MIT */
 #include "driver/i2c_master.h"
 #include "drivers.h"
+#include "esp_check.h"
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"
 
