@@ -39,36 +39,38 @@ def vec(x, y):
     return pcbnew.VECTOR2I(mm(x), mm(y))
 
 
-# ---- explicit placement for major parts (mm; board 42x42, origin at corner)
-# x right, y down. Sensors on the bottom go inside the central 16mm window.
+# ---- explicit placement for major parts (mm; board 48x54 portrait, origin
+# at corner). x right (0..48), y down (0..54); y=0 is the camera nose (front).
+# Bottom-side sensors (U8/U9/J3) sit in the central window; motor pads at the
+# four corners align with the printed body's arms.
 PLACE = {
-    "U1": (21, 21, 0, "T"),     # P4 center
-    "U2": (32.5, 13, 0, "T"),   # flash
-    "Y1": (32.5, 18, 0, "T"),   # crystal
-    "U3": (21, 6.5, 0, "T"),    # C6-MINI, antenna toward top edge
-    "J2": (21, 39.5, 0, "T"),   # USB-C bottom edge
-    "U4": (7, 33, 0, "T"),      # TP4056
-    "U5": (14, 34, 0, "T"),     # buck
-    "L1": (17.5, 34, 0, "T"),
-    "J1": (32, 39, 0, "T"),     # battery JST
-    "U6": (13.5, 27, 0, "T"),   # IMU
-    "U7": (28, 27, 0, "T"),     # baro
-    "U8": (21, 24, 0, "B"),     # VL53L1X bottom, in window
-    "U9": (21, 18, 0, "B"),     # PMW3901 bottom, in window
-    "J3": (10, 18, 0, "B"),     # flow fallback header bottom
-    "J4": (21, 2.6, 0, "T"),    # camera FFC front edge
-    "LED1": (9, 9, 0, "T"),
-    "LED2": (33, 9, 0, "T"),
-    "J9": (39, 19, 0, "T"),     # expansion
-    "J10": (39, 25, 0, "T"),    # P4 uart
-    "J11": (39, 31, 0, "T"),    # c6 uart
-    "SW1": (3.5, 21, 0, "T"),
-    "SW2": (3.5, 27, 0, "T"),
-    # motor FETs + pads at the 4 corners
-    "Q1": (35, 9, 0, "T"), "J5": (38.5, 5.5, 0, "T"),
-    "Q2": (35, 33, 0, "T"), "J6": (38.5, 36.5, 0, "T"),
-    "Q3": (7, 33, 270, "T"), "J7": (3.5, 36.5, 0, "T"),
-    "Q4": (9, 13, 0, "T"), "J8": (3.5, 5.5, 0, "T"),
+    "U1": (24, 28, 0, "T"),     # ESP32-P4, centre
+    "U2": (37, 20, 0, "T"),     # flash, beside P4
+    "Y1": (37, 27, 0, "T"),     # crystal
+    "U3": (24, 49, 0, "T"),     # ESP32-C6 module, antenna to rear edge
+    "J2": (38, 51, 0, "T"),     # USB-C, rear edge
+    "J1": (13, 51, 0, "T"),     # battery JST, rear edge
+    "U4": (9, 44, 0, "T"),      # TP4056 charger
+    "U5": (17, 46, 0, "T"),     # buck
+    "L1": (22, 46, 0, "T"),
+    "U6": (17, 25, 0, "T"),     # IMU, near centre
+    "U7": (31, 25, 0, "T"),     # baro
+    "U8": (24, 31, 0, "B"),     # VL53L1X (bottom, window)
+    "U9": (24, 24, 0, "B"),     # PMW3901 (bottom, window)
+    "J3": (37, 24, 0, "B"),     # flow fallback header (bottom)
+    "J4": (24, 4, 0, "T"),      # camera FFC, front nose
+    "LED1": (8, 10, 0, "T"),
+    "LED2": (40, 10, 0, "T"),
+    "SW1": (44, 28, 0, "T"),    # reset
+    "SW2": (44, 34, 0, "T"),    # boot
+    "J9": (44, 40, 0, "T"),     # expansion
+    "J10": (10, 51, 0, "T"),    # P4 uart pads
+    "J11": (18, 51, 0, "T"),    # c6 uart pads
+    # motor FETs + pads at the four corners (wire out to the body arms)
+    "Q1": (40, 16, 0, "T"), "J5": (44, 10, 0, "T"),
+    "Q2": (40, 40, 0, "T"), "J6": (44, 46, 0, "T"),
+    "Q3": (8, 40, 0, "T"),  "J7": (4, 46, 0, "T"),
+    "Q4": (8, 16, 0, "T"),  "J8": (4, 10, 0, "T"),
 }
 
 
@@ -108,7 +110,7 @@ def main():
         return nets[name]
 
     net("GND")
-    auto_x, auto_y = 2.0, 14.0  # auto-flow band for unplaced passives
+    auto_x, auto_y = 4.0, 13.0  # auto-flow band for unplaced passives
     missing, subs = [], []
     placed = 0
 
@@ -133,8 +135,8 @@ def main():
         else:
             x, y, rot, side = auto_x, auto_y, 0, comp["side"]
             auto_x += 2.2
-            if auto_x > 40:
-                auto_x = 2.0
+            if auto_x > 44:
+                auto_x = 4.0
                 auto_y += 2.2
         fp.SetPosition(vec(x, y))
         # net assignment per pad (before Add)
@@ -228,11 +230,12 @@ def draw_outline(board):
         arc.SetLayer(edge)
         arc.SetWidth(mm(0.1))
         board.Add(arc)
-    # mounting holes (NPTH M2) at 36mm square pitch, centered
+    # mounting holes (NPTH M2) at the rectangular pitch, centered
     cx, cy = w / 2, h / 2
-    p = b["mount_pitch"] / 2
-    for dx in (-p, p):
-        for dy in (-p, p):
+    px = b.get("mount_pitch_x", b.get("mount_pitch", 36.0)) / 2
+    py = b.get("mount_pitch_y", b.get("mount_pitch", 36.0)) / 2
+    for dx in (-px, px):
+        for dy in (-py, py):
             h_fp = pcbnew.FOOTPRINT(board)
             pad = pcbnew.PAD(h_fp)
             pad.SetAttribute(pcbnew.PAD_ATTRIB_NPTH)

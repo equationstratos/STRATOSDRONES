@@ -26,8 +26,10 @@ fc_core/            Platform-independent flight control core (pure C99, no RTOS 
 firmware/           ESP-IDF project for ESP32-P4 (esp32p4 target)
 sim/                Gazebo Harmonic plugin, drone SDF model, worlds, swarm launcher
 sdk/python/         stratospy: thin djitellopy add-on for STRATOS extensions + examples
-hardware/pcb/       KiCad project + JLCPCB fabrication outputs (gerbers, BOM, CPL)
-hardware/frame/     Parametric OpenSCAD frame, canopy, prop guards → STL
+hardware/pcb/       KiCad project + JLCPCB fab outputs (gerbers, BOM, CPL) + component map
+hardware/frame/     Parametric OpenSCAD frames → STL:
+                      • frame.scad …        open racing-style X-frame
+                      • tello_style/ …      closed Tello-size clamshell body
 docs/               Build guide, bring-up, SDK reference, architecture, safety
 ```
 

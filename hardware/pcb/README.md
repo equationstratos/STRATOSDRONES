@@ -1,9 +1,15 @@
 # STRATOSDRONE PCB
 
-A 4-layer, ~42×42 mm controller board for the STRATOSDRONE: chip-down
-ESP32-P4 (flight + camera + hardware H.264) with an ESP32-C6-MINI-1 Wi-Fi
-co-processor, IMU / barometer / ToF / optical-flow sensors, a MIPI-CSI camera
-FFC, 1S USB-C charging, and four brushed-motor drivers.
+A 4-layer, **48×54 mm Tello-style portrait** controller board for the
+STRATOSDRONE: chip-down ESP32-P4 (flight + camera + hardware H.264) with an
+ESP32-C6-MINI-1 Wi-Fi co-processor, IMU / barometer / ToF / optical-flow
+sensors, a MIPI-CSI camera FFC at the nose, 1S USB-C charging at the rear, and
+four corner brushed-motor drivers. It drops into the printed body pod
+(`../frame/tello_style/`).
+
+**Lost among the parts?** See the annotated component map (`make map`):
+
+![component map](preview/component_map.png)
 
 > **Read [`KNOWN_GAPS.md`](KNOWN_GAPS.md) before ordering.** This design is
 > generated as a reviewable starting point: the netlist, BOM and placement are

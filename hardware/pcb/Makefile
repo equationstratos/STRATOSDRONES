@@ -2,9 +2,12 @@
 # Requires KiCad 7 python (pcbnew) + kicad-cli on PATH.
 PY ?= python3
 
-.PHONY: all board pinmap fab check clean preview
+.PHONY: all board pinmap fab check clean preview map
 
-all: board pinmap fab check
+all: board pinmap fab check map
+
+map: board          ## render the annotated component map (top + bottom)
+	$(PY) scripts/gen_component_map.py
 
 board:            ## generate stratosdrone.kicad_pcb from design.py
 	$(PY) scripts/gen_pcb.py

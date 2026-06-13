@@ -444,7 +444,10 @@ part("J11", "C6DBG", "Connector_PinHeader_1.27mm:PinHeader_1x04_P1.27mm_Vertical
 POWER_NETS = ["VBAT", "VBUS", "3V3", "GND", "VDD_CORE", "VDD_MIPI"]
 
 # Board outline (mm), rounded rect, 4x M2 mounting holes at 36mm square pitch
-BOARD = dict(w=42.0, h=42.0, corner_r=3.0, mount_pitch=36.0, mount_d=2.2)
+# Tello-style portrait board that fills the printed body's pod (body_bottom.scad).
+# y=0 is the camera nose (front); mount holes at 40 x 46 mm match the pod bosses.
+BOARD = dict(w=48.0, h=54.0, corner_r=4.0,
+             mount_pitch_x=40.0, mount_pitch_y=46.0, mount_d=2.2)
 
 
 def all_components():

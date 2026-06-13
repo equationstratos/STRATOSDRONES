@@ -21,9 +21,17 @@ jobs:
             openscad -o stl/$f.stl --export-format binstl $f.scad 2>&1 | grep -i assert || true
             test -s stl/$f.stl || { echo "FAILED to render $f"; exit 1; }
           done
-          # wheelbase must stay Tello-compatible (118 mm)
+          # Tello-style closed body
+          mkdir -p tello_style/stl
+          for f in body_bottom body_top; do
+            openscad -o tello_style/stl/$f.stl --export-format binstl tello_style/$f.scad 2>&1 | grep -i assert || true
+            test -s tello_style/stl/$f.stl || { echo "FAILED to render $f"; exit 1; }
+          done
+          # wheelbase must stay Tello-compatible (118 mm) on both frames
           openscad -o /dev/null frame.scad 2>&1 | grep -q "ASSERT wheelbase=118" \
             || { echo "wheelbase changed from 118 mm"; exit 1; }
+          openscad -o /dev/null tello_style/body_bottom.scad 2>&1 | grep -q "ASSERT wheelbase=118" \
+            || { echo "tello body wheelbase changed from 118 mm"; exit 1; }
       - uses: actions/upload-artifact@v4
         with:
           name: frame-stl
