@@ -1,0 +1,9 @@
+# Managed components (fetched by the IDF component manager at configure time)
+dependencies:
+  idf: ">=5.4"
+  espressif/esp_hosted: "*"        # Wi-Fi via ESP32-C6 over SDIO
+  espressif/esp_wifi_remote: "*"   # esp_wifi_* API shim for hosted Wi-Fi
+  espressif/esp_video: "*"         # MIPI-CSI camera capture (V4L2-style)
+  espressif/esp_cam_sensor: "*"    # OV5647 / SC2336 sensor drivers
+  espressif/esp_h264: "~1.1"       # hardware H.264 encoder wrapper
+  espressif/led_strip: "*"         # WS2812 over RMT

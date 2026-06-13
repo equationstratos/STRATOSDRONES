@@ -1,0 +1,23 @@
+# STRATOSDRONE defaults — target esp32p4
+CONFIG_IDF_TARGET="esp32p4"
+
+# 16 MB external QSPI NOR flash (W25Q128)
+CONFIG_ESPTOOLPY_FLASHSIZE_16MB=y
+CONFIG_PARTITION_TABLE_CUSTOM=y
+CONFIG_PARTITION_TABLE_CUSTOM_FILENAME="partitions.csv"
+
+# in-package 32 MB PSRAM (P4NRW32)
+CONFIG_SPIRAM=y
+CONFIG_SPIRAM_SPEED_200M=y
+
+# 1 kHz tick so the flight loop can pace on vTaskDelay(1) fallback
+CONFIG_FREERTOS_HZ=1000
+
+CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ_360=y
+
+# lwIP: allow the SDK socket patterns we use
+CONFIG_LWIP_SO_REUSE=y
+
+# esp-hosted (C6 over SDIO) — pin numbers must match board_pinmap.h /
+# hardware/pcb (see docs/bringup.md to re-check on rev A boards)
+CONFIG_ESP_HOSTED_SDIO_4_BIT_BUS=y
