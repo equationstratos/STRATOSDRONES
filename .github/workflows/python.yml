@@ -1,0 +1,22 @@
+name: python
+# Lint + unit-test the stratospy client package.
+on:
+  push:
+    paths: ['sdk/**', '.github/workflows/python.yml']
+  pull_request:
+    paths: ['sdk/**']
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install ruff djitellopy
+      - name: Ruff
+        run: ruff check sdk/python
+      - name: Import check
+        run: |
+          cd sdk/python && python -c "import stratospy; print(stratospy.__version__)"

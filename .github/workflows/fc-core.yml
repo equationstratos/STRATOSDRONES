@@ -1,0 +1,21 @@
+name: fc_core
+# Platform-independent flight core: host build + unit/SIL/SDK tests.
+on:
+  push:
+    paths: ['fc_core/**', '.github/workflows/fc-core.yml']
+  pull_request:
+    paths: ['fc_core/**']
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install build tools
+        run: sudo apt-get update && sudo apt-get install -y cmake ninja-build gcc
+      - name: Build + ctest
+        run: |
+          cd fc_core
+          cmake -B build -G Ninja
+          cmake --build build
+          ctest --test-dir build --output-on-failure

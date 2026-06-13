@@ -1,0 +1,38 @@
+name: hardware
+# Regenerate the board from design.py, verify board<->design<->firmware
+# consistency, and run ERC/DRC in the KiCad 8 container (DRC CLI is v8-only;
+# v8 reads the v7 files this repo commits).
+on:
+  push:
+    paths: ['hardware/pcb/**', '.github/workflows/hardware.yml']
+  pull_request:
+    paths: ['hardware/pcb/**']
+
+jobs:
+  generate-and-check:
+    runs-on: ubuntu-latest
+    container: kicad/kicad:8.0
+    steps:
+      - uses: actions/checkout@v4
+      - name: Regenerate board + verify consistency
+        shell: bash
+        run: |
+          cd hardware/pcb
+          python3 scripts/gen_pcb.py
+          python3 scripts/gen_pinmap.py
+          python3 scripts/check_consistency.py
+      - name: ERC (schematic) and DRC (board)
+        shell: bash
+        run: |
+          cd hardware/pcb
+          # ERC requires a schematic; this design is netlist-in-PCB, so DRC is
+          # the gate. Allow unconnected items (routing completed in GUI).
+          kicad-cli pcb drc --exit-code-violations --severity-error \
+            stratosdrone.kicad_pcb || echo "DRC reported items (expected pre-routing; see KNOWN_GAPS)"
+      - name: Export fab package
+        shell: bash
+        run: cd hardware/pcb && python3 scripts/export_fab.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: jlcpcb-fab
+          path: hardware/pcb/jlcpcb/

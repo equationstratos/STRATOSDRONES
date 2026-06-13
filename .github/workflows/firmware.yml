@@ -1,0 +1,28 @@
+name: firmware
+# Full ESP-IDF build for the ESP32-P4 target. Runs in the official Espressif
+# container, which (unlike the sandboxed dev environment) can reach the
+# component registry to fetch esp_video / esp_h264 / esp_hosted / led_strip.
+on:
+  push:
+    paths: ['firmware/**', 'fc_core/**', '.github/workflows/firmware.yml']
+  pull_request:
+    paths: ['firmware/**', 'fc_core/**']
+
+jobs:
+  idf-build:
+    runs-on: ubuntu-latest
+    container: espressif/idf:v5.4
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build firmware (esp32p4)
+        shell: bash
+        run: |
+          . $IDF_PATH/export.sh
+          cd firmware
+          idf.py set-target esp32p4
+          idf.py build
+      - name: Size report
+        shell: bash
+        run: |
+          . $IDF_PATH/export.sh
+          cd firmware && idf.py size || true

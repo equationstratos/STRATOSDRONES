@@ -1,0 +1,40 @@
+name: sim
+# Build the SITL runner + Gazebo Harmonic plugin, then fly full missions and a
+# 3-drone swarm headlessly through unmodified djitellopy.
+on:
+  push:
+    paths: ['sim/**', 'fc_core/**', 'sdk/**', '.github/workflows/sim.yml']
+  pull_request:
+    paths: ['sim/**', 'fc_core/**', 'sdk/**']
+
+jobs:
+  sitl:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install build + python deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake ninja-build g++ python3-pip
+          pip install --break-system-packages djitellopy pytest
+      - name: Build SITL runner
+        run: |
+          cd sim && cmake -B build -G Ninja && cmake --build build --target sitl_runner
+      - name: SITL mission + swarm tests
+        run: cd ${{ github.workspace }} && python3 -m pytest sim/tests/test_sitl_missions.py -v
+
+  gazebo:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Gazebo Harmonic
+        run: |
+          sudo apt-get update && sudo apt-get install -y curl lsb-release gnupg cmake ninja-build g++ python3-pip libx264-dev
+          sudo curl -fsSL https://packages.osrfoundation.org/gazebo.gpg -o /usr/share/keyrings/pkgs-osrf-archive-keyring.gpg
+          echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/pkgs-osrf-archive-keyring.gpg] http://packages.osrfoundation.org/gazebo/ubuntu-stable $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/gazebo-stable.list
+          sudo apt-get update && sudo apt-get install -y gz-harmonic
+          pip install --break-system-packages djitellopy pytest
+      - name: Build plugin + bridge
+        run: cd sim && cmake -B build -G Ninja && cmake --build build
+      - name: Headless Gazebo mission + swarm tests
+        run: cd ${{ github.workspace }} && python3 -m pytest sim/tests/test_gazebo_missions.py -v

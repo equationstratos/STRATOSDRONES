@@ -1,0 +1,30 @@
+name: cad
+# Render the 3D-printable frame parts to STL and check key dimensions.
+on:
+  push:
+    paths: ['hardware/frame/**', '.github/workflows/cad.yml']
+  pull_request:
+    paths: ['hardware/frame/**']
+
+jobs:
+  stl:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install OpenSCAD
+        run: sudo apt-get update && sudo apt-get install -y openscad
+      - name: Export STLs + dimension asserts
+        run: |
+          cd hardware/frame
+          mkdir -p stl
+          for f in frame prop_guards canopy; do
+            openscad -o stl/$f.stl --export-format binstl $f.scad 2>&1 | grep -i assert || true
+            test -s stl/$f.stl || { echo "FAILED to render $f"; exit 1; }
+          done
+          # wheelbase must stay Tello-compatible (118 mm)
+          openscad -o /dev/null frame.scad 2>&1 | grep -q "ASSERT wheelbase=118" \
+            || { echo "wheelbase changed from 118 mm"; exit 1; }
+      - uses: actions/upload-artifact@v4
+        with:
+          name: frame-stl
+          path: hardware/frame/stl/
