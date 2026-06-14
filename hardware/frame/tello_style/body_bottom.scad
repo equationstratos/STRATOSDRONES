@@ -19,17 +19,17 @@ motor_off   = wheelbase/2/sqrt(2);   // 41.72 mm in x and y
 motor_d     = 8.5;    // 8520 motor diameter
 motor_h     = 16;     // motor pocket depth
 nacelle_d   = 15;     // outer hex nacelle across-flats
-pod_x       = 36;     // central pod width  (narrow, Tello-like)
-pod_y       = 70;     // central pod length (elongated)
+pod_x       = 40;     // central pod width  (narrow, Tello-like)
+pod_y       = 74;     // central pod length (elongated)
 wall        = 1.6;
 half_h      = 13;     // height of the lower shell
 floor_t     = 1.4;
 arm_w       = 9;      // arm width (slimmer, Tello-like)
 arm_h       = 6.0;    // arm thickness (structural)
-pcb_x       = 32;     // Tello-style portrait mainboard (see design.py BOARD)
-pcb_y       = 66;
-pcb_hole    = 24;     // PCB mount hole pitch X (24 x 58)
-pcb_hole_y  = 58;
+pcb_x       = 36;     // Tello-style portrait mainboard (see design.py BOARD)
+pcb_y       = 70;
+pcb_hole    = 26;     // PCB mount hole pitch X (26 x 60)
+pcb_hole_y  = 60;
 boss_h      = 3.0;
 batt_w      = 27;     // 1S pack
 batt_l      = 53;
@@ -93,7 +93,7 @@ module arm(sx, sy) {
     }
 }
 
-/* PCB mounting bosses (4) inside the pod, at the 24 x 58 mm hole pitch */
+/* PCB mounting bosses (4) inside the pod, at the 26 x 60 mm hole pitch */
 module pcb_bosses() {
     for (sx=[-1,1], sy=[-1,1])
         translate([sx*pcb_hole/2, sy*pcb_hole_y/2, floor_t-eps])

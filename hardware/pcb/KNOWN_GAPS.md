@@ -14,10 +14,14 @@ JLCPCB. Items are ordered roughly by risk.
    zones (hotkey **B**), then re-export gerbers. The gerbers in `jlcpcb/` are
    preliminary (unrouted) and will not produce a working board.
 
-2. **Placement needs cleanup.** Auto-flowed passives currently overlap the
-   MCU region. Re-place the decoupling near their power pins, keep the IMU
-   (U6) away from motor-current copper, and keep the bottom-center 16 mm
-   window (U8 VL53L1X + U9 PMW3901) clear of other parts and vias.
+2. **Placement is done; refine as you route.** `gen_pcb.py` now does
+   anchor-based placement with collision avoidance: decoupling caps ring the
+   P4, each FET has its gate resistors + flyback at its corner, crystal caps
+   sit on the crystal, and the layout is verified to have **zero
+   copper-pad overlaps**. The bottom-center window (U8 VL53L1X + U9 PMW3901)
+   is kept clear. You may still want to micro-adjust during routing (e.g. tuck
+   a cap to the exact power pin it serves), but the board is routable as
+   generated.
 
 3. **ESP32-P4 core DC-DC topology + values UNVERIFIED.** `L2`/`C5` on
    `VDD_DCDCC`/`FB_DCDC`/`EN_DCDC` are placeholders. Replicate the exact

@@ -45,33 +45,34 @@ def vec(x, y):
 # in shielded zones down the spine, power at the rear, motor pads at the four
 # corners (wires out to the body arms), USB on the left side edge.
 PLACE = {
-    "J4": (16, 5, 0, "T"),       # camera FFC — nose
-    "U3": (16, 14, 0, "T"),      # ESP32-C6 module, antenna toward the nose edge
-    "U1": (16, 30, 0, "T"),      # ESP32-P4, spine centre (under CPU shield)
-    "U2": (10, 24, 0, "T"),      # flash
-    "Y1": (22, 24, 0, "T"),      # crystal
-    "U6": (11, 37, 0, "T"),      # IMU
-    "U7": (22, 37, 0, "T"),      # baro
-    "U8": (16, 35, 0, "B"),      # VL53L1X ToF (bottom, downward)
-    "U9": (16, 42, 0, "B"),      # PMW3901 flow (bottom, downward)
-    "J3": (24, 44, 0, "B"),      # flow fallback header (bottom)
-    "U4": (9, 50, 0, "T"),       # TP4056 charger
-    "U5": (20, 50, 0, "T"),      # buck
-    "L1": (24, 52, 0, "T"),
-    "J2": (3.5, 24, 90, "T"),    # USB-C, left side edge (like Tello micro-USB)
-    "J1": (16, 62, 0, "T"),      # battery JST, rear edge
-    "LED1": (6, 16, 0, "T"),
-    "LED2": (26, 16, 0, "T"),
-    "SW1": (27, 30, 0, "T"),     # reset
-    "SW2": (27, 36, 0, "T"),     # boot
-    "J9": (5, 44, 0, "T"),       # expansion
-    "J10": (10, 60, 0, "T"),     # P4 uart pads
-    "J11": (22, 60, 0, "T"),     # c6 uart pads
-    # motor FETs + pads at the four corners (wire out to the body arms)
-    "Q1": (27, 10, 0, "T"), "J5": (28, 5, 0, "T"),
-    "Q2": (27, 56, 0, "T"), "J6": (28, 61, 0, "T"),
-    "Q3": (5, 56, 0, "T"),  "J7": (4, 61, 0, "T"),
-    "Q4": (5, 10, 0, "T"),  "J8": (4, 5, 0, "T"),
+    "J4": (18, 4.5, 0, "T"),      # camera FFC — nose
+    "U3": (18, 16, 0, "T"),       # ESP32-C6 module (large), RF zone
+    "U1": (18, 37, 0, "T"),       # ESP32-P4, CPU zone
+    "U2": (9, 38, 0, "T"),        # flash, left of P4 (clear of USB)
+    "Y1": (30, 33, 0, "T"),       # crystal, right of P4
+    "U6": (8, 47, 0, "T"),        # IMU
+    "U7": (29, 47, 0, "T"),       # baro
+    "U8": (18, 36, 0, "B"),       # VL53L1X ToF (bottom, downward)
+    "U9": (18, 44, 0, "B"),       # PMW3901 flow (bottom, downward)
+    "J3": (29, 43, 0, "B"),       # flow fallback header (bottom)
+    "U4": (14, 58, 0, "T"),       # TP4056 charger
+    "U5": (23, 57, 0, "T"),       # buck
+    "L1": (27, 57, 0, "T"),
+    "J2": (3.5, 28, 90, "T"),     # USB-C, left side edge (like Tello micro-USB)
+    "J1": (18, 67, 0, "T"),       # battery JST, rear edge
+    "LED1": (7, 22, 0, "T"),
+    "LED2": (29, 22, 0, "T"),
+    "SW1": (33, 40, 0, "T"),      # reset
+    "SW2": (33, 50, 0, "T"),      # boot
+    "J9": (4, 40, 0, "T"),        # expansion (left edge, mid)
+    "J10": (13, 64, 0, "T"),      # P4 uart pads
+    "J11": (25, 64, 0, "T"),      # c6 uart pads
+    # motor FETs + pads near the four corners, inboard of the mount holes
+    # (26x60 pitch -> holes at (5,5)/(31,5)/(5,65)/(31,65))
+    "Q1": (30, 16, 0, "T"), "J5": (32, 11, 0, "T"),
+    "Q2": (30, 55, 0, "T"), "J6": (32, 59, 0, "T"),
+    "Q3": (6, 55, 0, "T"),  "J7": (4, 59, 0, "T"),
+    "Q4": (6, 16, 0, "T"),  "J8": (4, 11, 0, "T"),
 }
 
 
@@ -94,6 +95,56 @@ def resolve_fp(spec):
     return None, spec
 
 
+def anchor_map():
+    """For each passive, the placed component it belongs next to.
+
+    Automatic: a passive anchors to the placed major it shares its most
+    *specific* (rarest) net with — so XTAL caps land on the crystal, gate
+    resistors on their FET, flash pull-ups on the flash, etc. Overrides cover
+    parts that only touch the global rails (regulator I/O caps, bulk/decoupling)
+    where the net alone doesn't say where they go.
+    """
+    GLOBAL = {"GND", "3V3", "VBAT", "VBUS"}
+    net_refs = {}
+    for c in design.all_components():
+        for n in set(c["pins"].values()):
+            net_refs.setdefault(n, set()).add(c["ref"])
+    place_refs = set(PLACE)
+    res = {}
+    for c in design.all_components():
+        ref = c["ref"]
+        if ref in place_refs:
+            continue
+        specific = sorted((n for n in set(c["pins"].values()) if n not in GLOBAL),
+                          key=lambda n: len(net_refs[n]))
+        best = None
+        for n in specific:
+            cands = [r for r in net_refs[n] if r in place_refs]
+            if cands:
+                best = sorted(cands)[0]
+                break
+        res[ref] = best
+    OVERRIDE = {
+        "C1": "U4", "C2": "U4", "R3": "U4", "D2": "U4",          # charger
+        "C3": "U5", "C4": "U5", "R4": "U5", "R5": "U5", "R6": "U5",
+        "R7": "U5", "R8": "U5", "C6": "U5",                       # buck + Vbat sense
+        "C5": "U1", "C11": "U1", "C7": "U1",                      # core/MIPI rails
+        "C26": "U1", "C27": "U1",                                 # bulk by the P4
+        "C8": "Y1", "C9": "Y1",                                   # crystal load caps
+        "C28": "U6", "C29": "U6", "C30": "U7",                    # IMU / baro
+        "C31": "U8", "C32": "U9",                                 # ToF / flow (bottom)
+        "C33": "J4", "C34": "LED1", "C35": "LED2",
+        "D1": "J2", "R1": "J2", "R2": "J2",                       # USB
+    }
+    for k, v in OVERRIDE.items():
+        if k in res:
+            res[k] = v
+    for ref in res:
+        if res[ref] is None:
+            res[ref] = "U1"   # leftover decoupling rings the P4
+    return res
+
+
 def main():
     board = pcbnew.NewBoard(OUT)
     # 4-layer stackup
@@ -110,13 +161,13 @@ def main():
             nets[name] = ni
         return nets[name]
 
+    import math
     net("GND")
-    # auto-flow unplaced passives into the rear region so the MCU/sensor spine
-    # stays readable (final placement is a manual step — see KNOWN_GAPS).
-    auto_x, auto_y = 2.5, 45.0
     missing, subs = [], []
-    placed = 0
+    bw, bh = design.BOARD["w"], design.BOARD["h"]
 
+    # ---- load every footprint, assign nets, measure courtyard size ----
+    loaded = []   # (comp, fp, w_mm, h_mm)
     for comp in design.all_components():
         ref = comp["ref"]
         fp, info = resolve_fp(comp["fp"])
@@ -129,28 +180,39 @@ def main():
         if not fp:
             missing.append(f"{ref}: {comp['fp']}")
             continue
-
         fp.SetReference(ref)
         fp.SetValue(comp["value"])
-        # placement
-        if ref in PLACE:
-            x, y, rot, side = PLACE[ref]
-        else:
-            x, y, rot, side = auto_x, auto_y, 0, comp["side"]
-            auto_x += 2.2
-            if auto_x > 29.5:
-                auto_x = 2.5
-                auto_y += 2.2
-        fp.SetPosition(vec(x, y))
-        # net assignment per pad (before Add)
+        xs, ys = [], []
         for pad in fp.Pads():
             padname = pad.GetPadName() or pad.GetName()
             if padname in comp["pins"]:
                 pad.SetNet(net(comp["pins"][padname]))
-        # KiCad 7: footprint must be on the board before Flip; LCSC/DNP are
-        # carried in design.py (BOM/CPL generated from there), not as fields.
+            pb = pad.GetBoundingBox()
+            xs += [pb.GetLeft(), pb.GetRight()]
+            ys += [pb.GetTop(), pb.GetBottom()]
+        # copper extent from pads (GetBoundingBox on an unplaced footprint is
+        # unreliable and includes silk text), + courtyard allowance
+        wmm = (max(xs) - min(xs)) / 1e6 + 0.7 if xs else 1.2
+        hmm = (max(ys) - min(ys)) / 1e6 + 0.7 if ys else 1.2
+        loaded.append((comp, fp, max(wmm, 1.0), max(hmm, 1.0)))
+
+    placed_ref = {}              # ref -> (x, y)
+    occ = {"T": [], "B": []}     # occupied boxes per side (x0,y0,x1,y1)
+
+    def add_box(side, x, y, w, h, m=0.25):
+        occ[side].append((x - w / 2 - m, y - h / 2 - m, x + w / 2 + m, y + h / 2 + m))
+
+    def overlaps(side, x, y, w, h, m=0.25):
+        a = (x - w / 2 - m, y - h / 2 - m, x + w / 2 + m, y + h / 2 + m)
+        for b in occ[side]:
+            if a[0] < b[2] and a[2] > b[0] and a[1] < b[3] and a[3] > b[1]:
+                return True
+        return False
+
+    def place(comp, fp, w, h, x, y, rot, side):
+        fp.SetPosition(vec(x, y))
         board.Add(fp)
-        if comp["side"] == "B" or side == "B":
+        if side == "B":
             fp.SetLayerAndFlip(pcbnew.B_Cu)
         if rot:
             fp.SetOrientationDegrees(rot)
@@ -159,8 +221,106 @@ def main():
                 fp.SetExcludedFromBOM(True)
             except Exception:
                 pass
-        placed += 1
+        add_box(side, x, y, w, h)
+        placed_ref[comp["ref"]] = (x, y)
 
+    def inside(x, y, w, h):
+        return not (x - w / 2 < 1.0 or y - h / 2 < 1.0
+                    or x + w / 2 > bw - 1.0 or y + h / 2 > bh - 1.0)
+
+    def find_slot(side, ax, ay, w, h):
+        """nearest free position to (ax, ay): fine rings for tight clustering,
+        then a full-board grid scan that guarantees a spot if any exists."""
+        for i in range(160):
+            rad = 0.8 + i * 0.3
+            if rad > 30:
+                break
+            steps = max(16, int(rad * 9))
+            for k in range(steps):
+                ang = 2 * math.pi * k / steps
+                x = ax + rad * math.cos(ang)
+                y = ay + rad * math.sin(ang)
+                if inside(x, y, w, h) and not overlaps(side, x, y, w, h):
+                    return x, y
+        gy = 1.0 + h / 2
+        while gy < bh - 1.0 - h / 2:
+            gx = 1.0 + w / 2
+            while gx < bw - 1.0 - w / 2:
+                if not overlaps(side, gx, gy, w, h):
+                    return gx, gy
+                gx += 0.5
+            gy += 0.5
+        return ax, ay
+
+    # mounting holes are obstacles on both sides (parts must clear them)
+    mcx, mcy = bw / 2, bh / 2
+    mpx = design.BOARD.get("mount_pitch_x", 24) / 2
+    mpy = design.BOARD.get("mount_pitch_y", 58) / 2
+    md = design.BOARD.get("mount_d", 2.2) + 1.0
+    for dx in (-mpx, mpx):
+        for dy in (-mpy, mpy):
+            for s in ("T", "B"):
+                add_box(s, mcx + dx, mcy + dy, md, md, m=0.0)
+
+    # ---- phase 1: anchors (major ICs/connectors) at their fixed positions ----
+    by_ref = {c[0]["ref"]: c for c in loaded}
+    for ref, (x, y, rot, side) in PLACE.items():
+        if ref in by_ref:
+            comp, fp, w, h = by_ref[ref]
+            place(comp, fp, w, h, x, y, rot, side)
+
+    # ---- phase 2: passives clustered around the part they serve ----
+    anchors = anchor_map()
+    free = [c for c in loaded if c[0]["ref"] not in PLACE]
+    free.sort(key=lambda c: (anchors.get(c[0]["ref"], "U1"), c[2] * c[3]))
+    for comp, fp, w, h in free:
+        an = anchors.get(comp["ref"], "U1")
+        ax, ay = placed_ref.get(an, (bw / 2, bh / 2))
+        x, y = find_slot(comp["side"], ax, ay, w, h)
+        place(comp, fp, w, h, x, y, 0, comp["side"])
+
+    # ---- repair: relocate any non-anchor part still overlapping a neighbour ----
+    fp_of = {c[0]["ref"]: c[1] for c in loaded if c[0]["ref"] in placed_ref}
+    sz = {c[0]["ref"]: (c[2], c[3]) for c in loaded}
+
+    def cur_box(fp):
+        xs, ys = [], []
+        for p in fp.Pads():
+            pb = p.GetBoundingBox()
+            xs += [pb.GetLeft(), pb.GetRight()]
+            ys += [pb.GetTop(), pb.GetBottom()]
+        return (min(xs) / 1e6, min(ys) / 1e6, max(xs) / 1e6, max(ys) / 1e6) if xs else None
+
+    mh = [(mcx + dx, mcy + dy) for dx in (-mpx, mpx) for dy in (-mpy, mpy)]
+    for _pass in range(6):
+        boxes = {r: (cur_box(f), "B" if f.IsFlipped() else "T") for r, f in fp_of.items()}
+        moved = 0
+        for ref, f in list(fp_of.items()):
+            if ref in PLACE:
+                continue
+            bx, side = boxes[ref]
+            if bx is None:
+                continue
+            clash = any(r2 != ref and s2 == side and bx[0] < b2[2] and bx[2] > b2[0]
+                        and bx[1] < b2[3] and bx[3] > b2[1]
+                        for r2, (b2, s2) in boxes.items() if b2)
+            if not clash:
+                continue
+            occ[side] = [(b2[0] - 0.25, b2[1] - 0.25, b2[2] + 0.25, b2[3] + 0.25)
+                         for r2, (b2, s2) in boxes.items() if r2 != ref and s2 == side and b2]
+            occ[side] += [(hx - 1.6, hy - 1.6, hx + 1.6, hy + 1.6) for hx, hy in mh]
+            w, h = sz[ref]
+            an = anchors.get(ref, "U1")
+            ax, ay = placed_ref.get(an, (bw / 2, bh / 2))
+            nx, ny = find_slot(side, ax, ay, w, h)
+            f.SetPosition(vec(nx, ny))
+            placed_ref[ref] = (nx, ny)
+            boxes[ref] = (cur_box(f), side)
+            moved += 1
+        if not moved:
+            break
+
+    placed = len(placed_ref)
     draw_outline(board)
     board.Save(OUT)
     print(f"placed {placed}/{len(design.all_components())} components, {len(nets)} nets")
