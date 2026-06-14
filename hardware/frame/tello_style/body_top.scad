@@ -16,13 +16,13 @@ span_y      = 92.5;
 wheelbase   = 118;
 motor_off   = wheelbase/2/sqrt(2);
 nacelle_d   = 15;
-pod_x       = 54;
-pod_y       = 60;
+pod_x       = 36;
+pod_y       = 70;
 wall        = 1.6;
 top_h       = 11;     // canopy height
 roof_t      = 1.4;
 cam_w       = 9;
-arm_w       = 11;
+arm_w       = 9;
 arm_h_top   = 3.0;
 snap_n      = 8;
 

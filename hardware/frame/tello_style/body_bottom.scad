@@ -19,17 +19,17 @@ motor_off   = wheelbase/2/sqrt(2);   // 41.72 mm in x and y
 motor_d     = 8.5;    // 8520 motor diameter
 motor_h     = 16;     // motor pocket depth
 nacelle_d   = 15;     // outer hex nacelle across-flats
-pod_x       = 54;     // central pod width
-pod_y       = 60;     // central pod length
+pod_x       = 36;     // central pod width  (narrow, Tello-like)
+pod_y       = 70;     // central pod length (elongated)
 wall        = 1.6;
 half_h      = 13;     // height of the lower shell
 floor_t     = 1.4;
-arm_w       = 11;     // arm width
-arm_h       = 6.5;    // arm thickness (structural)
-pcb_x       = 48;     // Tello-style portrait mainboard (see design.py BOARD)
-pcb_y       = 54;
-pcb_hole    = 40;     // PCB mount hole pitch X (40 x 46)
-pcb_hole_y  = 46;
+arm_w       = 9;      // arm width (slimmer, Tello-like)
+arm_h       = 6.0;    // arm thickness (structural)
+pcb_x       = 32;     // Tello-style portrait mainboard (see design.py BOARD)
+pcb_y       = 66;
+pcb_hole    = 24;     // PCB mount hole pitch X (24 x 58)
+pcb_hole_y  = 58;
 boss_h      = 3.0;
 batt_w      = 27;     // 1S pack
 batt_l      = 53;
@@ -54,13 +54,14 @@ module pod_shell() {
         // hollow interior
         translate([0,0,floor_t])
             rrect(pod_x-2*wall, pod_y-2*wall, 5, half_h);
-        // bottom sensor window (flow + ToF look straight down)
-        translate([0,0,-eps]) rrect(sensor_win, sensor_win, 2, floor_t+2*eps);
+        // bottom sensor window (flow + ToF look straight down; long enough to
+        // clear both U8/U9 which are spaced along the board spine)
+        translate([0,3,-eps]) rrect(sensor_win, sensor_win+10, 2, floor_t+2*eps);
         // camera aperture at the front nose (-y)
         translate([0,-pod_y/2-eps,half_h*0.5])
             rotate([-90,0,0]) cylinder(d=cam_w+0.6, h=wall+2);
-        // USB-C + status slot at the rear (+y)
-        translate([-6,pod_y/2-wall-eps,2.5]) cube([12,wall+2,5.5]);
+        // USB-C slot on the LEFT side wall (like the Tello micro-USB), forward of centre
+        translate([-pod_x/2-eps,-15,2.5]) cube([wall+2,12,5.5]);
     }
     // chamfered camera nose bump
     translate([0,-pod_y/2+1,half_h*0.5])
@@ -92,7 +93,7 @@ module arm(sx, sy) {
     }
 }
 
-/* PCB mounting bosses (4) inside the pod, at the 40 x 46 mm hole pitch */
+/* PCB mounting bosses (4) inside the pod, at the 24 x 58 mm hole pitch */
 module pcb_bosses() {
     for (sx=[-1,1], sy=[-1,1])
         translate([sx*pcb_hole/2, sy*pcb_hole_y/2, floor_t-eps])

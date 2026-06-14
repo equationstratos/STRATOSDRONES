@@ -39,38 +39,39 @@ def vec(x, y):
     return pcbnew.VECTOR2I(mm(x), mm(y))
 
 
-# ---- explicit placement for major parts (mm; board 48x54 portrait, origin
-# at corner). x right (0..48), y down (0..54); y=0 is the camera nose (front).
-# Bottom-side sensors (U8/U9/J3) sit in the central window; motor pads at the
-# four corners align with the printed body's arms.
+# ---- explicit placement for major parts (mm; narrow portrait board 32x66,
+# origin at corner). x right (0..32), y down (0..66); y=0 is the camera nose.
+# Layout mirrors a real Tello mainboard: optical cluster at the nose, P4 + C6
+# in shielded zones down the spine, power at the rear, motor pads at the four
+# corners (wires out to the body arms), USB on the left side edge.
 PLACE = {
-    "U1": (24, 28, 0, "T"),     # ESP32-P4, centre
-    "U2": (37, 20, 0, "T"),     # flash, beside P4
-    "Y1": (37, 27, 0, "T"),     # crystal
-    "U3": (24, 49, 0, "T"),     # ESP32-C6 module, antenna to rear edge
-    "J2": (38, 51, 0, "T"),     # USB-C, rear edge
-    "J1": (13, 51, 0, "T"),     # battery JST, rear edge
-    "U4": (9, 44, 0, "T"),      # TP4056 charger
-    "U5": (17, 46, 0, "T"),     # buck
-    "L1": (22, 46, 0, "T"),
-    "U6": (17, 25, 0, "T"),     # IMU, near centre
-    "U7": (31, 25, 0, "T"),     # baro
-    "U8": (24, 31, 0, "B"),     # VL53L1X (bottom, window)
-    "U9": (24, 24, 0, "B"),     # PMW3901 (bottom, window)
-    "J3": (37, 24, 0, "B"),     # flow fallback header (bottom)
-    "J4": (24, 4, 0, "T"),      # camera FFC, front nose
-    "LED1": (8, 10, 0, "T"),
-    "LED2": (40, 10, 0, "T"),
-    "SW1": (44, 28, 0, "T"),    # reset
-    "SW2": (44, 34, 0, "T"),    # boot
-    "J9": (44, 40, 0, "T"),     # expansion
-    "J10": (10, 51, 0, "T"),    # P4 uart pads
-    "J11": (18, 51, 0, "T"),    # c6 uart pads
+    "J4": (16, 5, 0, "T"),       # camera FFC — nose
+    "U3": (16, 14, 0, "T"),      # ESP32-C6 module, antenna toward the nose edge
+    "U1": (16, 30, 0, "T"),      # ESP32-P4, spine centre (under CPU shield)
+    "U2": (10, 24, 0, "T"),      # flash
+    "Y1": (22, 24, 0, "T"),      # crystal
+    "U6": (11, 37, 0, "T"),      # IMU
+    "U7": (22, 37, 0, "T"),      # baro
+    "U8": (16, 35, 0, "B"),      # VL53L1X ToF (bottom, downward)
+    "U9": (16, 42, 0, "B"),      # PMW3901 flow (bottom, downward)
+    "J3": (24, 44, 0, "B"),      # flow fallback header (bottom)
+    "U4": (9, 50, 0, "T"),       # TP4056 charger
+    "U5": (20, 50, 0, "T"),      # buck
+    "L1": (24, 52, 0, "T"),
+    "J2": (3.5, 24, 90, "T"),    # USB-C, left side edge (like Tello micro-USB)
+    "J1": (16, 62, 0, "T"),      # battery JST, rear edge
+    "LED1": (6, 16, 0, "T"),
+    "LED2": (26, 16, 0, "T"),
+    "SW1": (27, 30, 0, "T"),     # reset
+    "SW2": (27, 36, 0, "T"),     # boot
+    "J9": (5, 44, 0, "T"),       # expansion
+    "J10": (10, 60, 0, "T"),     # P4 uart pads
+    "J11": (22, 60, 0, "T"),     # c6 uart pads
     # motor FETs + pads at the four corners (wire out to the body arms)
-    "Q1": (40, 16, 0, "T"), "J5": (44, 10, 0, "T"),
-    "Q2": (40, 40, 0, "T"), "J6": (44, 46, 0, "T"),
-    "Q3": (8, 40, 0, "T"),  "J7": (4, 46, 0, "T"),
-    "Q4": (8, 16, 0, "T"),  "J8": (4, 10, 0, "T"),
+    "Q1": (27, 10, 0, "T"), "J5": (28, 5, 0, "T"),
+    "Q2": (27, 56, 0, "T"), "J6": (28, 61, 0, "T"),
+    "Q3": (5, 56, 0, "T"),  "J7": (4, 61, 0, "T"),
+    "Q4": (5, 10, 0, "T"),  "J8": (4, 5, 0, "T"),
 }
 
 
@@ -110,7 +111,9 @@ def main():
         return nets[name]
 
     net("GND")
-    auto_x, auto_y = 4.0, 13.0  # auto-flow band for unplaced passives
+    # auto-flow unplaced passives into the rear region so the MCU/sensor spine
+    # stays readable (final placement is a manual step — see KNOWN_GAPS).
+    auto_x, auto_y = 2.5, 45.0
     missing, subs = [], []
     placed = 0
 
@@ -135,8 +138,8 @@ def main():
         else:
             x, y, rot, side = auto_x, auto_y, 0, comp["side"]
             auto_x += 2.2
-            if auto_x > 44:
-                auto_x = 4.0
+            if auto_x > 29.5:
+                auto_x = 2.5
                 auto_y += 2.2
         fp.SetPosition(vec(x, y))
         # net assignment per pad (before Add)
@@ -175,8 +178,55 @@ def main():
     # footprints, so inject the copper pours as text (no pcbnew). They are
     # unfilled outlines; KiCad fills them on open.
     inject_zones(OUT)
+    inject_silk(OUT)
     print("poured GND/3V3/VBAT/GND planes (In1/In2/B/F, unfilled — fill in KiCad)")
+    print("added Tello-style silkscreen (shield outlines, section labels)")
     os._exit(0 if not missing else 2)
+
+
+def inject_silk(path):
+    """Cosmetic Tello-mainboard silkscreen: shield-can outlines, section
+    labels, motor +/- marks, a front arrow and the board name. Text-injected
+    (no pcbnew) to stay crash-free. Purely on F.SilkS/B.SilkS."""
+    import uuid as _uuid
+    txt = open(path).read()
+    b = design.BOARD
+    w = b["w"]
+    items = []
+
+    def rect(x0, y0, x1, y1, layer="F.SilkS", wdt=0.15):
+        for (xa, ya, xb, yb) in [(x0, y0, x1, y0), (x1, y0, x1, y1),
+                                 (x1, y1, x0, y1), (x0, y1, x0, y0)]:
+            items.append(
+                f'  (gr_line (start {xa} {ya}) (end {xb} {yb}) '
+                f'(stroke (width {wdt}) (type solid)) (layer "{layer}") (tstamp {_uuid.uuid4()}))')
+
+    def text(s, x, y, size=1.2, layer="F.SilkS", rot=0, mirror=False):
+        j = " (justify mirror)" if mirror else ""
+        items.append(
+            f'  (gr_text "{s}" (at {x} {y} {rot}) (layer "{layer}") (tstamp {_uuid.uuid4()})\n'
+            f'    (effects (font (size {size} {size}) (thickness {size*0.15:.2f}))'
+            f' (justify left bottom{("" if not mirror else " mirror")})))')
+
+    # shield-can outlines down the spine (camera / RF / CPU), like the Tello
+    rect(2.5, 2.0, w - 2.5, 9.5)     # optical / camera section
+    rect(3.0, 10.5, w - 3.0, 20.0)   # RF (ESP32-C6) shield
+    rect(2.5, 21.5, w - 2.5, 40.0)   # CPU (ESP32-P4 + sensors) shield
+    # labels
+    text("STRATOSDRONE", 4.5, 1.6, 1.4)
+    text("CAM", 13.0, 8.8, 1.0)
+    text("RF", 14.0, 19.2, 1.0)
+    text("CPU", 13.5, 39.2, 1.0)
+    text("FRONT ^", 11.0, 4.2, 1.0)
+    # motor pad polarity marks near the four corners
+    for (x, y, lbl) in [(28, 3, "M1"), (28, 63.5, "M2"), (4, 63.5, "M3"), (4, 3, "M4")]:
+        text(lbl, x - 3.0, y, 0.9)
+    # bottom-side: sensor window label
+    text("FLOW + ToF", 9.0, 39.0, 1.0, layer="B.SilkS", mirror=True)
+
+    idx = txt.rstrip().rfind(")")
+    out = txt[:idx] + "\n" + "\n".join(items) + "\n" + txt[idx:]
+    open(path, "w").write(out)
 
 
 def inject_zones(path):

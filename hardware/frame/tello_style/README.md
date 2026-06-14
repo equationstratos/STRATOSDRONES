@@ -22,9 +22,9 @@ openscad -o stl/body_top.scad   --export-format binstl body_top.scad
 ```
 
 Print in PETG or tough PLA, 3 perimeters, no supports (each shell prints flat
-on its open face). The pod fits the **48 × 54 mm Tello-style PCB** (see
+on its open face). The pod fits the **32 × 66 mm Tello-style PCB** (see
 `../../pcb/`, board outline `BOARD` in `design.py`); the four M2 bosses are at
-a 40 × 46 mm pitch. Press the 8520 motors into the hex nacelles, route the
+a 24 × 58 mm pitch. Press the 8520 motors into the hex nacelles, route the
 wires through the arm channels to the board's corner motor pads, slide the 1S
 pack into the rear bay, and snap the canopy on.
 

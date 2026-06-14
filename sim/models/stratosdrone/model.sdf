@@ -20,35 +20,40 @@
         </surface>
       </collision>
 
+      <!-- Tello-style elongated narrow body: long along +x (forward), narrow
+           in y. Camera bump at the nose, battery slab at the rear. -->
       <visual name="body">
         <pose>0 0 0.004 0 0 0</pose>
-        <geometry><box><size>0.075 0.075 0.028</size></box></geometry>
-        <material><ambient>0.15 0.15 0.18 1</ambient><diffuse>0.15 0.15 0.18 1</diffuse></material>
+        <geometry><box><size>0.072 0.034 0.026</size></box></geometry>
+        <material><ambient>0.12 0.12 0.14 1</ambient><diffuse>0.12 0.12 0.14 1</diffuse></material>
       </visual>
       <visual name="canopy">
-        <pose>0.025 0 0.02 0 0.25 0</pose>
-        <geometry><box><size>0.05 0.05 0.012</size></box></geometry>
+        <pose>0.006 0 0.018 0 0.12 0</pose>
+        <geometry><box><size>0.044 0.03 0.012</size></box></geometry>
         <material><ambient>0.9 0.45 0.05 1</ambient><diffuse>0.9 0.45 0.05 1</diffuse></material>
       </visual>
+      <visual name="camera"><pose>0.034 0 0.006 0 1.5708 0</pose>
+        <geometry><cylinder><radius>0.006</radius><length>0.006</length></cylinder></geometry>
+        <material><ambient>0.05 0.05 0.06 1</ambient><diffuse>0.05 0.05 0.06 1</diffuse></material></visual>
       <visual name="battery">
-        <pose>-0.01 0 -0.014 0 0 0</pose>
-        <geometry><box><size>0.055 0.026 0.013</size></box></geometry>
-        <material><ambient>0.1 0.1 0.1 1</ambient><diffuse>0.1 0.1 0.1 1</diffuse></material>
+        <pose>-0.022 0 -0.013 0 0 0</pose>
+        <geometry><box><size>0.03 0.026 0.013</size></box></geometry>
+        <material><ambient>0.08 0.08 0.08 1</ambient><diffuse>0.08 0.08 0.08 1</diffuse></material>
       </visual>
 
-      <!-- arms + motors + prop disks at the four 41.7 mm offsets -->
-      <visual name="arm_fr"><pose>0.0295 -0.0295 0 0 0 -0.785</pose>
-        <geometry><box><size>0.062 0.011 0.007</size></box></geometry>
-        <material><ambient>0.2 0.2 0.22 1</ambient><diffuse>0.2 0.2 0.22 1</diffuse></material></visual>
-      <visual name="arm_br"><pose>-0.0295 -0.0295 0 0 0 0.785</pose>
-        <geometry><box><size>0.062 0.011 0.007</size></box></geometry>
-        <material><ambient>0.2 0.2 0.22 1</ambient><diffuse>0.2 0.2 0.22 1</diffuse></material></visual>
-      <visual name="arm_bl"><pose>-0.0295 0.0295 0 0 0 -0.785</pose>
-        <geometry><box><size>0.062 0.011 0.007</size></box></geometry>
-        <material><ambient>0.2 0.2 0.22 1</ambient><diffuse>0.2 0.2 0.22 1</diffuse></material></visual>
-      <visual name="arm_fl"><pose>0.0295 0.0295 0 0 0 0.785</pose>
-        <geometry><box><size>0.062 0.011 0.007</size></box></geometry>
-        <material><ambient>0.2 0.2 0.22 1</ambient><diffuse>0.2 0.2 0.22 1</diffuse></material></visual>
+      <!-- four slim arms reaching diagonally to the motors at ±41.7 mm -->
+      <visual name="arm_fr"><pose>0.0235 -0.0235 0 0 0 -0.785</pose>
+        <geometry><box><size>0.05 0.009 0.006</size></box></geometry>
+        <material><ambient>0.18 0.18 0.2 1</ambient><diffuse>0.18 0.18 0.2 1</diffuse></material></visual>
+      <visual name="arm_br"><pose>-0.0235 -0.0235 0 0 0 0.785</pose>
+        <geometry><box><size>0.05 0.009 0.006</size></box></geometry>
+        <material><ambient>0.18 0.18 0.2 1</ambient><diffuse>0.18 0.18 0.2 1</diffuse></material></visual>
+      <visual name="arm_bl"><pose>-0.0235 0.0235 0 0 0 -0.785</pose>
+        <geometry><box><size>0.05 0.009 0.006</size></box></geometry>
+        <material><ambient>0.18 0.18 0.2 1</ambient><diffuse>0.18 0.18 0.2 1</diffuse></material></visual>
+      <visual name="arm_fl"><pose>0.0235 0.0235 0 0 0 0.785</pose>
+        <geometry><box><size>0.05 0.009 0.006</size></box></geometry>
+        <material><ambient>0.18 0.18 0.2 1</ambient><diffuse>0.18 0.18 0.2 1</diffuse></material></visual>
 
       <visual name="motor_fr"><pose>0.0417 -0.0417 0.008 0 0 0</pose>
         <geometry><cylinder><radius>0.00425</radius><length>0.02</length></cylinder></geometry>

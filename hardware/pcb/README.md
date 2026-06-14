@@ -1,6 +1,6 @@
 # STRATOSDRONE PCB
 
-A 4-layer, **48×54 mm Tello-style portrait** controller board for the
+A 4-layer, **32×66 mm Tello-style portrait** controller board for the
 STRATOSDRONE: chip-down ESP32-P4 (flight + camera + hardware H.264) with an
 ESP32-C6-MINI-1 Wi-Fi co-processor, IMU / barometer / ToF / optical-flow
 sensors, a MIPI-CSI camera FFC at the nose, 1S USB-C charging at the rear, and
