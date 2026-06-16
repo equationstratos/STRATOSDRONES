@@ -84,6 +84,24 @@
         <geometry><cylinder><radius>0.0381</radius><length>0.002</length></cylinder></geometry>
         <material><ambient>0.9 0.45 0.05 0.5</ambient><diffuse>0.9 0.45 0.05 0.5</diffuse></material>
         <transparency>0.45</transparency></visual>
+
+      <!-- whoop cinewhoop ducts (translucent rings around each prop) -->
+      <visual name="duct_fr"><pose>0.0417 -0.0417 0.008 0 0 0</pose>
+        <geometry><cylinder><radius>0.0432</radius><length>0.018</length></cylinder></geometry>
+        <material><ambient>0.1 0.1 0.11 0.30</ambient><diffuse>0.1 0.1 0.11 0.30</diffuse></material>
+        <transparency>0.7</transparency></visual>
+      <visual name="duct_br"><pose>-0.0417 -0.0417 0.008 0 0 0</pose>
+        <geometry><cylinder><radius>0.0432</radius><length>0.018</length></cylinder></geometry>
+        <material><ambient>0.1 0.1 0.11 0.30</ambient><diffuse>0.1 0.1 0.11 0.30</diffuse></material>
+        <transparency>0.7</transparency></visual>
+      <visual name="duct_bl"><pose>-0.0417 0.0417 0.008 0 0 0</pose>
+        <geometry><cylinder><radius>0.0432</radius><length>0.018</length></cylinder></geometry>
+        <material><ambient>0.1 0.1 0.11 0.30</ambient><diffuse>0.1 0.1 0.11 0.30</diffuse></material>
+        <transparency>0.7</transparency></visual>
+      <visual name="duct_fl"><pose>0.0417 0.0417 0.008 0 0 0</pose>
+        <geometry><cylinder><radius>0.0432</radius><length>0.018</length></cylinder></geometry>
+        <material><ambient>0.1 0.1 0.11 0.30</ambient><diffuse>0.1 0.1 0.11 0.30</diffuse></material>
+        <transparency>0.7</transparency></visual>
     </link>
   </model>
 </sdf>

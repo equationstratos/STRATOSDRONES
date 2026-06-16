@@ -27,12 +27,27 @@ jobs:
             openscad -o tello_style/stl/$f.stl --export-format binstl tello_style/$f.scad 2>&1 | grep -i assert || true
             test -s tello_style/stl/$f.stl || { echo "FAILED to render $f"; exit 1; }
           done
-          # wheelbase must stay Tello-compatible (118 mm) on both frames
-          openscad -o /dev/null frame.scad 2>&1 | grep -q "ASSERT wheelbase=118" \
-            || { echo "wheelbase changed from 118 mm"; exit 1; }
-          openscad -o /dev/null tello_style/body_bottom.scad 2>&1 | grep -q "ASSERT wheelbase=118" \
-            || { echo "tello body wheelbase changed from 118 mm"; exit 1; }
+          # whoop airframe (primary): render all three guard variants + canopy
+          mkdir -p whoop/stl
+          for g in none ring duct; do
+            openscad -D guard=\"$g\" -o whoop/stl/frame_$g.stl --export-format binstl whoop/frame.scad 2>&1 | grep -i assert || true
+            test -s whoop/stl/frame_$g.stl || { echo "FAILED to render whoop frame_$g"; exit 1; }
+          done
+          openscad -o whoop/stl/canopy.stl --export-format binstl whoop/canopy.scad 2>&1 | grep -i assert || true
+          test -s whoop/stl/canopy.stl || { echo "FAILED to render whoop canopy"; exit 1; }
+          # wheelbase must stay Tello-compatible (118 mm) on every frame.
+          # Use the .echo export (fast, evaluates asserts without a full CSG render).
+          check_wb() {
+            openscad -o "/tmp/$(basename $1).echo" "$1" >/dev/null 2>&1
+            grep -q "ASSERT wheelbase=118" "/tmp/$(basename $1).echo" \
+              || { echo "wheelbase changed from 118 mm in $1"; exit 1; }
+          }
+          check_wb frame.scad
+          check_wb tello_style/body_bottom.scad
+          check_wb whoop/frame.scad
       - uses: actions/upload-artifact@v4
         with:
           name: frame-stl
-          path: hardware/frame/stl/
+          path: |
+            hardware/frame/stl/
+            hardware/frame/whoop/stl/
