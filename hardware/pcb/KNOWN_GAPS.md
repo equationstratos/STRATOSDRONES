@@ -63,10 +63,12 @@ JLCPCB. Items are ordered roughly by risk.
 
 ## High — verify, likely small fixes
 
-8. **LGA/QFN sensor pad maps.** The pad→signal map for `U7` (SPL06-001) is
-   reasoned but **not** checked pad by pad against the datasheet, and the
-   footprint itself is approximate. Replace with the exact manufacturer land
-   pattern and re-verify every pad.
+8. ✅ **LGA/QFN sensor pad maps — all three RESOLVED.** All sensor pad→signal
+   maps (`U6`, `U7`, `U8`) are now re-verified pad-by-pad against datasheets
+   and/or real reference designs using the same footprints. `U7` and `U8`
+   already use KiCad's official manufacturer land patterns; only `U6` still
+   sits on a generic substitute footprint (geometry only, netlist is correct
+   — see its sub-bullet).
    - ✅ **`U8` VL53L1X — RESOLVED.** Moved to KiCad's official
      `Sensor_Distance:ST_VL53L1x` land pattern and rewired pad-by-pad to the ST
      datasheet (1 AVDDVCSEL=3V3, 2 AVSSVCSEL=GND, 3/4/6/12 GND, 5 XSHUT,
@@ -90,6 +92,20 @@ JLCPCB. Items are ordered roughly by risk.
      not present on the real LGA-14) grounded as the conservative default
      for unused copper. *Still TODO: replace the generic DHVQFN-14 substitute
      with the real LGA-14 land pattern (pad geometry only, not netlist).*
+   - ✅ **`U7` SPL06-001 — RESOLVED.** Re-verified pad-by-pad against a real
+     reference design using the *identical* official KiCad footprint
+     (iNavFlight/hardware `BARO1/SPL06.kicad_pcb`): 1 GND, 2 SDO (addr
+     select), 3 SDA, 4 SCL, 5 CSB, 6 VDDIO, 7 GND, 8 VDD. The previous map
+     had real pin 6 (`VDDIO`) tied to **GND** (IO supply dead), real pin 3
+     (`SDA`) hard-wired straight to 3V3 (a bus short the instant anything
+     pulled the shared SDA line low), and the host's `I2C_SDA` net wired to
+     real pin 1 (`GND`) — shorting the shared I²C bus to ground through this
+     chip, which would have broken every other device on that bus, not just
+     this sensor. Fixed: GND->1/2/7, `I2C_SDA`->3, `I2C_SCL`->4, 3V3->5/6/8
+     (`SDO` tied low for the documented 0x76 address; `CSB` tied high for
+     I2C mode). Footprint (`Package_LGA:Bosch_LGA-8_2x2.5mm_P0.65mm_
+     ClockwisePinNumbering`) is KiCad's official land pattern and matches
+     the reference design, so no geometry concern here.
 
 9. **PMW3901 (`U9`) is a placeholder footprint** (`lib/strat.pretty/`). The
    COB land pattern is invented. Either draw the real PixArt land pattern, or

@@ -387,11 +387,20 @@ part("U6", "ICM-42688-P", "Package_DFN_QFN:DHVQFN-14-1EP_2.5x3mm_P0.5mm_EP1x1.5m
 part("C28", "100nF", "Capacitor_SMD:C_0402_1005Metric", {"1": "3V3", "2": "GND"}, lcsc="C1525")
 part("C29", "100nF", "Capacitor_SMD:C_0402_1005Metric", {"1": "3V3", "2": "GND"}, lcsc="C1525")
 
-# SPL06-001 barometer (I2C, SDO->GND = 0x76).  LGA-8.
+# SPL06-001 barometer (I2C, SDO->GND = 0x76).  LGA-8 pad map re-verified
+# against a real reference design using the *same* KiCad footprint
+# (iNavFlight/hardware BARO1/SPL06.kicad_pcb) and the Bosch/Goertek
+# SPL06-001 pin table: 1 GND, 2 SDO (addr select), 3 SDA, 4 SCL, 5 CSB
+# (tie high for I2C mode), 6 VDDIO, 7 GND, 8 VDD.  Previous map had real
+# pin 6 (VDDIO) tied to GND (IO supply dead), real pin 3 (SDA) hard-wired
+# to 3V3 (a bus short the instant anything pulls the shared SDA line low),
+# and the host's I2C_SDA net wired to real pin 1 (GND) -- shorting the
+# shared I2C bus to ground through this chip, which would have broken
+# every other device on the same bus, not just this sensor.
 part("U7", "SPL06-001", "Package_LGA:Bosch_LGA-8_2x2.5mm_P0.65mm_ClockwisePinNumbering",
-     {"1": "I2C_SDA", "2": "GND", "3": "3V3", "4": "I2C_SCL",
-      "5": "3V3", "6": "GND", "7": "GND", "8": "3V3"},
-     lcsc="C2684428", comment="VERIFY LGA-8 pads; CSB=3V3 for I2C, SDO sets 0x76")
+     {"1": "GND", "2": "GND", "3": "I2C_SDA", "4": "I2C_SCL",
+      "5": "3V3", "6": "3V3", "7": "GND", "8": "3V3"},
+     lcsc="C2684428", comment="SPL06-001 pinout verified vs reference design using same footprint")
 part("C30", "100nF", "Capacitor_SMD:C_0402_1005Metric", {"1": "3V3", "2": "GND"}, lcsc="C1525")
 
 # VL53L1X ToF (I2C 0x29, XSHUT gated).  Bottom side.  LGA-12 verified vs the
