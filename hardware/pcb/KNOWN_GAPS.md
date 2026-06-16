@@ -63,11 +63,10 @@ JLCPCB. Items are ordered roughly by risk.
 
 ## High — verify, likely small fixes
 
-8. **LGA/QFN sensor pad maps.** The pad→signal maps for `U6` (ICM-42688-P,
-   on a generic DHVQFN-14 footprint) and `U7` (SPL06-001) are reasoned but
-   **not** checked pad by pad against datasheets, and the footprints themselves
-   are approximate. Replace with the exact manufacturer land patterns and
-   re-verify every pad.
+8. **LGA/QFN sensor pad maps.** The pad→signal map for `U7` (SPL06-001) is
+   reasoned but **not** checked pad by pad against the datasheet, and the
+   footprint itself is approximate. Replace with the exact manufacturer land
+   pattern and re-verify every pad.
    - ✅ **`U8` VL53L1X — RESOLVED.** Moved to KiCad's official
      `Sensor_Distance:ST_VL53L1x` land pattern and rewired pad-by-pad to the ST
      datasheet (1 AVDDVCSEL=3V3, 2 AVSSVCSEL=GND, 3/4/6/12 GND, 5 XSHUT,
@@ -75,6 +74,22 @@ JLCPCB. Items are ordered roughly by risk.
      map used the wrong `ST_VL53L0X` footprint and had supply/I²C pins on the
      wrong pads. *Still TODO: confirm LCSC C2970716 part rotation for the JLC
      CPL.*
+   - ✅ **`U6` ICM-42688-P — RESOLVED (pinout; footprint geometry still
+     generic).** The previous map had the chip's two real power pins
+     backwards: `VDDIO` (real pin 5) and `VDD` (real pin 8) were both tied to
+     **GND**, so the IMU could never power up at all, while the host's
+     SPI_SCLK/SPI_MOSI/CS_IMU nets were wired to reserved/no-connect pads (2,
+     3, 1) and the chip's real `AP_CS`/`AP_SCLK`/`AP_SDI` pins (12/13/14) were
+     tied to GND/3V3/GND instead of the host signals. Re-verified the full
+     14-pin LGA pinout against the TDK InvenSense DS-000347 pin table and an
+     independent, manufacturer/IPC-7351B-tagged KiCad symbol (1 AP_SDO/AP_AD0,
+     2/3/7/10/11 RESV, 4 INT1, 5 VDDIO, 6 GND, 8 VDD, 9 INT2/FSYNC/CLKIN,
+     12 AP_CS, 13 AP_SCLK, 14 AP_SDI) and rewired every pad: SPI_MISO->1,
+     IMU_INT->4, 3V3->5/8, GND->2/3/6/7/9/10/11, CS_IMU->12, SPI_SCLK->13,
+     SPI_MOSI->14, and the footprint's pad 15 (generic exposed/heatsink pad,
+     not present on the real LGA-14) grounded as the conservative default
+     for unused copper. *Still TODO: replace the generic DHVQFN-14 substitute
+     with the real LGA-14 land pattern (pad geometry only, not netlist).*
 
 9. **PMW3901 (`U9`) is a placeholder footprint** (`lib/strat.pretty/`). The
    COB land pattern is invented. Either draw the real PixArt land pattern, or

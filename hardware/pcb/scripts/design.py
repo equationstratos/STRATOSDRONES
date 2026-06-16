@@ -352,18 +352,38 @@ part("C27", "10uF", "Capacitor_SMD:C_0603_1608Metric", {"1": "3V3", "2": "GND"},
 # ==========================================================================
 # SENSORS
 # ==========================================================================
-# ICM-42688-P IMU (SPI mode).  LGA-14 pad map VERIFY against TDK DS-000347.
+# ICM-42688-P IMU (SPI mode).  LGA-14 pinout re-verified against the TDK
+# InvenSense DS-000347 pin table and cross-checked against an independent,
+# professionally-generated KiCad symbol (manufacturer/IPC-7351B-tagged,
+# rishikesh2715/STM32F7_FC "Sensors & Peripherals.kicad_sch"): 1 AP_SDO/AP_AD0
+# (SPI SDO), 2/3/7/10/11 RESV, 4 INT1, 5 VDDIO, 6 GND, 8 VDD, 9 INT2/FSYNC/
+# CLKIN (unused -> GND per datasheet guidance for unused FSYNC), 12 AP_CS,
+# 13 AP_SCLK, 14 AP_SDI.  Previous map grounded BOTH real power pins (VDDIO
+# on its pin 5, VDD on its pin 8 -- chip could never power up) and wired
+# every host SPI signal to reserved/wrong pads (host CS->real SDO pin, host
+# SCLK->a RESV pin, host MOSI->another RESV pin, real AP_CS->GND, real
+# AP_SCLK->3V3, real AP_SDI->GND).  Pad 15 is the generic footprint's
+# exposed/heatsink pad (the real LGA-14 has no such pad; tied to GND as the
+# conservative choice for an unused copper feature).  Footprint itself is
+# still a generic DHVQFN-14 substitute, not the exact LGA-14 land pattern --
+# see KNOWN_GAPS.md item 8.
 part("U6", "ICM-42688-P", "Package_DFN_QFN:DHVQFN-14-1EP_2.5x3mm_P0.5mm_EP1x1.5mm",
-     {"1": "CS_IMU",         # AP_CS / nCS
-      "2": "SPI_SCLK",       # SCLK
-      "3": "SPI_MOSI",       # SDI
-      "10": "SPI_MISO",      # SDO
-      "11": "3V3",           # VDDIO
-      "13": "3V3",           # VDD
-      "12": "GND", "14": "GND", "8": "GND",
-      "9": "IMU_INT",        # INT1
-      "4": "GND", "5": "GND", "6": "GND", "7": "GND"},
-     lcsc="C2840095", comment="VERIFY LGA-14 pad assignment vs datasheet")
+     {"1": "SPI_MISO",       # AP_SDO/AP_AD0
+      "2": "GND",            # RESV
+      "3": "GND",            # RESV
+      "4": "IMU_INT",        # INT1
+      "5": "3V3",            # VDDIO
+      "6": "GND",            # GND
+      "7": "GND",            # RESV
+      "8": "3V3",            # VDD
+      "9": "GND",            # INT2/FSYNC/CLKIN, unused
+      "10": "GND",           # RESV
+      "11": "GND",           # RESV
+      "12": "CS_IMU",        # AP_CS
+      "13": "SPI_SCLK",      # AP_SCLK
+      "14": "SPI_MOSI",      # AP_SDI
+      "15": "GND"},          # exposed/heatsink pad (generic footprint only)
+     lcsc="C2840095", comment="ICM-42688-P pinout verified vs datasheet + independent KiCad symbol")
 part("C28", "100nF", "Capacitor_SMD:C_0402_1005Metric", {"1": "3V3", "2": "GND"}, lcsc="C1525")
 part("C29", "100nF", "Capacitor_SMD:C_0402_1005Metric", {"1": "3V3", "2": "GND"}, lcsc="C1525")
 
