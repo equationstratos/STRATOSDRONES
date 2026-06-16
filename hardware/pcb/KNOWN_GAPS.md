@@ -55,10 +55,17 @@ JLCPCB. Items are ordered roughly by risk.
 ## High — verify, likely small fixes
 
 8. **LGA/QFN sensor pad maps.** The pad→signal maps for `U6` (ICM-42688-P,
-   on a generic DHVQFN-14 footprint), `U7` (SPL06-001), and `U8` (VL53L1X, on
-   a placeholder `ST_VL53L0X` footprint) are reasoned but **not** checked pad
-   by pad against datasheets, and the footprints themselves are approximate.
-   Replace with the exact manufacturer land patterns and re-verify every pad.
+   on a generic DHVQFN-14 footprint) and `U7` (SPL06-001) are reasoned but
+   **not** checked pad by pad against datasheets, and the footprints themselves
+   are approximate. Replace with the exact manufacturer land patterns and
+   re-verify every pad.
+   - ✅ **`U8` VL53L1X — RESOLVED.** Moved to KiCad's official
+     `Sensor_Distance:ST_VL53L1x` land pattern and rewired pad-by-pad to the ST
+     datasheet (1 AVDDVCSEL=3V3, 2 AVSSVCSEL=GND, 3/4/6/12 GND, 5 XSHUT,
+     7 GPIO1=INT, 8 DNC floating, 9 SDA, 10 SCL, 11 AVDD=3V3). The previous
+     map used the wrong `ST_VL53L0X` footprint and had supply/I²C pins on the
+     wrong pads. *Still TODO: confirm LCSC C2970716 part rotation for the JLC
+     CPL.*
 
 9. **PMW3901 (`U9`) is a placeholder footprint** (`lib/strat.pretty/`). The
    COB land pattern is invented. Either draw the real PixArt land pattern, or

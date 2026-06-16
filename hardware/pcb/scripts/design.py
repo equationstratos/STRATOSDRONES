@@ -365,12 +365,16 @@ part("U7", "SPL06-001", "Package_LGA:Bosch_LGA-8_2x2.5mm_P0.65mm_ClockwisePinNum
      lcsc="C2684428", comment="VERIFY LGA-8 pads; CSB=3V3 for I2C, SDO sets 0x76")
 part("C30", "100nF", "Capacitor_SMD:C_0402_1005Metric", {"1": "3V3", "2": "GND"}, lcsc="C1525")
 
-# VL53L1X ToF (I2C 0x29, XSHUT gated).  Bottom side.
-part("U8", "VL53L1X", "OptoDevice:ST_VL53L0X",
-     {"6": "3V3", "1": "GND", "10": "I2C_SDA", "8": "I2C_SCL",
-      "4": "VL53_XSHUT", "7": "TOF_INT", "5": "3V3"},
+# VL53L1X ToF (I2C 0x29, XSHUT gated).  Bottom side.  LGA-12 verified vs the
+# ST VL53L1X datasheet pin table: 1 AVDDVCSEL, 2 AVSSVCSEL, 3/4/6/12 GND,
+# 5 XSHUT, 7 GPIO1 (INT, open-drain), 8 DNC (leave floating), 9 SDA, 10 SCL,
+# 11 AVDD.  Footprint is KiCad's official Sensor_Distance:ST_VL53L1x land.
+part("U8", "VL53L1X", "Sensor_Distance:ST_VL53L1x",
+     {"1": "3V3", "2": "GND", "3": "GND", "4": "GND", "5": "VL53_XSHUT",
+      "6": "GND", "7": "TOF_INT", "9": "I2C_SDA", "10": "I2C_SCL",
+      "11": "3V3", "12": "GND"},
      lcsc="C2970716", side="B",
-     comment="VERIFY VL53L1X 12-pad map (using VL53L0X fp as placeholder)")
+     comment="VL53L1x LGA-12 verified vs ST datasheet; pin8 DNC left floating")
 part("C31", "100nF", "Capacitor_SMD:C_0402_1005Metric", {"1": "3V3", "2": "GND"}, lcsc="C1525", side="B")
 
 # PMW3901 optical flow (SPI).  Bottom side, COB-28 custom footprint.
