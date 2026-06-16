@@ -263,11 +263,20 @@ part("D1", "USBLC6-2SC6", "Package_TO_SOT_SMD:SOT-23-6",
      {"1": "USB_DP_C", "2": "GND", "3": "USB_DM_C", "4": "USB_DM_MCU",
       "5": "VBUS", "6": "USB_DP_MCU"}, lcsc="C7519", comment="USB ESD")
 
-# TP4056 1S charger (TEMP grounded = NTC disabled; PROG 1.2k ~ 1A)
+# TP4056 1S charger.  Pinout verified vs the Nanjing Top Power TP4056-42-ESOP8
+# datasheet pin table and cross-checked against an independent KiCad symbol
+# (corecode/kicad-libs tp4056.kicad_sym): 1 TEMP, 2 PROG, 3 GND, 4 VCC, 5 BAT,
+# 6 STDBY (open-collector, active low), 7 CHRG (open-collector, active low),
+# 8 CE (input, active high), EP=GND (datasheet-recommended thermal/ground pad).
+# TEMP grounded = NTC disabled; PROG 1.2k ~ 1A; CE tied straight to VCC since
+# this design has no software charge-enable line (always-enabled when powered,
+# matching the common reference application circuit).
+# Previous map shorted STDBY straight to VBAT (pin 6) and had no CE drive at
+# all (pin 8 aliased to STDBY_N) -- both fixed here.
 part("U4", "TP4056-42-ESOP8", "Package_SO:SOIC-8-1EP_3.9x4.9mm_P1.27mm_EP2.41x3.81mm",
-     {"1": "GND", "2": "PROG", "3": "GND", "4": "VBUS", "5": "VBAT", "6": "VBAT",
-      "7": "CHRG_N", "8": "STDBY_N", "9": "GND"}, lcsc="C16581",
-     comment="VERIFY pinout vs datasheet; EP=GND")
+     {"1": "GND", "2": "PROG", "3": "GND", "4": "VBUS", "5": "VBAT", "6": "STDBY_N",
+      "7": "CHRG_N", "8": "VBUS", "9": "GND"}, lcsc="C16581",
+     comment="TP4056 pinout verified vs datasheet + independent KiCad symbol")
 part("R3", "1.2k", "Resistor_SMD:R_0402_1005Metric", {"1": "PROG", "2": "GND"}, lcsc="C4180")
 part("C1", "10uF", "Capacitor_SMD:C_0805_2012Metric", {"1": "VBUS", "2": "GND"}, lcsc="C15850")
 part("C2", "10uF", "Capacitor_SMD:C_0805_2012Metric", {"1": "VBAT", "2": "GND"}, lcsc="C15850")

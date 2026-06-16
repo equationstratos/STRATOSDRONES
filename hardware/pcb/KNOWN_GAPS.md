@@ -45,12 +45,21 @@ JLCPCB. Items are ordered roughly by risk.
    both the RPi camera connector spec and the P4 CSI requirements; a swapped
    pair or polarity means no image.
 
-7. **TP4056 charger + power path.** Confirm the TP4056 pinout (`U4`), the
-   1.2 k PROG → ~1 A rate for your cell, and that grounding `TEMP` correctly
-   disables the NTC. There is **no load-share**: the board runs from the
-   battery; `D2` (DNP) is bench-power-only and must not be populated with a
-   battery installed. Add a proper power-path FET if you want USB-powered
-   bench operation while charging.
+7. ✅ **RESOLVED — TP4056 charger pinout + PROG rate.** `U4`'s pin map had two
+   real bugs: pin 6 (`STDBY`, open-collector) was shorted straight to `VBAT`
+   instead of being the status output, and pin 8 (`CE`, enable input) was
+   aliased to `STDBY_N` instead of being driven at all. Re-verified the full
+   pinout against the Nanjing Top Power TP4056-42-ESOP8 datasheet pin table
+   and an independent KiCad symbol (1 TEMP, 2 PROG, 3 GND, 4 VCC, 5 BAT,
+   6 STDBY, 7 CHRG, 8 CE, EP=GND); fixed pin 6 → `STDBY_N`, pin 8 → tied to
+   `VBUS` (always-enabled charging, matching the standard no-software-control
+   reference circuit). `R3` = 1.2 kΩ on `PROG` gives `1200/R(kΩ) = 1.0 A`,
+   an appropriate ≈0.9 C rate for the 1S 1100 mAh pack in the BOM. Grounding
+   `TEMP` to disable the NTC is correct per datasheet. Remaining by-design
+   caveat (not a gap): there is **no load-share** — the board runs from the
+   battery, and `D2` (DNP) is bench-power-only and must not be populated with
+   a battery installed. Add a proper power-path FET if USB-powered bench
+   operation while charging is wanted.
 
 ## High — verify, likely small fixes
 
