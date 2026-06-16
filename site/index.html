@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>STRATOSDRONE — open-source Tello EDU class drone</title>
+<meta name="description" content="A fully open-source DJI Tello EDU class drone: orderable KiCad PCB, 3D-printable whoop airframe, ESP32-P4 firmware, Tello SDK 2.0 wire-compatible, swarming, and a full Gazebo simulation running the same flight code.">
+<meta property="og:title" content="STRATOSDRONE">
+<meta property="og:description" content="Open-source Tello EDU class drone — PCB, firmware, CAD, simulation. 100% buildable.">
+<meta property="og:image" content="assets/cad/hero.jpg">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="nav">
+  <div class="wrap">
+    <a class="brand" href="#top">STRATO<b>S</b>DRONE</a>
+    <nav>
+      <a href="#specs">Specs</a>
+      <a href="#design">Design</a>
+      <a href="#variants">Variants</a>
+      <a href="#build">How it's built</a>
+      <a href="#gallery">Gallery</a>
+      <a href="#order">Build one</a>
+    </nav>
+    <a class="btn p" href="https://github.com/equationstratos/STRATOSDRONE" target="_blank" rel="noopener">GitHub</a>
+  </div>
+</header>
+
+<!-- ───────────────────────── hero ───────────────────────── -->
+<section class="hero" id="top" style="border-bottom:1px solid var(--line)">
+  <div class="wrap">
+    <div>
+      <span class="tag">100% open source · Tello EDU class</span>
+      <h1>The Tello you can<br>actually build.</h1>
+      <p class="lead">An open hardware mini-drone, down to the last footprint. Order the
+        board assembled, print the airframe, flash the firmware — then fly your mission
+        scripts against a Gazebo twin that runs the <em>same</em> flight code as the real
+        thing.</p>
+      <div class="cta">
+        <a class="btn p" href="#order">Build one</a>
+        <a class="btn" href="https://github.com/equationstratos/STRATOSDRONE" target="_blank" rel="noopener">Source &amp; docs</a>
+      </div>
+      <div class="kpis">
+        <div class="kpi"><b>~92 g</b><span>all-up weight</span></div>
+        <div class="kpi"><b>118 mm</b><span>wheelbase</span></div>
+        <div class="kpi"><b>1080p30</b><span>H.264 camera</span></div>
+        <div class="kpi"><b>Tello SDK</b><span>wire-compatible</span></div>
+      </div>
+    </div>
+    <figure>
+      <img src="assets/cad/hero.jpg" alt="STRATOSDRONE cinewhoop airframe render" width="800" height="520">
+    </figure>
+  </div>
+</section>
+
+<!-- ───────────────────────── intro / pitch ───────────────────────── -->
+<section id="intro">
+  <div class="wrap">
+    <h2>A drone, fully in the open</h2>
+    <p class="sub">The DJI Tello EDU is a brilliant learning platform — but it's a closed
+      box. STRATOSDRONE keeps everything that made it great (the size, the SDK, the
+      swarming) and opens all of it: schematic, PCB, CAD, firmware and a simulator, under
+      permissive licenses.</p>
+    <div class="grid g3">
+      <div class="feat">
+        <h3><span class="d">01</span>Same protocol</h3>
+        <p>Speaks Tello SDK 2.0 on the wire — UDP 8889/8890/11111. Existing
+          <code>djitellopy</code> scripts run unmodified, including the video stream.</p>
+      </div>
+      <div class="feat">
+        <h3><span class="d">02</span>Simulate first</h3>
+        <p>A full Gazebo Harmonic model runs the exact same <code>fc_core</code> flight
+          code as the firmware. Fly the mission in sim, then on hardware — no rewrite.</p>
+      </div>
+      <div class="feat">
+        <h3><span class="d">03</span>Actually buildable</h3>
+        <p>KiCad board with a JLCPCB assembly package, OpenSCAD airframe → STL, and an
+          ESP-IDF firmware tree. Nothing is hand-waved.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ───────────────────────── specs vs Tello ───────────────────────── -->
+<section id="specs">
+  <div class="wrap">
+    <h2>Specs vs DJI Tello EDU</h2>
+    <p class="sub">Same flight envelope and Tello-compatible props, with a modern open
+      brain: an ESP32-P4 doing flight + a hardware H.264 camera pipeline, paired with an
+      ESP32-C6 for Wi-Fi 6.</p>
+    <table class="spec">
+      <thead><tr><th>&nbsp;</th><th>DJI Tello EDU</th><th>STRATOSDRONE</th></tr></thead>
+      <tbody>
+        <tr><td>Weight / wheelbase</td><td>87 g / 118 mm</td><td><b>~92 g</b> / 118 mm</td></tr>
+        <tr><td>Motors / props</td><td>brushed 8520 / 3"</td><td>brushed 8520 / 3" <b>(Tello-compatible)</b></td></tr>
+        <tr><td>Flight MCU</td><td>proprietary + Myriad 2</td><td><b>ESP32-P4</b> + ESP32-C6 (Wi-Fi 6)</td></tr>
+        <tr><td>Sensors</td><td>IMU, baro, ToF, optical flow</td><td>ICM-42688-P · SPL06-001 · VL53L1X · PMW3901</td></tr>
+        <tr><td>Camera</td><td>5 MP, 720p30 H.264</td><td>OV5647 5 MP MIPI-CSI · <b>HW H.264 720p30 + 1080p30</b></td></tr>
+        <tr><td>SDK</td><td>Tello SDK 2.0</td><td><b>wire-compatible</b> incl. video + extensions</td></tr>
+        <tr><td>Swarm</td><td>STA mode on shared AP</td><td>identical, <b>plus simulated swarms</b></td></tr>
+        <tr><td>Simulation</td><td>none</td><td><b>full Gazebo Harmonic twin</b></td></tr>
+        <tr><td>License</td><td>closed</td><td><b>MIT · CERN-OHL-P · CC-BY</b></td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ───────────────────────── design ───────────────────────── -->
+<section id="design">
+  <div class="wrap">
+    <h2>Designed for the air</h2>
+    <p class="sub">A clean swept "whoop" body — minimal, aggressive, airflow-optimised.
+      The arms taper into the motor nacelles, the canopy crown is biased forward, and a
+      removable shell clips on and off without screws so you can customise it like a Tello.</p>
+    <div class="grid g2">
+      <div class="card">
+        <div class="ph"><img src="assets/cad/frame.jpg" alt="Whoop frame with ducts, three-quarter view"></div>
+        <div class="bd">
+          <h3>Removable canopy</h3>
+          <p>Smooth Tello-style shell with a chamfered camera nose, swept side air
+            intakes and LED light pipes. Snap posts mate with the deck — no screws, lift
+            it off to swap or print a new one.</p>
+        </div>
+      </div>
+      <div class="card">
+        <div class="ph"><img src="assets/cad/top.jpg" alt="Top view of the whoop airframe"></div>
+        <div class="bd">
+          <h3>Rear slide-in battery</h3>
+          <p>The 1S pack inserts from the rear exactly like a Tello, into a printed cradle
+            with a positive stop. The compact 36×70 mainboard sits on M2 bosses above the
+            under-body flow + ToF sensor window.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ───────────────────────── variants ───────────────────────── -->
+<section id="variants">
+  <div class="wrap">
+    <h2>One frame, three protection levels</h2>
+    <p class="sub">The airframe is parametric. Flip a single <code>guard</code> setting in
+      <code>params.scad</code> and re-slice — the electronics, wheelbase and motor mounts
+      stay identical across all three.</p>
+    <div class="grid g3">
+      <div class="card">
+        <div class="ph"><img src="assets/cad/none.jpg" alt="Naked variant, no prop guards"></div>
+        <div class="bd">
+          <h3>Naked <code>none</code></h3>
+          <p>Bare swept arms, no guards. The lightest, most minimal build — for open
+            flying and maximum efficiency.</p>
+        </div>
+      </div>
+      <div class="card">
+        <div class="ph"><img src="assets/cad/ring.jpg" alt="Open ring prop guards, Tello style"></div>
+        <div class="bd">
+          <h3>Ring guards <code>ring</code></h3>
+          <p>Thin open prop-guard rings on struts, Tello-style. Light protection for
+            learning to fly and indoor knocks.</p>
+        </div>
+      </div>
+      <div class="card">
+        <div class="ph"><img src="assets/cad/duct.jpg" alt="Cinewhoop ducts, reinforced"></div>
+        <div class="bd">
+          <h3>Cinewhoop <code>duct</code></h3>
+          <p>Full ducts with rounded intake lips and skids. Reinforced for indoor and
+            contact flying, with a thrust bump from the shrouds.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ───────────────────────── how it's built ───────────────────────── -->
+<section id="build">
+  <div class="wrap">
+    <h2>How it's built</h2>
+    <p class="sub">Five layers, one repository — each independently buildable and tested
+      in CI.</p>
+    <div class="grid g2">
+      <div class="feat">
+        <h3><span class="d">◆</span>fc_core — flight control</h3>
+        <p>A platform-independent C99 core (no RTOS deps) compiled into <em>both</em> the
+          ESP32-P4 firmware and the Gazebo plugin. Same code, same behaviour, in sim and
+          in the air — with host-side closed-loop SIL tests.</p>
+      </div>
+      <div class="feat">
+        <h3><span class="d">◆</span>Hardware — KiCad PCB</h3>
+        <p>A compact 36×70 mm mainboard generated from a single design database
+          (<code>design.py</code> → board, BOM, CPL, pinmap). ESP32-P4 + C6, MOSFET
+          motor drivers, full IMU/baro/ToF/flow sensor suite. Order it assembled from
+          JLCPCB.</p>
+      </div>
+      <div class="feat">
+        <h3><span class="d">◆</span>CAD — parametric airframe</h3>
+        <p>OpenSCAD whoop frame and canopy → STL. Three guard variants, rear battery bay,
+          press-fit 8520 pockets and a removable shell — all from shared parameters.</p>
+      </div>
+      <div class="feat">
+        <h3><span class="d">◆</span>Sim + SDK</h3>
+        <p>Gazebo Harmonic twin with a Tello-protocol UDP endpoint and multi-drone
+          swarms, plus <code>stratospy</code> — a thin add-on over <code>djitellopy</code>
+          for the STRATOS extensions.</p>
+      </div>
+    </div>
+    <div class="grid g2" style="margin-top:20px">
+      <div class="card">
+        <div class="ph"><img src="assets/pcb/component_map.jpg" alt="PCB component map, top and bottom"></div>
+        <div class="bd"><h3>Every reference, mapped</h3>
+          <p>A generated component map labels every part on both sides of the board so you
+            can place and inspect it with confidence before ordering.</p></div>
+      </div>
+      <div class="card">
+        <div class="ph"><img src="assets/pcb/top.jpg" alt="PCB top render"></div>
+        <div class="bd"><h3>Routable by design</h3>
+          <p>Passives are anchored around the ESP32-P4 with collision-aware placement —
+            decoupling caps ring the MCU, zero copper overlaps.</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ───────────────────────── gallery ───────────────────────── -->
+<section id="gallery">
+  <div class="wrap">
+    <h2>Gallery</h2>
+    <p class="sub">Concept brief, CAD renders and the board. Click any image to enlarge.</p>
+    <div class="gal" id="gal">
+      <a href="assets/cad/hero.jpg"><img src="assets/cad/hero.jpg" alt="Cinewhoop hero render" loading="lazy"></a>
+      <a href="assets/cad/duct.jpg"><img src="assets/cad/duct.jpg" alt="Duct variant" loading="lazy"></a>
+      <a href="assets/concept/1.jpg"><img src="assets/concept/1.jpg" alt="Concept — isometric view and dimensions" loading="lazy"></a>
+      <a href="assets/cad/ring.jpg"><img src="assets/cad/ring.jpg" alt="Ring variant" loading="lazy"></a>
+      <a href="assets/concept/2.jpg"><img src="assets/concept/2.jpg" alt="Concept — propulsion configuration" loading="lazy"></a>
+      <a href="assets/cad/none.jpg"><img src="assets/cad/none.jpg" alt="Naked variant" loading="lazy"></a>
+      <a href="assets/concept/3.jpg"><img src="assets/concept/3.jpg" alt="Concept render" loading="lazy"></a>
+      <a href="assets/cad/top.jpg"><img src="assets/cad/top.jpg" alt="Top view" loading="lazy"></a>
+      <a href="assets/concept/4.jpg"><img src="assets/concept/4.jpg" alt="Concept render" loading="lazy"></a>
+      <a href="assets/pcb/component_map.jpg"><img src="assets/pcb/component_map.jpg" alt="Component map" loading="lazy"></a>
+      <a href="assets/concept/5.jpg"><img src="assets/concept/5.jpg" alt="Concept render" loading="lazy"></a>
+      <a href="assets/cad/frame.jpg"><img src="assets/cad/frame.jpg" alt="Frame three-quarter" loading="lazy"></a>
+      <a href="assets/concept/6.jpg"><img src="assets/concept/6.jpg" alt="Concept render" loading="lazy"></a>
+      <a href="assets/concept/7.jpg"><img src="assets/concept/7.jpg" alt="Concept render" loading="lazy"></a>
+      <a href="assets/pcb/top.jpg"><img src="assets/pcb/top.jpg" alt="PCB top" loading="lazy"></a>
+      <a href="assets/concept/8.jpg"><img src="assets/concept/8.jpg" alt="Concept render" loading="lazy"></a>
+      <a href="assets/concept/9.jpg"><img src="assets/concept/9.jpg" alt="Concept render" loading="lazy"></a>
+      <a href="assets/concept/10.jpg"><img src="assets/concept/10.jpg" alt="Concept render" loading="lazy"></a>
+    </div>
+  </div>
+</section>
+
+<!-- ───────────────────────── order / build ───────────────────────── -->
+<section id="order">
+  <div class="wrap">
+    <h2>Build your own</h2>
+    <p class="sub">Everything you need is in the repository. The short version:</p>
+    <ol class="steps">
+      <li><b>Simulate it first.</b> Build the Gazebo plugin, spawn a drone, and run
+        <code>python sdk/python/examples/01_hover.py</code> — takeoff, hover, land, over
+        the Tello protocol. No hardware required.</li>
+      <li><b>Order the board.</b> Review the KiCad project, then send the JLCPCB
+        gerbers/BOM/CPL package off for assembly. Cross-check against the component map and
+        <code>KNOWN_GAPS.md</code> before you commit.</li>
+      <li><b>Print the airframe.</b> Pick a guard variant, slice
+        <code>frame_&lt;variant&gt;.stl</code> + <code>canopy.stl</code> in PETG or tough
+        PLA — no supports, each part prints flat.</li>
+      <li><b>Assemble.</b> Press in the 8520 motors, mount the board on the M2 bosses,
+        route the motor wires along the arms, slide in the 1S pack, clip on the canopy.</li>
+      <li><b>Flash &amp; fly.</b> Build the ESP-IDF firmware for the ESP32-P4, flash, and
+        connect — your simulated mission scripts now run on the real drone, unchanged.</li>
+    </ol>
+    <p class="sub" style="margin-top:26px">⚠️ This is a flying machine with spinning props.
+      Read <code>docs/safety.md</code> before the first flight — guards on, props off for
+      the first power-up, proper LiPo handling.</p>
+    <div class="cta">
+      <a class="btn p" href="https://github.com/equationstratos/STRATOSDRONE" target="_blank" rel="noopener">Get the source</a>
+      <a class="btn" href="https://github.com/equationstratos/STRATOSDRONE/blob/claude/cool-ride-w1bpia/docs/build_guide.md" target="_blank" rel="noopener">Build guide</a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div>
+      <div class="brand" style="margin-bottom:8px">STRATO<b>S</b>DRONE</div>
+      <span class="muted">Open-source Tello EDU class drone — hardware, firmware, CAD, simulation.</span>
+    </div>
+    <div>
+      <span class="muted">Code <a href="https://opensource.org/license/mit" target="_blank" rel="noopener">MIT</a> ·
+        Hardware <a href="https://ohwr.org/project/cernohl/wikis/Documents/CERN-OHL-version-2" target="_blank" rel="noopener">CERN-OHL-P</a> ·
+        Docs <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC-BY-4.0</a></span>
+    </div>
+  </div>
+</footer>
+
+<!-- lightbox -->
+<div id="lb"><img id="lbimg" src="" alt=""></div>
+<script>
+(function(){
+  var lb = document.getElementById('lb'), img = document.getElementById('lbimg');
+  document.getElementById('gal').addEventListener('click', function(e){
+    var a = e.target.closest('a'); if(!a) return;
+    e.preventDefault(); img.src = a.getAttribute('href'); lb.classList.add('on');
+  });
+  lb.addEventListener('click', function(){ lb.classList.remove('on'); img.src=''; });
+  document.addEventListener('keydown', function(e){ if(e.key==='Escape'){ lb.classList.remove('on'); img.src=''; } });
+})();
+</script>
+</body>
+</html>

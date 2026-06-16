@@ -1,0 +1,44 @@
+name: pages
+# Deploy the static presentation site (site/) to GitHub Pages.
+# Zero build step — it is plain HTML/CSS/assets, published as-is.
+on:
+  push:
+    branches: [claude/cool-ride-w1bpia, main]
+    paths: ['site/**', '.github/workflows/pages.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Allow one concurrent deployment; newer pushes supersede in-flight runs.
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Sanity-check the site
+        run: |
+          test -f site/index.html || { echo "site/index.html missing"; exit 1; }
+          test -f site/style.css  || { echo "site/style.css missing"; exit 1; }
+          # every local asset referenced in index.html must exist
+          grep -oE '(src|href)="(assets/[^"]+)"' site/index.html \
+            | sed -E 's/.*"(assets[^"]+)"/\1/' | sort -u \
+            | while read -r a; do
+                test -f "site/$a" || { echo "missing asset: $a"; exit 1; }
+              done
+          echo "site OK"
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+      - id: deployment
+        uses: actions/deploy-pages@v4
