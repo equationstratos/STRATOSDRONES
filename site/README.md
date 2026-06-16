@@ -34,8 +34,20 @@ asset exists). Enable Pages once in **Settings → Pages → Source: GitHub Acti
 ## Refreshing the images
 
 The CAD renders come from `hardware/frame/whoop/preview/*.png` and the PCB map
-from `hardware/pcb/preview/`. After re-rendering those, regenerate the resized
-JPEGs:
+from `hardware/pcb/preview/`. The studio previews use the `Tomorrow` colorscheme
+(light #f8f8f8 background) on `assembly.scad`:
+
+```bash
+cd hardware/frame/whoop
+CAM=0,0,4,62,0,22,0
+# airframe (no canopy) and canopy alone
+xvfb-run -a openscad -D guard='"duct"' -D show='"frame"'  --camera=$CAM --viewall \
+  --autocenter --projection=p --colorscheme=Tomorrow --imgsize=1200,820 -o preview/frame.png  assembly.scad
+xvfb-run -a openscad -D show='"canopy"' --camera=$CAM --viewall \
+  --autocenter --projection=p --colorscheme=Tomorrow --imgsize=1200,820 -o preview/canopy.png assembly.scad
+```
+
+After re-rendering, regenerate the resized JPEGs:
 
 ```bash
 python3 - <<'PY'
@@ -46,7 +58,8 @@ jobs = {
   "hardware/frame/whoop/preview/assembly_ring.png": "site/assets/cad/ring.jpg",
   "hardware/frame/whoop/preview/assembly_none.png": "site/assets/cad/none.jpg",
   "hardware/frame/whoop/preview/top.png":           "site/assets/cad/top.jpg",
-  "hardware/frame/whoop/preview/frame_duct.png":    "site/assets/cad/frame.jpg",
+  "hardware/frame/whoop/preview/frame.png":         "site/assets/cad/frame.jpg",
+  "hardware/frame/whoop/preview/canopy.png":        "site/assets/cad/canopy.jpg",
   "hardware/pcb/preview/component_map.png":         "site/assets/pcb/component_map.jpg",
 }
 for src, dst in jobs.items():
