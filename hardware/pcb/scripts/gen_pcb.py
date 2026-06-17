@@ -145,6 +145,41 @@ def anchor_map():
     return res
 
 
+def fix_3d_models_kicad9(pcb_path):
+    """Auto-fix 3D model paths for KiCad 9 compatibility.
+
+    pcbnew auto-adds models with KICAD6/7_3DMODEL_DIR (obsolete in KiCad 9).
+    Replace with KICAD9_3DMODEL_DIR and convert .wrl → .step format.
+    """
+    import re
+    with open(pcb_path, "r") as f:
+        content = f.read()
+
+    # Count originals
+    count_6 = content.count("KICAD6_3DMODEL_DIR")
+    count_7 = content.count("KICAD7_3DMODEL_DIR")
+
+    # Replace obsolete KiCad 6/7 variables with KiCad 9
+    content = content.replace("KICAD6_3DMODEL_DIR", "KICAD9_3DMODEL_DIR")
+    content = content.replace("KICAD7_3DMODEL_DIR", "KICAD9_3DMODEL_DIR")
+
+    # Convert .wrl (VRML, old) to .step (modern format for KiCad 9)
+    content = re.sub(
+        r'(\$\{KICAD9_3DMODEL_DIR\}/[^)]*\.wrl)',
+        lambda m: m.group(1).replace('.wrl', '.step'),
+        content
+    )
+    # Fix any double extensions
+    content = re.sub(r'\.step\.step', '.step', content)
+
+    with open(pcb_path, "w") as f:
+        f.write(content)
+
+    if count_6 + count_7 > 0:
+        print(f"fixed 3D models: replaced {count_6+count_7} KICAD6/7 paths with KICAD9, "
+              f"converted {content.count('.step')} models to .step format")
+
+
 def main():
     board = pcbnew.NewBoard(OUT)
     # 4-layer stackup
@@ -339,6 +374,7 @@ def main():
     # unfilled outlines; KiCad fills them on open.
     inject_zones(OUT)
     inject_silk(OUT)
+    fix_3d_models_kicad9(OUT)  # Fix 3D model paths for KiCad 9
     print("poured GND/3V3/VBAT/GND planes (In1/In2/B/F, unfilled — fill in KiCad)")
     print("added Tello-style silkscreen (shield outlines, section labels)")
     os._exit(0 if not missing else 2)
