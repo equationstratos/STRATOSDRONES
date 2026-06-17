@@ -49,10 +49,30 @@ JLCPCB. Items are ordered roughly by risk.
    `pcbnew`: all seven new/repurposed parts and all four P4 core pins map to the
    intended nets, no orphan `VDD_DCDCC` net remains.
 
-4. **`VDD_MIPI_DPHY` (2.5 V) source UNRESOLVED.** It is decoupled (`C7`) but
-   not connected to a supply. The P4 likely feeds it from an internal LDO
-   output — confirm which pin/rail on the Function-EV schematic and wire it.
-   Leaving it unpowered breaks the camera (and possibly boot).
+4. ✅ **RESOLVED — `VDD_MIPI_DPHY` source + the whole internal-LDO rail block.**
+   Investigating the MIPI supply surfaced a cluster of latent power bugs around
+   the P4's internal LDO outputs, all now fixed against the official ESP32-P4
+   schematic checklist (`schematic-checklist-esp32p4.rst`) and the ESP32-P4-
+   Function-EV-Board reference. The P4 has four internal LDOs whose **outputs**
+   (`VDDO_FLASH`, `VDDO_PSRAM`, `VDDO_3`, `VDDO_4`) the previous revision tied
+   straight to `3V3` — which both fights the regulators and, for PSRAM, put
+   **3.3 V on the 1.95 V-max `VDD_PSRAM_0/1` pins** (would damage the in-package
+   PSRAM). Fixes: (a) `VDDO_3` (a configurable 0.5–2.7 V LDO) now feeds
+   `VDD_MIPI_DPHY` on the `VDD_MIPI` rail — firmware sets LDO channel 3 to 2.5 V;
+   decoupled with 1 µF + 0.1 µF (`C7`/`C42`; the checklist's extra 10 nF HF cap
+   is noted but omitted for lack of a verified 0402 part). (b) `VDDO_PSRAM` (1.8 V)
+   now ties to `VDD_PSRAM_0/1` on a dedicated `VDD_PSRAM` rail (1 µF + 0.1 µF).
+   (c) `VDDO_FLASH` (default 3.3 V) ties to `VDD_FLASH_IO` **and** the external
+   flash VCC on a shared `VDD_FLASHIO` rail (1 µF + 0.1 µF; flash-IO pull-ups
+   `R13–R15` re-referenced to it). (d) `VDDO_4` (unused) left unconnected. Also
+   confirmed the **NRW32 = in-package PSRAM only, NO in-package flash** (the
+   reference board pairs the very same `ESP32-P4NRW32X` with an external
+   GD25Q128), so the on-board W25Q128 boot flash is correct, not a bus conflict.
+   **Bonus — full pinout audit:** the entire 105-pin P4 map was diffed against
+   Espressif's official KiCad symbol (`espressif/kicad-libraries`); every signal
+   matches (incl. `VDDO_FLASH`=71, `VDD_DCDCC`=77, `FB_DCDC`=78, `GND`=EP pin
+   105, no `VDD_HP_1`), so the DC-DC fix in item 3 is on the correct pads. All
+   rails re-verified pad-by-pad in `pcbnew`.
 
 5. **ESP32-P4 strapping pins UNVERIFIED.** `BOOT_STRAP` is assumed to be
    GPIO35 and `SW2`/`R10` hang off it. Confirm the real download/boot strap
