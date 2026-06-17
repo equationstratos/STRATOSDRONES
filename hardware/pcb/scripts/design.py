@@ -285,11 +285,24 @@ part("D2", "SS34-DNP", "Diode_SMD:D_SMA", {"2": "VBUS", "1": "VBAT"},
      lcsc="C8678", populate=False, comment="bench power only; DO NOT populate with a battery")
 
 # SY8089 buck VBAT -> 3V3 / 2A.  FB = 0.6V; 3V3 = 0.6*(1+R4/R5)
+# SOT-23-5 pinout (1 EN, 2 GND, 3 LX/SW, 4 IN/VIN, 5 FB) confirmed against
+# the Silergy SY8089/SY8089A application note pin table -- matches the
+# existing map exactly, no change needed.
 part("U5", "SY8089AAAC", "Package_TO_SOT_SMD:SOT-23-5",
      {"1": "3V3_EN", "2": "GND", "3": "SW3V3", "4": "VBAT", "5": "FB3V3"},
-     lcsc="C78988", comment="VERIFY SOT23-5 pinout")
-part("L1", "2.2uH", "Inductor_SMD:L_0805_2012Metric", {"1": "SW3V3", "2": "3V3"},
-     lcsc="C408412", comment="buck inductor (VERIFY value/rating)")
+     lcsc="C78988", comment="SY8089 pinout verified vs Silergy application note")
+# LCSC C408412 is actually a Sunlord MWSA0503S-100MT = 10uH/2.8A(min)sat,
+# NOT 2.2uH as the value field previously claimed -- JLCPCB SMT assembly
+# stuffs whichever physical part the LCSC code resolves to, so the real
+# board would have shipped with 10uH regardless of the printed value.
+# 10uH is higher than the ~2.2-4.7uH typically recommended for this IC
+# class at 2A/~1.5MHz (lower ripple current, slower transient response)
+# but well within safe operating range -- not a stability or rating issue,
+# current margin (2.8A min sat vs 2A regulator max) is adequate. Value
+# corrected to match the real part; swap for a 2.2-3.3uH/>=2.5A 0805 part
+# if faster transient response is wanted.
+part("L1", "10uH", "Inductor_SMD:L_0805_2012Metric", {"1": "SW3V3", "2": "3V3"},
+     lcsc="C408412", comment="buck inductor, value corrected to match real LCSC part")
 part("C3", "10uF", "Capacitor_SMD:C_0805_2012Metric", {"1": "VBAT", "2": "GND"}, lcsc="C15850")
 part("C4", "22uF", "Capacitor_SMD:C_0805_2012Metric", {"1": "3V3", "2": "GND"}, lcsc="C45783")
 part("R4", "453k", "Resistor_SMD:R_0402_1005Metric", {"1": "3V3", "2": "FB3V3"}, lcsc="C123734")

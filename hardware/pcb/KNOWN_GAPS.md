@@ -112,9 +112,20 @@ JLCPCB. Items are ordered roughly by risk.
    leave `U9` unpopulated and use the `J3` 2×4 header with a CJMCU-3901 module
    (recommended for a first build — JLC reflow of the bare COB is unproven).
 
-10. **Buck (`U5` SY8089) pinout + inductor.** Confirm the SOT-23-5 pin order
-    and that `L1` (2.2 µH, 0805) meets the 2 A rating; the FB divider
-    (`R4`/`R5`) targets ~3.42 V — retune to 3.30 V if desired.
+10. ✅ **RESOLVED — Buck (`U5` SY8089) pinout + inductor.** SOT-23-5 pinout
+    (1 EN, 2 GND, 3 LX/SW, 4 IN/VIN, 5 FB) confirmed against the Silergy
+    application note — matched the existing map exactly, no rewiring needed.
+    `L1`'s value field said "2.2 µH" but the chosen LCSC part (`C408412`) is
+    actually a Sunlord MWSA0503S-100MT, **10 µH** (2.8 A min saturation) —
+    JLCPCB assembly stuffs whatever the LCSC code resolves to regardless of
+    the printed value, so the real board would have shipped with 10 µH
+    either way. Corrected the value field to match; 10 µH is higher than the
+    ~2.2–4.7 µH typical for this IC class at 2A/~1.5 MHz (lower ripple,
+    slower transient response) but not a stability or current-rating issue
+    — swap for a 2.2–3.3 µH/≥2.5 A 0805 part if faster transient response is
+    wanted. FB divider (`R4`=453k/`R5`=100k) computes to 0.6×(1+453/100) =
+    **3.318 V**, not the ~3.42 V this item previously claimed (stale note) —
+    already within 0.5% of the 3.30 V target, no retune needed.
 
 11. **Crystal load caps (`C8`/`C9` = 10 pF)** are nominal; set them for the
     actual 40 MHz crystal's CL.
