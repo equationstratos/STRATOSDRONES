@@ -1,0 +1,756 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>STRATOSDRONE PCB Layout Viewer</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #1e1e1e;
+            color: #ccc;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        h1 {
+            color: #fff;
+            margin-bottom: 20px;
+            font-size: 24px;
+        }
+        .info {
+            background: #2d2d2d;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            border-left: 4px solid #4f8;
+        }
+        .info p { margin: 5px 0; }
+        .viewer-container {
+            background: #0a0a0a;
+            border: 2px solid #444;
+            border-radius: 8px;
+            overflow: auto;
+            max-width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 600px;
+            position: relative;
+        }
+        svg {
+            background: #1a1a1a;
+            border: 1px solid #333;
+        }
+        .component {
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+        .component:hover {
+            opacity: 0.8;
+        }
+        .component text {
+            font-size: 8px;
+            pointer-events: none;
+            fill: #fff;
+            text-anchor: middle;
+            dominant-baseline: middle;
+        }
+        .legend {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 30px;
+            background: #2d2d2d;
+            padding: 20px;
+            border-radius: 8px;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+            border: 1px solid #666;
+        }
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .stat-box {
+            background: #2d2d2d;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #4f8;
+        }
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #4f8;
+        }
+        .stat-label {
+            font-size: 12px;
+            color: #888;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>⚡ STRATOSDRONE PCB Layout</h1>
+
+        <div class="info">
+            <p><strong>Board Dimensions:</strong> 40.9 × 74.1 mm</p>
+            <p><strong>Components:</strong> 115 placed</p>
+            <p><strong>Status:</strong> Zones filled ✓ | Signal routing pending</p>
+        </div>
+
+        <div class="stats">
+            <div class="stat-box">
+                <div class="stat-value">41×74</div>
+                <div class="stat-label">mm (Board Size)</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-value">115</div>
+                <div class="stat-label">Components</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-value">4</div>
+                <div class="stat-label">Zones (Filled)</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-value">14</div>
+                <div class="stat-label">Gerber Files</div>
+            </div>
+        </div>
+
+        <div class="viewer-container">
+            <svg width="409.1825" height="740.7825" viewBox="0 0 409.1825 740.7825">
+                <!-- PCB outline -->
+                <rect x="0" y="0" width="409.1825" height="740.7825"
+                      fill="#1a1a1a" stroke="#444" stroke-width="1"/>
+
+                <!-- Component placements -->
+                <g class="component" title="R3: 1.2k">
+                    <rect x="119.29142000000002" y="521.9796" width="34.404759999999996" height="40.365"
+                          fill="#999" stroke="#555" stroke-width="0.5" opacity="0.7"/>
+                    <text x="136.49380000000002" y="542.1621" font-size="7">R3</text>
+                </g>
+                <g class="component" title="Q2: AO3400A">
+                    <rect x="265.892855" y="517.5175" width="68.21429" height="64.965"
+                          fill="#999" stroke="#555" stroke-width="0.5" opacity="0.7"/>
+                    <text x="300.0" y="550.0" font-size="7">Q2</text>
+                </g>
+                <g class="component" title="D4: SS34">
+                    <rect x="198.87214" y="502.49565" width="70.95" height="67.965"
+                          fill="#999" stroke="#555" stroke-width="0.5" opacity="0.7"/>
+                    <text x="234.34714" y="536.47815" font-size="7">D4</text>
+                </g>
+                <g class="component" title="R19: 51k">
+                    <rect x="224.23737000000003" y="449.08812" width="31.54762" height="40.365"
+                          fill="#999" stroke="#555" stroke-width="0.5" opacity="0.7"/>
+                    <text x="240.01118000000002" y="469.27062" font-size="7">R19</text>
+                </g>
+                <g class="component" title="C41: 100nF">
+                    <rect x="227.60308000000003" y="322.48688" width="48.69048" height="40.165"
+                          fill="#999" stroke="#555" stroke-width="0.5" opacity="0.7"/>
+                    <text x="251.94832000000002" y="342.56937999999997" font-size="7">C41</text>
+                </g>
+                <g class="component" title="D3: SS34">
+                    <rect x="277.50831999999997" y="218.84525000000002" width="70.95" height="67.965"
+                          fill="#999" stroke="#555" stroke-width="0.5" opacity="0.7"/>
+                    <text x="312.98332" y="252.82775" font-size="7">D3</text>
+                </g>
+                <g class="component" title="C35: 100nF">
+                    <rect x="256.94789000000003" y="175.41871" width="48.69048" height="40.165"
+                          fill="#999" stroke="#555" stroke-width="0.5" opacity="0.7"/>
+                    <text x="281.29313" y="195.50121000000001" font-size="7">C35</text>
+                </g>
+                <g class="component" title="R9: 10k">
+                    <rect x="315.17857" y="356.8175" width="29.64286" height="40.365"
+                          fill="#999" stroke="#555" stroke-width="0.5" opacity="0.7"/>
+                    <text x="330.0" y="377.0" font-size="7">R9</text>
+                </g>
+                <g class="component" title="J1: BATT_PH2">
+                    <rect x="133.75" y="603.5175" width="92.5" height="132.965"
+                          fill="#44f" stroke="#555" stroke-width="0.5" opacity="0.7"/>
+                    <text x="180.0" y="670.0" font-size="7">J1</text>
+                </g>
+                <g class="component" title="U6: ICM-42688-P">
+                    <rect x="24.464290000000005" y="433.5175" width="111.07141999999999" height="72.965"
+                          fill="#f44" stroke="#555" stroke-width="0.5" opacity="0.7"/>
+                    <text x="80.0" y="470.0" font-size="7">U6</text>
+                </g>
+                <g class="component" title="R16: 51k">
+                    <rect x="228.03245" y="260.21414" width="31.54762" height="40.365"
+                          fill="#999" stroke="#555" stroke-width="0.5" opacity="0.7"/>
+                    <text x="243.80626" y="280.39664" font-size="7">R16</text>
+                </g>
+                <g class="component" title="C30: 100nF">
+                    <rect x="263.88045" y="423.97811" width="48.69048" height="40.165"
+                          fill="#999" stroke="#555" stroke-width="0.5" opacity="0.7"/>
+                    <text x="288.22569" y="444.06061" font-size="7">C30</text>
+                </g>
+                <g class="component" title="C22: 100nF">
+                    <rect x="129.65677" y="441.29093" width="48.69048" height="40.165"
+                          fill="#999" stroke="#555" stroke-width="0.5" opacity="0.7"/>
+                    <text x="154.00200999999998" y="461.37343" font-size="7">C22</text>
+                </g>
+                <g class="component" title="C5: 22uF">
+                    <rect x="276.09008500000004" y="265.85269000000005" width="39.166669999999996" height="50.565"
+                          fill="#999" stroke="#555" stroke-width="0.5" opacity="0.7"/>
+                    <text x="295.67342" y="291.13519" font-size="7">C5</text>
+                </g>
+                <g class="component" title="C11: 100nF">
+                    <rect x="194.62858" y="419.78194" width="48.69048" height="40.165"
+                          fill="#999" stroke="#555" stroke-width="0.5" opacity="0.7"/>
+                    <text x="218.97382" y="439.86444" font-size="7">C11</text>
+                </g>
+                <g class="component" title="C8: 10pF">
+                    <rect x="318.416665" y="309.9175" width="39.166669999999996" height="40.165"
+                          fill="#999" stroke="#555" stroke-width="0.5" opacity="0.7"/>
+                    <text x="338.0" y="330.0" font-size="7">C8</text>
+                </g>
+                <g class="component" title=": ">
+                    <rect x="299.0" y="39.0" width="22.0" height="22.0"
+                          fill="#999" stroke="#555" stroke-width="0.5" opacity="0.7"/>
+                    <text x="310.0" y="50.0" font-size="7"></text>
+                </g>
+                <g class="component" title="R4: 453k">
+                    <rect x="184.062365" y="581.22532" width="39.166669999999996" height="40.365"
+                          fill="#999" stroke="#555" stroke-width="0.5" opacity="0.7"/>
+                    <text x="203.6457" y="601.40782" font-size="7">R4</text>
+                </g>
+                <g class="component" title="J4: CAM_FFC15">
+                    <rect x="111.75" y="-9.982499999999995" width="136.5" height="109.96499999999999"
+                          fill="#44f" stroke="#555" stroke-width="0.5" opacity="0.7"/>
+                    <text x="180.0" y="45.0" font-size="7">J4</text>
+                </g>
+                <g class="component" title="J10: DBG">
+                    <rect x="113.75" y="595.5175" width="32.5" height="88.965"
+                          fill="#44f" stroke="#555" stroke-width="0.5" opacity="0.7"/>
+                    <text x="130.0" y="640.0" font-size="7">J10</text>
+                </g>
+                <g class="component" title="R25: 100R">
+                    <rect x="111.628855" y="465.30244" width="41.07143" height="40.365"
+                          fill="#999" stroke="#555" stroke-width="0.5" opacity="0.7"/>
+                    <text x="132.16457" y="485.48494" font-size="7">R25</text>
+                </g>
+                <g class="component" title="R10: 10k">
+                    <rect x="314.22619" y="456.8175" width="31.54762" height="40.365"
+                          fill="#999" stroke="#555" stroke-width="0.5" opacity="0.7"/>
+                    <text x="330.0" y="477.0" font-size="7">R10</text>
+                </g>
+                <g class="component" title="D2: SS34-DNP">
+                    <rect x="4.2738099999999974" y="48.5175" width="83.45238" height="67.965"
+                          fill="#999" stroke="#555" stroke-width="0.5" opacity="0.7"/>
+                    <text x="46.0" y="82.5" font-size="7">D2</text>
+                </g>
+                <g class="component" title="R27: 100k">
+                    <rect x="318.416665" y="529.8175" width="39.166669999999996" height="40.365"
+                          fill="#999" stroke="#555" stroke-width="0.5" opacity="0.7"/>
+                    <text x="338.0" y="550.0" font-size="7">R27</text>
+                </g>
+                <g class="component" title="C37: 20pF">
+                    <rect x="169.147745" y="417.35464" width="39.166669999999996" height="40.165"
+                          fill="#999" stroke="#555" stroke-width="0.5" opacity="0.7"/>
+                    <text x="188.73108" y="437.43714" font-size="7">C37</text>
+                </g>
+                <g class="component" title="C39: 100nF">
+                    <rect x="179.85778" y="279.98743" width="48.69048" height="40.165"
+                          fill="#999" stroke="#555" stroke-width="0.5" opacity="0.7"/>
+                    <text x="204.20301999999998" y="300.06993" font-size="7">C39</text>
+                </g>
+                <g class="component" title="C19: 100nF">
+                    <rect x="134.87812" y="263.37657" width="48.69048" height="40.165"
+                          fill="#999" stroke="#555" stroke-width="0.5" opacity="0.7"/>
+                    <text x="159.22335999999999" y="283.45907" font-size="7">C19</text>
+                </g>
+                <g class="component" title="R8: 100k">
+                    <rect x="261.49363500000004" y="594.7078399999999" width="39.166669999999996" height="40.365"
+                          fill="#999" stroke="#555" stroke-width="0.5" opacity="0.7"/>
+                    <text x="281.07697" y="614.8903399999999" font-size="7">R8</text>
+                </g>
+                <g class="component" title="R29: 100k">
+                    <rect x="54.300935" y="110.98649" width="39.166669999999996" height="40.365"
+                          fill="#999" stroke="#555" stroke-width="0.5" opacity="0.7"/>
+                    <text x="73.88427" y="131.16899" font-size="7">R29</text>
+                </g>
+                <g class="component" title="R7: 100k">
+                    <rect x="234.47564500000001" y="489.43401000000006" width="39.166669999999996" height="40.365"
+                          fill="#999" stroke="#555" stroke-width="0.5" opacity="0.7"/>
+                    <text x="254.05898000000002" y="509.61651000000006" font-size="7">R7</text>
+                </g>
+                <g class="component" title="U7: SPL06-001">
+                    <rect x="244.940475" y="430.5175" width="90.11905" height="78.965"
+                          fill="#f44" stroke="#555" stroke-width="0.5" opacity="0.7"/>
+                    <text x="290.0" y="470.0" font-size="7">U7</text>
+                </g>
+                <g class="component" title="C24: 100nF">
+                    <rect x="234.1078" y="408.64671" width="48.69048" height="40.165"
+                          fill="#999" stroke="#555" stroke-width="0.5" opacity="0.7"/>
+                    <text x="258.45304" y="428.72920999999997" font-size="7">C24</text>
+                </g>
+                <g class="component" title="J8: MOTOR4">
+                    <rect x="8.988095000000001" y="65.5175" width="62.02381" height="88.965"
+                          fill="#44f" stroke="#555" stroke-width="0.5" opacity="0.7"/>
+                    <text x="40.0" y="110.0" font-size="7">J8</text>
+                </g>
+                <g class="component" title="C3: 10uF">
+                    <rect x="311.67917500000004" y="427.36800000000005" width="39.166669999999996" height="50.565"
+                          fill="#999" stroke="#555" stroke-width="0.5" opacity="0.7"/>
+                    <text x="331.26251" y="452.6505" font-size="7">C3</text>
+                </g>
+                <g class="component" title="C23: 100nF">
+                    <rect x="74.88412999999998" y="399.92855000000003" width="48.69048" height="40.165"
+                          fill="#999" stroke="#555" stroke-width="0.5" opacity="0.7"/>
+                    <text x="99.22936999999999" y="420.01105" font-size="7">C23</text>
+                </g>
+                <g class="component" title="U4: TP4056-42-ESOP8">
+                    <rect x="64.70238" y="537.5175" width="150.59524" height="84.96499999999999"
+                          fill="#f44" stroke="#555" stroke-width="0.5" opacity="0.7"/>
+                    <text x="140.0" y="580.0" font-size="7">U4</text>
+                </g>
+                <g class="component" title="U2: W25Q128JVSIQ">
+                    <rect x="33.511905000000006" y="337.5175" width="112.97618999999999" height="84.96499999999999"
+                          fill="#f44" stroke="#555" stroke-width="0.5" opacity="0.7"/>
+                    <text x="90.0" y="380.0" font-size="7">U2</text>
+                </g>
+                <g class="component" title="C17: 100nF">
+                    <rect x="228.00256000000002" y="303.42238" width="48.69048" height="40.165"
+                          fill="#999" stroke="#555" stroke-width="0.5" opacity="0.7"/>
+                    <text x="252.3478" y="323.50487999999996" font-size="7">C17</text>
+                </g>
+                <g class="component" title="R21: 10k">
+                    <rect x="260.22619" y="619.8175" width="31.54762" height="40.365"
+                          fill="#999" stroke="#555" stroke-width="0.5" opacity="0.7"/>
+                    <text x="276.0" y="640.0" font-size="7">R21</text>
+                </g>
+                <g class="component" title="C12: 100nF">
+                    <rect x="81.91484999999999" y="318.89449" width="48.69048" height="40.165"
+                          fill="#999" stroke="#555" stroke-width="0.5" opacity="0.7"/>
+                    <text x="106.26008999999999" y="338.97699" font-size="7">C12</text>
+                </g>
+                <g class="component" title="C26: 10uF">
+                    <rect x="167.429675" y="481.03385000000003" width="39.166669999999996" height="45.565"
+                          fill="#999" stroke="#555" stroke-width="0.5" opacity="0.7"/>
+                    <text x="187.01301" y="503.81635000000006" font-size="7">C26</text>
+                </g>
+                <g class="component" title="L2: 2.2uH">
+                    <rect x="251.15669499999998" y="87.70792999999999" width="45.83333" height="66.965"
+                          fill="#ff4" stroke="#555" stroke-width="0.5" opacity="0.7"/>
+                    <text x="274.07336" y="121.19042999999999" font-size="7">L2</text>
+                </g>
+                <g class="component" title="C33: 1uF">
+                    <rect x="171.34576" y="65.29461" width="31.54762" height="40.165"
+                          fill="#999" stroke="#555" stroke-width="0.5" opacity="0.7"/>
+                    <text x="187.11957" y="85.37711" font-size="7">C33</text>
+                </g>
+                <g class="component" title="R26: 100k">
+                    <rect x="294.30093500000004" y="168.64849999999998" width="39.166669999999996" height="40.365"
+                          fill="#999" stroke="#555" stroke-width="0.5" opacity="0.7"/>
+                    <text x="313.88427" y="188.831" font-size="7">R26</text>
+                </g>
+                <g class="component" title="C13: 100nF">
+                    <rect x="228.11493" y="390.39618" width="48.69048" height="40.165"
+                          fill="#999" stroke="#555" stroke-width="0.5" opacity="0.7"/>
+                    <text x="252.46016999999998" y="410.47868" font-size="7">C13</text>
+                </g>
+                <g class="component" title="R18: 51k">
+                    <rect x="173.00446" y="237.15897999999999" width="31.54762" height="40.365"
+                          fill="#999" stroke="#555" stroke-width="0.5" opacity="0.7"/>
+                    <text x="188.77827" y="257.34148" font-size="7">R18</text>
+                </g>
+                <g class="component" title="C18: 100nF">
+                    <rect x="83.65223999999999" y="297.60461000000004" width="48.69048" height="40.165"
+                          fill="#999" stroke="#555" stroke-width="0.5" opacity="0.7"/>
+                    <text x="107.99748" y="317.68711" font-size="7">C18</text>
+                </g>
+                <g class="component" title=": ">
+                    <rect x="299.0" y="639.0" width="22.0" height="22.0"
+                          fill="#999" stroke="#555" stroke-width="0.5" opacity="0.7"/>
+                    <text x="310.0" y="650.0" font-size="7"></text>
+                </g>
+                <g class="component" title="Q3: AO3400A">
+                    <rect x="25.892854999999997" y="517.5175" width="68.21429" height="64.965"
+                          fill="#999" stroke="#555" stroke-width="0.5" opacity="0.7"/>
+                    <text x="60.0" y="550.0" font-size="7">Q3</text>
+                </g>
+                <g class="component" title="L1: 10uH">
+                    <rect x="249.464285" y="546.0175" width="41.07143" height="47.965"
+                          fill="#ff4" stroke="#555" stroke-width="0.5" opacity="0.7"/>
+                    <text x="270.0" y="570.0" font-size="7">L1</text>
+                </g>
+                <g class="component" title="J2: USB-C-16P">
+                    <rect x="-27.207499999999996" y="226.55" width="124.41499999999999" height="106.89999999999999"
+                          fill="#44f" stroke="#555" stroke-width="0.5" opacity="0.7"/>
+                    <text x="35.0" y="280.0" font-size="7">J2</text>
+                </g>
+                <g class="component" title="C2: 10uF">
+                    <rect x="74.73870500000001" y="596.6403399999999" width="39.166669999999996" height="50.565"
+                          fill="#999" stroke="#555" stroke-width="0.5" opacity="0.7"/>
+                    <text x="94.32204" y="621.92284" font-size="7">C2</text>
+                </g>
+                <g class="component" title="U10: TLV62569DBVR">
+                    <rect x="85.25407000000001" y="80.34763" width="112.9762" height="64.965"
+                          fill="#f44" stroke="#555" stroke-width="0.5" opacity="0.7"/>
+                    <text x="141.74217000000002" y="112.83013" font-size="7">U10</text>
+                </g>
+                <g class="component" title="J7: MOTOR3">
+                    <rect x="8.988095000000001" y="545.5175" width="62.02381" height="88.965"
+                          fill="#44f" stroke="#555" stroke-width="0.5" opacity="0.7"/>
+                    <text x="40.0" y="590.0" font-size="7">J7</text>
+                </g>
+                <g class="component" title="U5: SY8089AAAC">
+                    <rect x="182.797615" y="537.5175" width="94.40477" height="64.965"
+                          fill="#f44" stroke="#555" stroke-width="0.5" opacity="0.7"/>
+                    <text x="230.0" y="570.0" font-size="7">U5</text>
+                </g>
+                <g class="component" title="C1: 10uF">
+                    <rect x="151.85518499999998" y="512.04878" width="39.166669999999996" height="50.565"
+                          fill="#999" stroke="#555" stroke-width="0.5" opacity="0.7"/>
+                    <text x="171.43851999999998" y="537.33128" font-size="7">C1</text>
+                </g>
+                <g class="component" title="Q1: AO3400A">
+                    <rect x="265.892855" y="127.5175" width="68.21429" height="64.965"
+                          fill="#999" stroke="#555" stroke-width="0.5" opacity="0.7"/>
+                    <text x="300.0" y="160.0" font-size="7">Q1</text>
+                </g>
+                <g class="component" title="C38: 1uF">
+                    <rect x="238.22619" y="349.9175" width="31.54762" height="40.165"
+                          fill="#999" stroke="#555" stroke-width="0.5" opacity="0.7"/>
+                    <text x="254.0" y="370.0" font-size="7">C38</text>
+                </g>
+                <g class="component" title="R17: 51k">
+                    <rect x="144.98865999999998" y="461.16792" width="31.54762" height="40.365"
+                          fill="#999" stroke="#555" stroke-width="0.5" opacity="0.7"/>
+                    <text x="160.76246999999998" y="481.35042" font-size="7">R17</text>
+                </g>
+                <g class="component" title="Y1: 40MHz">
+                    <rect x="274.22619" y="297.0175" width="51.547619999999995" height="65.965"
+                          fill="#999" stroke="#555" stroke-width="0.5" opacity="0.7"/>
+                    <text x="300.0" y="330.0" font-size="7">Y1</text>
+                </g>
+                <g class="component" title="SW1: RESET">
+                    <rect x="280.75" y="363.5175" width="98.5" height="72.965"
+                          fill="#999" stroke="#555" stroke-width="0.5" opacity="0.7"/>
+                    <text x="330.0" y="400.0" font-size="7">SW1</text>
+                </g>
+                <g class="component" title="R28: 100k">
+                    <rect x="54.300935" y="558.6485" width="39.166669999999996" height="40.365"
+                          fill="#999" stroke="#555" stroke-width="0.5" opacity="0.7"/>
+                    <text x="73.88427" y="578.831" font-size="7">R28</text>
+                </g>
+                <g class="component" title="D1: USBLC6-2SC6">
+                    <rect x="59.464285" y="247.51749999999998" width="111.07143" height="64.965"
+                          fill="#999" stroke="#555" stroke-width="0.5" opacity="0.7"/>
+                    <text x="115.0" y="280.0" font-size="7">D1</text>
+                </g>
+                <g class="component" title="R13: 10k">
+                    <rect x="60.872119999999995" y="322.12386" width="31.54762" height="40.365"
+                          fill="#999" stroke="#555" stroke-width="0.5" opacity="0.7"/>
+                    <text x="76.64592999999999" y="342.30636" font-size="7">R13</text>
+                </g>
+                <g class="component" title="R20: 51k">
+                    <rect x="270.33516" y="403.68665" width="31.54762" height="40.365"
+                          fill="#999" stroke="#555" stroke-width="0.5" opacity="0.7"/>
+                    <text x="286.10897" y="423.86915" font-size="7">R20</text>
+                </g>
+                <g class="component" title=": ">
+                    <rect x="39.0" y="39.0" width="22.0" height="22.0"
+                          fill="#999" stroke="#555" stroke-width="0.5" opacity="0.7"/>
+                    <text x="50.0" y="50.0" font-size="7"></text>
+                </g>
+                <g class="component" title="U1: ESP32-P4NRW32">
+                    <rect x="113.511905" y="295.5175" width="132.97619" height="148.965"
+                          fill="#f44" stroke="#555" stroke-width="0.5" opacity="0.7"/>
+                    <text x="180.0" y="370.0" font-size="7">U1</text>
+                </g>
+                <g class="component" title="R12: 4.02k">
+                    <rect x="104.535715" y="442.48221" width="43.92857" height="40.365"
+                          fill="#999" stroke="#555" stroke-width="0.5" opacity="0.7"/>
+                    <text x="126.5" y="462.66471" font-size="7">R12</text>
+                </g>
+                <g class="component" title="R1: 5.1k">
+                    <rect x="52.79762" y="259.8175" width="34.404759999999996" height="40.365"
+                          fill="#999" stroke="#555" stroke-width="0.5" opacity="0.7"/>
+                    <text x="70.0" y="280.0" font-size="7">R1</text>
+                </g>
+                <g class="component" title="C28: 100nF">
+                    <rect x="80.6496" y="486.12879000000004" width="48.69048" height="40.165"
+                          fill="#999" stroke="#555" stroke-width="0.5" opacity="0.7"/>
+                    <text x="104.99484000000001" y="506.21129" font-size="7">C28</text>
+                </g>
+                <g class="component" title="J5: MOTOR1">
+                    <rect x="288.988095" y="65.5175" width="62.02381" height="88.965"
+                          fill="#44f" stroke="#555" stroke-width="0.5" opacity="0.7"/>
+                    <text x="320.0" y="110.0" font-size="7">J5</text>
+                </g>
+                <g class="component" title="R14: 10k">
+                    <rect x="143.35152" y="244.87347" width="31.54762" height="40.365"
+                          fill="#999" stroke="#555" stroke-width="0.5" opacity="0.7"/>
+                    <text x="159.12533" y="265.05597" font-size="7">R14</text>
+                </g>
+                <g class="component" title="R6: 100k">
+                    <rect x="205.17770499999997" y="491.05055000000004" width="39.166669999999996" height="40.365"
+                          fill="#999" stroke="#555" stroke-width="0.5" opacity="0.7"/>
+                    <text x="224.76103999999998" y="511.23305000000005" font-size="7">R6</text>
+                </g>
+                <g class="component" title="C16: 100nF">
+                    <rect x="209.27488" y="282.67999000000003" width="48.69048" height="40.165"
+                          fill="#999" stroke="#555" stroke-width="0.5" opacity="0.7"/>
+                    <text x="233.62012" y="302.76249" font-size="7">C16</text>
+                </g>
+                <g class="component" title="C14: 100nF">
+                    <rect x="157.40903" y="435.8996" width="48.69048" height="40.165"
+                          fill="#999" stroke="#555" stroke-width="0.5" opacity="0.7"/>
+                    <text x="181.75427" y="455.9821" font-size="7">C14</text>
+                </g>
+                <g class="component" title="R22: 100R">
+                    <rect x="198.88524499999997" y="237.53665" width="41.07143" height="40.365"
+                          fill="#999" stroke="#555" stroke-width="0.5" opacity="0.7"/>
+                    <text x="219.42095999999998" y="257.71915" font-size="7">R22</text>
+                </g>
+                <g class="component" title="C27: 10uF">
+                    <rect x="73.950815" y="415.21497999999997" width="39.166669999999996" height="45.565"
+                          fill="#999" stroke="#555" stroke-width="0.5" opacity="0.7"/>
+                    <text x="93.53415" y="437.99748" font-size="7">C27</text>
+                </g>
+                <g class="component" title="R30: 453k">
+                    <rect x="264.416665" y="349.8175" width="39.166669999999996" height="40.365"
+                          fill="#999" stroke="#555" stroke-width="0.5" opacity="0.7"/>
+                    <text x="284.0" y="370.0" font-size="7">R30</text>
+                </g>
+                <g class="component" title="LED2: WS2812B-2020">
+                    <rect x="228.988095" y="190.5175" width="122.02381000000001" height="58.964999999999996"
+                          fill="#ff4" stroke="#555" stroke-width="0.5" opacity="0.7"/>
+                    <text x="290.0" y="220.0" font-size="7">LED2</text>
+                </g>
+                <g class="component" title="R24: 100R">
+                    <rect x="200.749165" y="467.80291" width="41.07143" height="40.365"
+                          fill="#999" stroke="#555" stroke-width="0.5" opacity="0.7"/>
+                    <text x="221.28488000000002" y="487.98541" font-size="7">R24</text>
+                </g>
+                <g class="component" title="C20: 100nF">
+                    <rect x="162.63761" y="261.19185" width="48.69048" height="40.165"
+                          fill="#999" stroke="#555" stroke-width="0.5" opacity="0.7"/>
+                    <text x="186.98284999999998" y="281.27434999999997" font-size="7">C20</text>
+                </g>
+                <g class="component" title="R31: 453k">
+                    <rect x="226.81697499999999" y="429.86121999999995" width="39.166669999999996" height="40.365"
+                          fill="#999" stroke="#555" stroke-width="0.5" opacity="0.7"/>
+                    <text x="246.40031" y="450.04371999999995" font-size="7">R31</text>
+                </g>
+                <g class="component" title="C6: 100nF">
+                    <rect x="209.15032000000002" y="578.70605" width="48.69048" height="40.165"
+                          fill="#999" stroke="#555" stroke-width="0.5" opacity="0.7"/>
+                    <text x="233.49556" y="598.78855" font-size="7">C6</text>
+                </g>
+                <g class="component" title="C40: 1uF">
+                    <rect x="238.37082" y="370.69185000000004" width="31.54762" height="40.165"
+                          fill="#999" stroke="#555" stroke-width="0.5" opacity="0.7"/>
+                    <text x="254.14463" y="390.77435" font-size="7">C40</text>
+                </g>
+                <g class="component" title="Q4: AO3400A">
+                    <rect x="25.892854999999997" y="127.5175" width="68.21429" height="64.965"
+                          fill="#999" stroke="#555" stroke-width="0.5" opacity="0.7"/>
+                    <text x="60.0" y="160.0" font-size="7">Q4</text>
+                </g>
+                <g class="component" title="U3: ESP32-C6-MINI-1">
+                    <rect x="106.13096" y="54.767499999999984" width="147.73808" height="210.46500000000003"
+                          fill="#f44" stroke="#555" stroke-width="0.5" opacity="0.7"/>
+                    <text x="180.0" y="160.0" font-size="7">U3</text>
+                </g>
+                <g class="component" title="D5: SS34">
+                    <rect x="13.270669999999996" y="479.5157699999999" width="70.95" height="67.965"
+                          fill="#999" stroke="#555" stroke-width="0.5" opacity="0.7"/>
+                    <text x="48.74567" y="513.4982699999999" font-size="7">D5</text>
+                </g>
+                <g class="component" title="C4: 22uF">
+                    <rect x="77.84328499999998" y="630.67272" width="39.166669999999996" height="50.565"
+                          fill="#999" stroke="#555" stroke-width="0.5" opacity="0.7"/>
+                    <text x="97.42661999999999" y="655.95522" font-size="7">C4</text>
+                </g>
+                <g class="component" title=": ">
+                    <rect x="39.0" y="639.0" width="22.0" height="22.0"
+                          fill="#999" stroke="#555" stroke-width="0.5" opacity="0.7"/>
+                    <text x="50.0" y="650.0" font-size="7"></text>
+                </g>
+                <g class="component" title="J9: EXP">
+                    <rect x="24.25" y="342.8175" width="31.5" height="114.36500000000001"
+                          fill="#44f" stroke="#555" stroke-width="0.5" opacity="0.7"/>
+                    <text x="40.0" y="400.0" font-size="7">J9</text>
+                </g>
+                <g class="component" title="R5: 100k">
+                    <rect x="249.24988499999998" y="576.29354" width="39.166669999999996" height="40.365"
+                          fill="#999" stroke="#555" stroke-width="0.5" opacity="0.7"/>
+                    <text x="268.83322" y="596.47604" font-size="7">R5</text>
+                </g>
+                <g class="component" title="C34: 100nF">
+                    <rect x="36.94789" y="175.41871" width="48.69048" height="40.165"
+                          fill="#999" stroke="#555" stroke-width="0.5" opacity="0.7"/>
+                    <text x="61.29313" y="195.50121000000001" font-size="7">C34</text>
+                </g>
+                <g class="component" title="J6: MOTOR2">
+                    <rect x="288.988095" y="545.5175" width="62.02381" height="88.965"
+                          fill="#44f" stroke="#555" stroke-width="0.5" opacity="0.7"/>
+                    <text x="320.0" y="590.0" font-size="7">J6</text>
+                </g>
+                <g class="component" title="C7: 1uF">
+                    <rect x="159.93063" y="282.1203" width="29.64286" height="40.165"
+                          fill="#999" stroke="#555" stroke-width="0.5" opacity="0.7"/>
+                    <text x="174.75206" y="302.20279999999997" font-size="7">C7</text>
+                </g>
+                <g class="component" title="C36: 10uF">
+                    <rect x="125.67049499999999" y="483.43196" width="39.166669999999996" height="50.565"
+                          fill="#999" stroke="#555" stroke-width="0.5" opacity="0.7"/>
+                    <text x="145.25383" y="508.71446" font-size="7">C36</text>
+                </g>
+                <g class="component" title="R11: 4.02k">
+                    <rect x="239.18948500000002" y="284.77855" width="43.92857" height="40.365"
+                          fill="#999" stroke="#555" stroke-width="0.5" opacity="0.7"/>
+                    <text x="261.15377" y="304.96105" font-size="7">R11</text>
+                </g>
+                <g class="component" title="J11: C6DBG">
+                    <rect x="223.988095" y="595.5175" width="52.02381" height="88.965"
+                          fill="#44f" stroke="#555" stroke-width="0.5" opacity="0.7"/>
+                    <text x="250.0" y="640.0" font-size="7">J11</text>
+                </g>
+                <g class="component" title="C29: 100nF">
+                    <rect x="77.82858" y="504.59218" width="48.69048" height="40.165"
+                          fill="#999" stroke="#555" stroke-width="0.5" opacity="0.7"/>
+                    <text x="102.17382" y="524.67468" font-size="7">C29</text>
+                </g>
+                <g class="component" title="C15: 100nF">
+                    <rect x="104.82178" y="419.28614000000005" width="48.69048" height="40.165"
+                          fill="#999" stroke="#555" stroke-width="0.5" opacity="0.7"/>
+                    <text x="129.16702" y="439.36864" font-size="7">C15</text>
+                </g>
+                <g class="component" title="C42: 100nF">
+                    <rect x="133.0422" y="417.22033999999996" width="48.69048" height="40.165"
+                          fill="#999" stroke="#555" stroke-width="0.5" opacity="0.7"/>
+                    <text x="157.38744" y="437.30283999999995" font-size="7">C42</text>
+                </g>
+                <g class="component" title="C10: 1uF">
+                    <rect x="314.22619" y="402.9175" width="31.54762" height="40.165"
+                          fill="#999" stroke="#555" stroke-width="0.5" opacity="0.7"/>
+                    <text x="330.0" y="423.0" font-size="7">C10</text>
+                </g>
+                <g class="component" title="C9: 10pF">
+                    <rect x="310.89653500000003" y="278.18459" width="39.166669999999996" height="40.165"
+                          fill="#999" stroke="#555" stroke-width="0.5" opacity="0.7"/>
+                    <text x="330.47987" y="298.26709" font-size="7">C9</text>
+                </g>
+                <g class="component" title="LED1: WS2812B-2020">
+                    <rect x="8.988094999999994" y="190.5175" width="122.02381000000001" height="58.964999999999996"
+                          fill="#ff4" stroke="#555" stroke-width="0.5" opacity="0.7"/>
+                    <text x="70.0" y="220.0" font-size="7">LED1</text>
+                </g>
+                <g class="component" title="SW2: BOOT">
+                    <rect x="280.75" y="463.5175" width="98.5" height="72.965"
+                          fill="#999" stroke="#555" stroke-width="0.5" opacity="0.7"/>
+                    <text x="330.0" y="500.0" font-size="7">SW2</text>
+                </g>
+                <g class="component" title="R15: 10k">
+                    <rect x="176.41839000000002" y="459.13973" width="31.54762" height="40.365"
+                          fill="#999" stroke="#555" stroke-width="0.5" opacity="0.7"/>
+                    <text x="192.1922" y="479.32223" font-size="7">R15</text>
+                </g>
+                <g class="component" title="C21: 100nF">
+                    <rect x="185.01137" y="440.26786" width="48.69048" height="40.165"
+                          fill="#999" stroke="#555" stroke-width="0.5" opacity="0.7"/>
+                    <text x="209.35661" y="460.35035999999997" font-size="7">C21</text>
+                </g>
+                <g class="component" title="D6: SS34">
+                    <rect x="165.52499" y="76.0175" width="70.95" height="67.965"
+                          fill="#999" stroke="#555" stroke-width="0.5" opacity="0.7"/>
+                    <text x="200.99999" y="110.0" font-size="7">D6</text>
+                </g>
+                <g class="component" title="R23: 100R">
+                    <rect x="48.68922500000001" y="400.9339" width="41.07143" height="40.365"
+                          fill="#999" stroke="#555" stroke-width="0.5" opacity="0.7"/>
+                    <text x="69.22494" y="421.1164" font-size="7">R23</text>
+                </g>
+                <g class="component" title="C25: 100nF">
+                    <rect x="189.90224" y="258.09642" width="48.69048" height="40.165"
+                          fill="#999" stroke="#555" stroke-width="0.5" opacity="0.7"/>
+                    <text x="214.24748" y="278.17892" font-size="7">C25</text>
+                </g>
+                <g class="component" title="R2: 5.1k">
+                    <rect x="53.30465999999999" y="280.3175" width="34.404759999999996" height="40.365"
+                          fill="#999" stroke="#555" stroke-width="0.5" opacity="0.7"/>
+                    <text x="70.50703999999999" y="300.5" font-size="7">R2</text>
+                </g>
+                <g class="component" title="C32: 100nF">
+                    <rect x="159.12772" y="439.61365" width="48.69048" height="40.165"
+                          fill="#999" stroke="#555" stroke-width="0.5" opacity="0.7"/>
+                    <text x="183.47296" y="459.69615" font-size="7">C32</text>
+                </g>
+                <g class="component" title="J3: FLOW_HDR">
+                    <rect x="250.416665" y="360.1175" width="79.16667000000001" height="139.765"
+                          fill="#44f" stroke="#555" stroke-width="0.5" opacity="0.7"/>
+                    <text x="290.0" y="430.0" font-size="7">J3</text>
+                </g>
+                <g class="component" title="C31: 100nF">
+                    <rect x="153.88045000000002" y="365.85688000000005" width="48.69048" height="40.165"
+                          fill="#999" stroke="#555" stroke-width="0.5" opacity="0.7"/>
+                    <text x="178.22569000000001" y="385.93938" font-size="7">C31</text>
+                </g>
+                <g class="component" title="U8: VL53L1X">
+                    <rect x="147.321425" y="329.0175" width="65.35714999999999" height="61.965"
+                          fill="#f44" stroke="#555" stroke-width="0.5" opacity="0.7"/>
+                    <text x="180.0" y="360.0" font-size="7">U8</text>
+                </g>
+                <g class="component" title="U9: PMW3901MB">
+                    <rect x="120.358085" y="429.938" width="119.28383" height="20.124"
+                          fill="#f44" stroke="#555" stroke-width="0.5" opacity="0.7"/>
+                    <text x="180.0" y="440.0" font-size="7">U9</text>
+                </g>
+            </svg>
+        </div>
+
+        <div class="legend">
+            <div class="legend-item">
+                <div class="legend-color" style="background: #f44;"></div>
+                <span>ICs (U1–U10)</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #4f4;"></div>
+                <span>Sensors (U8, U9)</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #44f;"></div>
+                <span>Connectors (J)</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #ff4;"></div>
+                <span>Inductors (L)</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #999;"></div>
+                <span>Passives (R, C, D)</span>
+            </div>
+        </div>
+
+        <div style="margin-top: 30px; padding: 20px; background: #2d2d2d; border-radius: 8px; border-left: 4px solid #ff4;">
+            <strong>📋 Next Steps:</strong>
+            <ol style="margin-left: 20px; margin-top: 10px; line-height: 1.8;">
+                <li>Open <code>stratosdrone.kicad_pcb</code> in KiCad 7.0+</li>
+                <li>Route signal nets (Tools > Autoroute or manual routing)</li>
+                <li>Verify clearances and traces</li>
+                <li>Re-export gerbers from KiCad</li>
+                <li>Upload to JLCPCB for fabrication</li>
+            </ol>
+        </div>
+    </div>
+</body>
+</html>
