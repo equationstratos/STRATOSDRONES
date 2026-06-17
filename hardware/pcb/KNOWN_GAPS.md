@@ -170,13 +170,27 @@ JLCPCB. Items are ordered roughly by risk.
 11. **Crystal load caps (`C8`/`C9` = 10 pF)** are nominal; set them for the
     actual 40 MHz crystal's CL.
 
-12. **CSI/DSI REXT values (`R11`/`R12` = 10 k)** are placeholders — use the
-    guideline value. DSI is otherwise unused; terminate per the guideline.
+12. ✅ **RESOLVED — CSI/DSI REXT termination values.** `R11` and `R12` changed
+    from placeholder 10 kΩ to the authoritative **4.02 kΩ** per the official
+    Espressif *esp32p4-schematic-checklist.rst*. Both resistors populate to
+    properly terminate the CSI (U8/U9 sensor interface) and DSI (unused but
+    terminated) pairs. LCSC part C25752 (0402 SMD). Both pull to GND via the
+    respective `CSI_REXT` and `DSI_REXT` pins on the P4.
 
-13. **USB-C footprint** (`J2`, HRO TYPE-C-31-M-12) — confirm it matches the
+13. ✅ **RESOLVED — Bottom-side sensor aperture integration.** The VBAT copper
+    zone on the bottom layer (B.Cu) now includes a rectangular aperture
+    (11–25 mm X, 29–51 mm Y) that excludes the copper pour from the sensor area.
+    This allows both `U8` (VL53L1X ToF @ 18, 36) and `U9` (PMW3901 optical flow
+    @ 18, 44) unobstructed optical windows to sense downward, matching the Tello
+    reference design. The aperture is defined via a polygon with an inner hole
+    in `gen_pcb.py` and regenerated each time. **Before filling zones in KiCad**,
+    verify the aperture window aligns with the sensor locations; adjust the zone
+    exclusion if sensors are moved.
+
+14. **USB-C footprint** (`J2`, HRO TYPE-C-31-M-12) — confirm it matches the
     LCSC part you order; mirrored-contact variants exist.
 
-14. **WS2812B from VBAT logic levels** — at VDD 3.7–4.2 V the 3.3 V data high
+15. **WS2812B from VBAT logic levels** — at VDD 3.7–4.2 V the 3.3 V data high
     is marginal-but-standard for 1S whoops. Fine in practice; noted for the
     record.
 
