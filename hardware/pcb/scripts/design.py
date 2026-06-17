@@ -404,10 +404,10 @@ part("SW1", "RESET", "Button_Switch_SMD:SW_SPST_CK_RS282G05A3",
 part("SW2", "BOOT", "Button_Switch_SMD:SW_SPST_CK_RS282G05A3",
      {"1": "BOOT", "2": "GND"}, lcsc="C720477", comment="VERIFY P4 boot strap = GPIO35")
 part("R10", "10k", "Resistor_SMD:R_0402_1005Metric", {"1": "3V3", "2": "BOOT"}, lcsc="C25744")
-part("R11", "10k", "Resistor_SMD:R_0402_1005Metric", {"1": "CSI_REXT", "2": "GND"}, lcsc="C25744",
-     comment="VERIFY CSI REXT value")
-part("R12", "10k", "Resistor_SMD:R_0402_1005Metric", {"1": "DSI_REXT", "2": "GND"}, lcsc="C25744",
-     comment="VERIFY DSI REXT value (DSI unused)")
+part("R11", "4.02k", "Resistor_SMD:R_0402_1005Metric", {"1": "CSI_REXT", "2": "GND"}, lcsc="C25752",
+     comment="CSI termination resistor per esp32p4-schematic-checklist.rst (4.02k required)")
+part("R12", "4.02k", "Resistor_SMD:R_0402_1005Metric", {"1": "DSI_REXT", "2": "GND"}, lcsc="C25752",
+     comment="DSI termination resistor (DSI unused, populated for completeness)")
 # flash IO pull-ups -- pulled to the flash IO rail (VDD_FLASHIO), not 3V3, so
 # the pull level always tracks the flash IO voltage
 part("R13", "10k", "Resistor_SMD:R_0402_1005Metric", {"1": "VDD_FLASHIO", "2": "FLASH_CS"}, lcsc="C25744")

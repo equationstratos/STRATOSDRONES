@@ -401,11 +401,21 @@ def inject_zones(path):
     for layer, nn in plan:
         if nn not in netnum:
             continue
+        # For VBAT on bottom (B.Cu), create a polygon with aperture for U8/U9 sensors
+        if nn == "VBAT" and layer == "B.Cu":
+            # Sensor window aperture (excludes area around U8 ToF @ (18,36) and U9 flow @ (18,44))
+            # Create a donut polygon: outer rect with inner hole
+            # Outer: (0.3, 0.3) -> (35.7, 0.3) -> (35.7, 69.7) -> (0.3, 69.7) -> back
+            # Inner hole: (11, 29) -> (25, 29) -> (25, 51) -> (11, 51) -> back (reversed direction)
+            polygon_str = "(pts (xy 0.3 0.3) (xy 35.7 0.3) (xy 35.7 69.7) (xy 0.3 69.7) (xy 0.3 0.3) (xy 11 29) (xy 11 51) (xy 25 51) (xy 25 29) (xy 11 29))"
+        else:
+            polygon_str = f"(pts (xy {x0} {y0}) (xy {x1} {y0}) (xy {x1} {y1}) (xy {x0} {y1}))"
+
         blocks.append(f'''  (zone (net {netnum[nn]}) (net_name "{nn}") (layer "{layer}") (tstamp {_uuid.uuid4()}) (hatch edge 0.508)
     (connect_pads (clearance 0.2))
     (min_thickness 0.25) (filled_areas_thickness no)
     (fill (thermal_gap 0.5) (thermal_bridge_width 0.5))
-    (polygon (pts (xy {x0} {y0}) (xy {x1} {y0}) (xy {x1} {y1}) (xy {x0} {y1})))
+    (polygon {polygon_str})
   )''')
     # insert before the final top-level ')'
     idx = txt.rstrip().rfind(")")
