@@ -23,11 +23,31 @@ JLCPCB. Items are ordered roughly by risk.
    a cap to the exact power pin it serves), but the board is routable as
    generated.
 
-3. **ESP32-P4 core DC-DC topology + values UNVERIFIED.** `L2`/`C5` on
-   `VDD_DCDCC`/`FB_DCDC`/`EN_DCDC` are placeholders. Replicate the exact
-   inductor/cap network and feedback from the official *ESP32-P4 Hardware
-   Design Guidelines* and the ESP32-P4-Function-EV-Board reference schematic.
-   Wrong topology here = dead chip.
+3. ✅ **RESOLVED — ESP32-P4 core DC-DC topology + values.** The previous
+   revision was **chip-fatal in three ways**, all confirmed against the official
+   *ESP32-P4 Hardware Design Guidelines* (`esp32p4-ldo-dcdc.inc`) and its
+   TLV62569 rev-3.0 reference schematic: (a) the CPU core pins `VDD_HP_0/2/3`
+   were tied directly to `3V3`, i.e. ~2.75× overvoltage on the core — instant
+   dead chip; (b) `EN_DCDC` was hard-tied to `3V3` instead of driving a DC-DC
+   enable; (c) there was **no external DC-DC at all** — `L2`/`C5` were bare
+   passives on a meaningless `VDD_DCDCC` switch-node net, and `FB_DCDC` was
+   shorted onto `VDD_CORE`. Per the guideline, `VDD_HP` is **not** self-generated:
+   it requires an external buck whose `EN`/`FB` are driven by the P4's own
+   `EN_DCDC`/`FB_DCDC` pins, while `VDD_DCDCC`/`VDD_LDO` are ordinary 3.0–3.6 V
+   supply *inputs*. Implemented the Espressif-verified **TLV62569** reference
+   circuit exactly: `U10` (TLV62569DBVR, C141836, SOT-23-5) with VIN←3V3 (`C36`),
+   `SW`→`L2` 2.2 µH (Sunlord SWPA3015S2R2MT, C43389, 3×3 mm/2 A)→`VDD_CORE`,
+   `C5` 22 µF output, divider `R30`/`R31` (top→`FB_DCDC`, bottom→GND) with
+   feed-forward `C37` across `R30`, `EN_DCDC`→`U10.EN`, `FB_DCDC`→`U10.FB`. The
+   core pins `VDD_HP_0/2/3` now tie to the regulated `VDD_CORE` rail and
+   `VDD_DCDCC` to `3V3`. Divider is `453k/453k` (vs the reference 499k/499k): the
+   **1:1 ratio is what sets the output**, so this reproduces Espressif's intended
+   core voltage *by construction* (`Vout = 2·Vfb`) using a part already on this
+   board; input cap is 10 µF (vs 4.7 µF) and feed-forward cap 20 pF (vs
+   22 pF), both electrically non-critical. Per the guideline the FB resistor and
+   capacitor are populated (required for chip rev v3.0+). Verified pad-by-pad in
+   `pcbnew`: all seven new/repurposed parts and all four P4 core pins map to the
+   intended nets, no orphan `VDD_DCDCC` net remains.
 
 4. **`VDD_MIPI_DPHY` (2.5 V) source UNRESOLVED.** It is decoupled (`C7`) but
    not connected to a supply. The P4 likely feeds it from an internal LDO
