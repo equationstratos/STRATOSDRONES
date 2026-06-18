@@ -490,8 +490,10 @@ def draw_outline(board):
     cx, cy = w / 2, h / 2
     px = b.get("mount_pitch_x", b.get("mount_pitch", 36.0)) / 2
     py = b.get("mount_pitch_y", b.get("mount_pitch", 36.0)) / 2
+    mh_n = 0
     for dx in (-px, px):
         for dy in (-py, py):
+            mh_n += 1
             h_fp = pcbnew.FOOTPRINT(board)
             pad = pcbnew.PAD(h_fp)
             pad.SetAttribute(pcbnew.PAD_ATTRIB_NPTH)
@@ -502,6 +504,19 @@ def draw_outline(board):
             pad.SetLayerSet(pad.UnplatedHoleMask())
             h_fp.Add(pad)
             h_fp.SetPosition(vec(cx + dx, cy + dy))
+            # Unique reference + a footprint id are REQUIRED: the Specctra DSN
+            # exporter (and many other tools) abort if two components share an
+            # empty reference. Mark as unfitted mechanical so it stays off the
+            # assembly BOM/CPL.
+            h_fp.SetReference(f"MH{mh_n}")
+            h_fp.SetValue("MountingHole_M2_NPTH")
+            h_fp.SetFPIDAsString("MountingHole:MountingHole_2.2mm_M2")
+            h_fp.Reference().SetVisible(False)
+            try:
+                h_fp.SetAttributes(pcbnew.FP_EXCLUDE_FROM_POS_FILES
+                                   | pcbnew.FP_EXCLUDE_FROM_BOM)
+            except Exception:
+                pass
             board.Add(h_fp)
 
 
