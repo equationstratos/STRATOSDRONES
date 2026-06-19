@@ -8,11 +8,21 @@ JLCPCB. Items are ordered roughly by risk.
 
 ## Blocking — must resolve before ordering
 
-1. **Signal routing is not done.** `gen_pcb.py` places footprints, assigns
-   every net, and pours GND/3V3/VBAT planes, but the signal nets are left as
-   ratsnest. Open `stratosdrone.kicad_pcb` in KiCad, finish routing, fill
-   zones (hotkey **B**), then re-export gerbers. The gerbers in `jlcpcb/` are
-   preliminary (unrouted) and will not produce a working board.
+1. **Signal routing — partial AI autoroute applied; finish in KiCad.** The
+   signal nets are now ~89% autorouted (Freerouting 1.9, driven headless by
+   `scripts/route_board.py`): 295 track segments on F.Cu/B.Cu, committed as
+   `stratosdrone.ses` and applied to `stratosdrone.kicad_pcb`. **Still to do
+   in KiCad before ordering** (see `ROUTING.md`): (a) fill the four copper
+   zones — hotkey **B** — which connects GND/VBAT pads to their same-layer
+   pours; (b) add the cross-layer power stitch vias (3V3 pads → In2 plane,
+   etc.) that the headless fill can't place reliably — `connect_power()` in
+   `route_board.py` does a first pass but KiCad's GUI fill is authoritative;
+   (c) route the handful of remaining signal nets left as ratsnest; (d)
+   re-export gerbers. The `jlcpcb/` gerbers are still preliminary. NOTE:
+   `make board` regenerates the *unrouted* board — re-apply the route with
+   `python3 scripts/route_board.py --skip-route`. For a full clean autoroute,
+   route the committed `stratosdrone.dsn` on DeepPCB.ai or Windows Freerouting
+   (more compute than this sandbox) and re-import the `.ses`.
 
 2. **Placement is done; refine as you route.** `gen_pcb.py` now does
    anchor-based placement with collision avoidance: decoupling caps ring the

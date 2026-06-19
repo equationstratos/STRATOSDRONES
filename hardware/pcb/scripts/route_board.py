@@ -213,12 +213,14 @@ def import_ses(ses_path):
     if not routes:
         raise SystemExit("SES has no (routes ...) block")
     routes = routes[0]
-    # KiCad DSN/SES coordinates are whole <unit> values (the resolution integer
-    # is precision, not scale): a coord of 33000 with unit=um is 33.000 mm.
-    # Verified empirically: board R9 @ (33.0, 37.7) mm <-> DSN (33000, -37700).
+    # SES coordinates are in (unit / divisor): KiCad/Freerouting emit
+    # "(resolution um 10)" -> 1 unit = 0.1 um = 100 nm. Verified empirically:
+    # board C26 @ (18.701, 50.382) mm <-> SES (187013, -503816); wire width
+    # 1300 = 0.13 mm. Specctra Y is inverted vs KiCad, so negate Y.
     res = _find(routes, "resolution")
     unit = res[0][1] if res else "um"
-    per = {"um": 1000.0, "mm": 1_000_000.0, "inch": 25_400_000.0}[unit]  # nm/unit
+    div = float(res[0][2]) if res and len(res[0]) > 2 else 1.0
+    per = {"um": 1000.0, "mm": 1_000_000.0, "inch": 25_400_000.0}[unit] / div  # nm/unit
 
     def nmx(v):
         return int(round(float(v) * per))
@@ -296,25 +298,37 @@ OUTER_POUR_LAYER = {"GND": pcbnew.F_Cu, "VBAT": pcbnew.B_Cu}
 
 
 def connect_power():
-    """Drop a stitch via at each plane-net pad that doesn't already sit on its
-    net's outer pour layer, so zone fill connects it to the plane."""
+    """Stitch each plane-net pad to its plane with a via, so power connectivity
+    survives pour fragmentation by the signal traces. Skips fine-pitch pads
+    (where a via would overhang a neighbour) — those rely on the pour/escape —
+    and pads the router already stitched. 3V3 reaches In2, GND/VBAT go through
+    via to In1(GND)/B.Cu(VBAT)."""
     b = pcbnew.LoadBoard(BRD)
+    have_via = {(v.GetPosition().x, v.GetPosition().y)
+                for v in b.GetTracks() if isinstance(v, pcbnew.PCB_VIA)}
+    near = pcbnew.FromMM(0.15)
+    via_pad = pcbnew.FromMM(0.4)
     added = 0
     for fp in b.GetFootprints():
-        pad_layer = pcbnew.B_Cu if fp.IsFlipped() else pcbnew.F_Cu
         for p in fp.Pads():
             net = p.GetNetname()
             if net not in PLANE_NETS:
                 continue
-            if OUTER_POUR_LAYER.get(net) == pad_layer:
-                continue  # already on its pour layer
+            sz = p.GetSize()
+            if min(sz.x, sz.y) < via_pad + pcbnew.FromMM(0.05):
+                continue  # fine-pitch: a via would overhang -> rely on pour
+            pp = p.GetPosition()
+            if any(abs(pp.x - vx) < near and abs(pp.y - vy) < near
+                   for vx, vy in have_via):
+                continue  # already stitched
             v = pcbnew.PCB_VIA(b)
             v.SetPosition(p.GetPosition())
-            v.SetWidth(pcbnew.FromMM(0.4))
+            v.SetWidth(via_pad)
             v.SetDrill(pcbnew.FromMM(0.2))
             v.SetLayerPair(pcbnew.F_Cu, pcbnew.B_Cu)
             v.SetNetCode(p.GetNetCode())
             b.Add(v)
+            have_via.add((pp.x, pp.y))
             added += 1
     b.BuildConnectivity()
     pcbnew.SaveBoard(BRD, b)
@@ -329,26 +343,29 @@ def main():
     ap.add_argument("--jar", default=None)
     ap.add_argument("--skip-route", action="store_true",
                     help="reuse existing stratosdrone.ses, just import")
+    ap.add_argument("--strip-planes", action="store_true",
+                    help="route signals only; carry GND/3V3/VBAT on planes+stitch vias")
     args = ap.parse_args()
 
     print("== STRATOSDRONE autorouter ==")
     if not args.skip_route:
         jar = find_jar(args.jar)
-        print(f"[1/4] export signals-only DSN  (jar: {jar})")
-        # Signals route on F.Cu/B.Cu; GND/3V3/VBAT are carried by the copper
-        # planes + zone fill + stitch vias, not the autorouter.
-        export_dsn(DSN, strip_planes=True)
+        print(f"[1/4] export DSN  (jar: {jar})")
+        # Full board: the router routes signals on the freed F.Cu/B.Cu and
+        # connects GND/3V3 pads to the inner planes via vias. Outer pours are
+        # dropped for routing and re-filled around the traces afterwards.
+        export_dsn(DSN, strip_planes=args.strip_planes)
         print(f"[2/4] Freerouting ({args.passes} passes)")
         run_freerouting(jar, DSN, args.passes)
     else:
         print("[1-2/4] skipped (reusing existing SES)")
-    print("[3/4] import routed signals -> board")
+    print("[3/4] import routed tracks -> board")
     nseg, nvia = import_ses(SES)
     if nseg == 0:
         raise SystemExit("no tracks imported — routing likely failed")
-    print("[4/4] stitch power pads to planes")
+    print("[4/4] stitch any power pads the router left unconnected")
     nstitch = connect_power()
-    print(f"DONE: {nseg} segments, {nvia} signal vias, {nstitch} power vias.")
+    print(f"DONE: {nseg} segments, {nvia} vias imported, {nstitch} power stitch vias.")
     print("Next: python3 scripts/fill_zones_export.py  (fill zones + gerbers)")
 
 
