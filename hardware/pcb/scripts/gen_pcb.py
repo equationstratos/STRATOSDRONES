@@ -39,34 +39,37 @@ def vec(x, y):
     return pcbnew.VECTOR2I(mm(x), mm(y))
 
 
-# ---- explicit placement for major parts (mm; narrow portrait board 32x66,
-# origin at corner). x right (0..32), y down (0..66); y=0 is the camera nose.
+# ---- explicit placement for major parts (mm; portrait board 36x70, origin at
+# corner). x right (0..36), y down (0..70); y=0 is the camera nose.
 # Layout mirrors a real Tello mainboard: optical cluster at the nose, P4 + C6
 # in shielded zones down the spine, power at the rear, motor pads at the four
 # corners (wires out to the body arms), USB on the left side edge.
+# Positions are chosen so every anchor's pad+courtyard stays inside the outline
+# and major parts don't collide; assert_placement() at the end of main() fails
+# the build if that ever regresses.
 PLACE = {
-    "J4": (18, 4.5, 0, "T"),      # camera FFC — nose
-    "U3": (18, 16, 0, "T"),       # ESP32-C6 module (large), RF zone
+    "J4": (18, 5.0, 0, "T"),      # camera FFC — nose
+    "U3": (18, 17, 0, "T"),       # ESP32-C6 module (large), RF zone
     "U1": (18, 37, 0, "T"),       # ESP32-P4, CPU zone
     "U2": (9, 38, 0, "T"),        # flash, left of P4 (clear of USB)
     "Y1": (30, 33, 0, "T"),       # crystal, right of P4
     "U6": (8, 47, 0, "T"),        # IMU
-    "U7": (29, 47, 0, "T"),       # baro
+    "U7": (28, 47, 0, "T"),       # baro
     "U8": (18, 36, 0, "B"),       # VL53L1X ToF (bottom, downward)
     "U9": (18, 44, 0, "B"),       # PMW3901 flow (bottom, downward)
-    "J3": (29, 43, 0, "B"),       # flow fallback header (bottom)
-    "U4": (14, 58, 0, "T"),       # TP4056 charger
-    "U5": (23, 57, 0, "T"),       # buck
-    "L1": (27, 57, 0, "T"),
-    "J2": (3.5, 28, 90, "T"),     # USB-C, left side edge (like Tello micro-USB)
-    "J1": (18, 67, 0, "T"),       # battery JST, rear edge
+    "J3": (28, 42, 0, "B"),       # flow fallback header (bottom)
+    "U4": (14, 56.5, 0, "T"),     # TP4056 charger (clear of battery JST)
+    "U5": (22, 57, 0, "T"),       # buck
+    "L1": (26.5, 57, 0, "T"),
+    "J2": (5.2, 28, 90, "T"),     # USB-C, left side edge (contacts fully on-board)
+    "J1": (18, 65, 0, "T"),       # battery JST, rear edge (clear of bottom)
     "LED1": (7, 22, 0, "T"),
     "LED2": (29, 22, 0, "T"),
-    "SW1": (33, 40, 0, "T"),      # reset
-    "SW2": (33, 50, 0, "T"),      # boot
+    "SW1": (34.4, 40, 90, "T"),   # reset — vertical along right edge
+    "SW2": (34.4, 51, 90, "T"),   # boot  — vertical along right edge
     "J9": (4, 40, 0, "T"),        # expansion (left edge, mid)
-    "J10": (13, 64, 0, "T"),      # P4 uart pads
-    "J11": (25, 64, 0, "T"),      # c6 uart pads
+    "J10": (11, 62, 0, "T"),      # P4 uart pads
+    "J11": (28.5, 62, 0, "T"),    # c6 uart pads
     # motor FETs + pads near the four corners, inboard of the mount holes
     # (26x60 pitch -> holes at (5,5)/(31,5)/(5,65)/(31,65))
     "Q1": (30, 16, 0, "T"), "J5": (32, 11, 0, "T"),
@@ -178,6 +181,89 @@ def fix_3d_models_kicad9(pcb_path):
     if count_6 + count_7 > 0:
         print(f"fixed 3D models: replaced {count_6+count_7} KICAD6/7 paths with KICAD9, "
               f"converted {content.count('.step')} models to .step format")
+
+
+def assert_placement(path, bw, bh):
+    """Report parts whose pads fall outside the outline or whose courtyards
+    collide on the same side. Off-board pads are a hard error (return code);
+    courtyard overlaps are warnings (a dense board has acceptable tight pairs).
+    Loads the saved board from disk so pad/courtyard geometry is stable.
+    Returns (n_offboard, n_overlap)."""
+    board = pcbnew.LoadBoard(path)
+
+    def mm(v):
+        return v / 1e6
+
+    def pad_extent(fp):
+        xs, ys = [], []
+        for p in fp.Pads():
+            b = p.GetBoundingBox()
+            xs += [b.GetLeft(), b.GetRight()]
+            ys += [b.GetTop(), b.GetBottom()]
+        if not xs:
+            p = fp.GetPosition()
+            return mm(p.x), mm(p.y), mm(p.x), mm(p.y)
+        return mm(min(xs)), mm(min(ys)), mm(max(xs)), mm(max(ys))
+
+    def crt_extent(fp):
+        for ly in (pcbnew.F_CrtYd, pcbnew.B_CrtYd):
+            try:
+                poly = fp.GetCourtyard(ly)
+                if poly.OutlineCount() > 0:
+                    b = poly.BBox()
+                    return mm(b.GetLeft()), mm(b.GetTop()), mm(b.GetRight()), mm(b.GetBottom())
+            except Exception:
+                pass
+        return pad_extent(fp)
+
+    eps = 0.05
+    off = []
+    boxes = {}
+    for fp in board.GetFootprints():
+        ref = fp.GetReference()
+        l, t, r, b = pad_extent(fp)
+        tags = []
+        if l < -eps:
+            tags.append(f"L{l:.1f}")
+        if r > bw + eps:
+            tags.append(f"R{r:.1f}")
+        if t < -eps:
+            tags.append(f"T{t:.1f}")
+        if b > bh + eps:
+            tags.append(f"B{b:.1f}")
+        if tags:
+            off.append((ref, " ".join(tags)))
+        boxes[ref] = (crt_extent(fp), "B" if fp.IsFlipped() else "F")
+
+    # significant same-side courtyard overlaps (ignore <0.3mm tight-pack pairs)
+    refs = list(boxes)
+    clashes = []
+    for i in range(len(refs)):
+        for j in range(i + 1, len(refs)):
+            ra, rb = refs[i], refs[j]
+            (al, at, ar, ab), sa = boxes[ra]
+            (bl, bt, br, bb), sb = boxes[rb]
+            if sa != sb:
+                continue
+            ox = min(ar, br) - max(al, bl)
+            oy = min(ab, bb) - max(at, bt)
+            if ox > 0.3 and oy > 0.3:
+                clashes.append((ox * oy, ra, rb, ox, oy))
+    clashes.sort(reverse=True)
+
+    if off:
+        print(f"OFF-BOARD pads ({len(off)}) — must be inside 0..{bw} x 0..{bh}:")
+        for ref, tags in sorted(off):
+            print(f"   {ref:6s} {tags}")
+    else:
+        print(f"placement: all pads inside the {bw:g}x{bh:g} outline")
+    if clashes:
+        print(f"courtyard overlaps >0.3mm ({len(clashes)}):")
+        for _a, ra, rb, ox, oy in clashes:
+            print(f"   {ra:6s} <-> {rb:6s}  {ox:.2f}x{oy:.2f} mm")
+    else:
+        print("placement: no significant courtyard overlaps")
+    return len(off), len(clashes)
 
 
 def main():
@@ -367,6 +453,7 @@ def main():
         print("MISSING footprints (not placed — fix before fab):")
         for m in missing:
             print("  ", m)
+    n_off, n_clash = assert_placement(OUT, bw, bh)
     print(f"saved {OUT}")
     sys.stdout.flush()
     # pcbnew 7's zone-geometry computation crashes on this board's complex
@@ -377,7 +464,7 @@ def main():
     fix_3d_models_kicad9(OUT)  # Fix 3D model paths for KiCad 9
     print("poured GND/3V3/VBAT/GND planes (In1/In2/B/F, unfilled — fill in KiCad)")
     print("added Tello-style silkscreen (shield outlines, section labels)")
-    os._exit(0 if not missing else 2)
+    os._exit(0 if not missing and not n_off else 2)
 
 
 def inject_silk(path):
