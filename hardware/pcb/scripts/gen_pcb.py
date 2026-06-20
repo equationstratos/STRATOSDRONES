@@ -49,7 +49,9 @@ def vec(x, y):
 # the build if that ever regresses.
 PLACE = {
     "J4": (18, 5.0, 0, "T"),      # camera FFC — nose
-    "U3": (18, 17, 0, "T"),       # ESP32-C6 module (large), RF zone
+    "U3": (18, 19, 0, "T"),       # ESP32-C6 module (large), RF zone — spaced
+                                  # down so its antenna keepout clears the
+                                  # camera FFC (J4)
     "U1": (18, 37, 0, "T"),       # ESP32-P4, CPU zone
     "U2": (9, 38, 0, "T"),        # flash, left of P4 (clear of USB)
     "Y1": (30, 33, 0, "T"),       # crystal, right of P4
@@ -63,7 +65,7 @@ PLACE = {
     "L1": (26.5, 57, 0, "T"),
     "J2": (5.2, 28, 90, "T"),     # USB-C, left side edge (contacts fully on-board)
     "J1": (18, 65, 0, "T"),       # battery JST, rear edge (clear of bottom)
-    "LED1": (7, 22, 0, "T"),
+    "LED1": (9, 9, 0, "T"),       # status LED, top-left (clear of USB + FET)
     "LED2": (29, 22, 0, "T"),
     "SW1": (34.4, 40, 90, "T"),   # reset — vertical along right edge
     "SW2": (34.4, 51, 90, "T"),   # boot  — vertical along right edge
@@ -71,11 +73,17 @@ PLACE = {
     "J10": (11, 62, 0, "T"),      # P4 uart pads
     "J11": (28.5, 62, 0, "T"),    # c6 uart pads
     # motor FETs + pads near the four corners, inboard of the mount holes
-    # (26x60 pitch -> holes at (5,5)/(31,5)/(5,65)/(31,65))
-    "Q1": (30, 16, 0, "T"), "J5": (32, 11, 0, "T"),
-    "Q2": (30, 55, 0, "T"), "J6": (32, 59, 0, "T"),
-    "Q3": (6, 55, 0, "T"),  "J7": (4, 59, 0, "T"),
-    "Q4": (6, 16, 0, "T"),  "J8": (4, 11, 0, "T"),
+    # (26x60 pitch -> holes at (5,5)/(31,5)/(5,65)/(31,65)). Header sits at the
+    # board edge (motor wire exit); the FET is shifted ~2 mm further from the
+    # header in Y so the two tall courtyards don't touch.
+    "Q1": (30, 18, 0, "T"), "J5": (32, 11, 0, "T"),
+    "Q2": (30, 52, 0, "T"), "J6": (32, 59, 0, "T"),
+    "Q3": (6, 52, 0, "T"),  "J7": (4, 59, 0, "T"),
+    "Q4": (6, 18, 0, "T"),  "J8": (4, 11, 0, "T"),
+    # D2 (DNP reverse-polarity Schottky, wide D_SMA): the top side has no 7 mm
+    # gap left, so the optional diode goes on the bottom in the empty top-left,
+    # well clear of the downward sensor windows (U8/U9, center).
+    "D2": (11, 13, 0, "B"),
 }
 
 
@@ -311,19 +319,33 @@ def main():
             pb = pad.GetBoundingBox()
             xs += [pb.GetLeft(), pb.GetRight()]
             ys += [pb.GetTop(), pb.GetBottom()]
-        # copper extent from pads (GetBoundingBox on an unplaced footprint is
-        # unreliable and includes silk text), + courtyard allowance
-        wmm = (max(xs) - min(xs)) / 1e6 + 0.7 if xs else 1.2
-        hmm = (max(ys) - min(ys)) / 1e6 + 0.7 if ys else 1.2
+        # Collision size = the footprint's own COURTYARD (includes body + IPC
+        # clearance + module keepouts like the ESP32-C6 antenna). Fall back to
+        # the pad extent + 0.5 mm when a footprint defines no courtyard.
+        cxs, cys = [], []
+        for it in fp.GraphicalItems():
+            if it.GetLayer() in (pcbnew.F_CrtYd, pcbnew.B_CrtYd):
+                bb = it.GetBoundingBox()
+                cxs += [bb.GetLeft(), bb.GetRight()]
+                cys += [bb.GetTop(), bb.GetBottom()]
+        if cxs:
+            wmm = (max(cxs) - min(cxs)) / 1e6
+            hmm = (max(cys) - min(cys)) / 1e6
+        elif xs:
+            wmm = (max(xs) - min(xs)) / 1e6 + 0.5
+            hmm = (max(ys) - min(ys)) / 1e6 + 0.5
+        else:
+            wmm = hmm = 1.2
         loaded.append((comp, fp, max(wmm, 1.0), max(hmm, 1.0)))
 
     placed_ref = {}              # ref -> (x, y)
     occ = {"T": [], "B": []}     # occupied boxes per side (x0,y0,x1,y1)
 
-    def add_box(side, x, y, w, h, m=0.25):
+    # courtyards already bake in IPC clearance, so only a hair of extra gap
+    def add_box(side, x, y, w, h, m=0.15):
         occ[side].append((x - w / 2 - m, y - h / 2 - m, x + w / 2 + m, y + h / 2 + m))
 
-    def overlaps(side, x, y, w, h, m=0.25):
+    def overlaps(side, x, y, w, h, m=0.15):
         a = (x - w / 2 - m, y - h / 2 - m, x + w / 2 + m, y + h / 2 + m)
         for b in occ[side]:
             if a[0] < b[2] and a[2] > b[0] and a[1] < b[3] and a[3] > b[1]:
@@ -342,7 +364,9 @@ def main():
                 fp.SetExcludedFromBOM(True)
             except Exception:
                 pass
-        add_box(side, x, y, w, h)
+        # a 90/270 rotation swaps the collision box dimensions
+        bxw, bxh = (h, w) if rot in (90, 270) else (w, h)
+        add_box(side, x, y, bxw, bxh)
         placed_ref[comp["ref"]] = (x, y)
 
     def inside(x, y, w, h):
@@ -350,11 +374,13 @@ def main():
                     or x + w / 2 > bw - 1.0 or y + h / 2 > bh - 1.0)
 
     def find_slot(side, ax, ay, w, h):
-        """nearest free position to (ax, ay): fine rings for tight clustering,
-        then a full-board grid scan that guarantees a spot if any exists."""
-        for i in range(160):
+        """nearest free position to (ax, ay): fine concentric rings out to the
+        whole board, then a distance-sorted grid scan, so a part that can't sit
+        right by its anchor lands at the CLOSEST free spot — never dumped in a
+        far corner."""
+        for i in range(400):
             rad = 0.8 + i * 0.3
-            if rad > 30:
+            if rad > 80:                       # cover the full board diagonal
                 break
             steps = max(16, int(rad * 9))
             for k in range(steps):
@@ -363,14 +389,19 @@ def main():
                 y = ay + rad * math.sin(ang)
                 if inside(x, y, w, h) and not overlaps(side, x, y, w, h):
                     return x, y
+        # fallback: every free grid cell, nearest-to-anchor first
+        cands = []
         gy = 1.0 + h / 2
         while gy < bh - 1.0 - h / 2:
             gx = 1.0 + w / 2
             while gx < bw - 1.0 - w / 2:
                 if not overlaps(side, gx, gy, w, h):
-                    return gx, gy
+                    cands.append(((gx - ax) ** 2 + (gy - ay) ** 2, gx, gy))
                 gx += 0.5
             gy += 0.5
+        if cands:
+            cands.sort()
+            return cands[0][1], cands[0][2]
         return ax, ay
 
     # mounting holes are obstacles on both sides (parts must clear them)
@@ -405,6 +436,17 @@ def main():
     sz = {c[0]["ref"]: (c[2], c[3]) for c in loaded}
 
     def cur_box(fp):
+        # courtyard from graphic items at the placed position (GetCourtyard()'s
+        # cache isn't built in-memory pre-save, so read the graphics directly);
+        # fall back to the pad extent when a footprint defines no courtyard
+        cx, cy = [], []
+        for it in fp.GraphicalItems():
+            if it.GetLayer() in (pcbnew.F_CrtYd, pcbnew.B_CrtYd):
+                bb = it.GetBoundingBox()
+                cx += [bb.GetLeft(), bb.GetRight()]
+                cy += [bb.GetTop(), bb.GetBottom()]
+        if cx:
+            return (min(cx) / 1e6, min(cy) / 1e6, max(cx) / 1e6, max(cy) / 1e6)
         xs, ys = [], []
         for p in fp.Pads():
             pb = p.GetBoundingBox()
