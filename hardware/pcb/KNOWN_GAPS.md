@@ -28,10 +28,19 @@ JLCPCB. Items are ordered roughly by risk.
    anchor-based placement with collision avoidance: decoupling caps ring the
    P4, each FET has its gate resistors + flyback at its corner, crystal caps
    sit on the crystal, and the layout is verified to have **zero
-   copper-pad overlaps**. The bottom-center window (U8 VL53L1X + U9 PMW3901)
-   is kept clear. You may still want to micro-adjust during routing (e.g. tuck
-   a cap to the exact power pin it serves), but the board is routable as
-   generated.
+   copper-pad overlaps** and **every pad inside the 36×70 outline** (tightest
+   body-to-body gap 0.28 mm, JLCPCB-safe). The bottom-center window (U8
+   VL53L1X + U9 PMW3901) is kept clear. `assert_placement()` runs at the end
+   of every `make board` and **fails the build** if any pad lands off-board;
+   it also lists same-side courtyard overlaps (the remaining ones are the
+   oversized IPC courtyards of the ESP32-C6 / camera-FFC / USB-C modules, all
+   with ≥0.28 mm real clearance — cosmetic, not collisions). Fixed this pass:
+   the reset/boot slide switches (SW1/SW2) were hanging off the right edge and
+   colliding with the baro/flow cluster — rotated 90° onto a clear right-edge
+   column; the USB-C (J2) contact fingers straddled the left edge — moved fully
+   on-board; the battery JST (J1) and UART pads (J10/J11) were over the bottom
+   edge — pulled in. You may still micro-adjust during routing, but the board
+   is routable and DRC-clean on the outline as generated.
 
 3. ✅ **RESOLVED — ESP32-P4 core DC-DC topology + values.** The previous
    revision was **chip-fatal in three ways**, all confirmed against the official
