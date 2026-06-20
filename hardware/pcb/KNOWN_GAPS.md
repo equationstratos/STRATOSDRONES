@@ -8,21 +8,26 @@ JLCPCB. Items are ordered roughly by risk.
 
 ## Blocking — must resolve before ordering
 
-1. **Signal routing — partial AI autoroute applied; finish in KiCad.** The
-   signal nets are now ~89% autorouted (Freerouting 1.9, driven headless by
-   `scripts/route_board.py`): 295 track segments on F.Cu/B.Cu, committed as
-   `stratosdrone.ses` and applied to `stratosdrone.kicad_pcb`. **Still to do
-   in KiCad before ordering** (see `ROUTING.md`): (a) fill the four copper
-   zones — hotkey **B** — which connects GND/VBAT pads to their same-layer
-   pours; (b) add the cross-layer power stitch vias (3V3 pads → In2 plane,
-   etc.) that the headless fill can't place reliably — `connect_power()` in
-   `route_board.py` does a first pass but KiCad's GUI fill is authoritative;
-   (c) route the handful of remaining signal nets left as ratsnest; (d)
-   re-export gerbers. The `jlcpcb/` gerbers are still preliminary. NOTE:
-   `make board` regenerates the *unrouted* board — re-apply the route with
-   `python3 scripts/route_board.py --skip-route`. For a full clean autoroute,
-   route the committed `stratosdrone.dsn` on DeepPCB.ai or Windows Freerouting
-   (more compute than this sandbox) and re-import the `.ses`.
+1. **Signal routing — partial AI autoroute applied; finish in KiCad.**
+   Re-routed on the **corrected placement** (Freerouting 1.9, 6 passes +
+   optimization, driven headless by `scripts/route_board.py`): **496 track
+   segments + 27 router vias on F.Cu/B.Cu**, plus **176 power stitch vias**
+   (`connect_power()`), zones filled. Committed as `stratosdrone.ses` and
+   applied to `stratosdrone.kicad_pcb`; gerbers re-exported. After fill+stitch
+   **99 ratsnest connections remain** (down from 221 pre-fill, and better than
+   the previous placement's ~114) — roughly ⅓ power (3V3/GND pads whose
+   cross-layer thermal link KiCad's GUI fill resolves authoritatively) and ⅔
+   harder signal nets the dense 2-signal-layer board (In1/In2 are planes)
+   couldn't squeeze headless. **Still to do in KiCad before ordering** (see
+   `ROUTING.md`): (a) open the board and re-fill the four zones — hotkey **B** —
+   to seat the thermal connections; (b) route the remaining ratsnest signals
+   (or re-run Freerouting with more passes); (c) re-export gerbers. The
+   `jlcpcb/` gerbers are usable for a first article but are not yet 100%
+   connected. NOTE: `make board` regenerates the *unrouted* board — re-apply
+   the route with `python3 scripts/route_board.py --skip-route`. For a fuller
+   autoroute, route the committed `stratosdrone.dsn` (which matches the current
+   placement) on DeepPCB.ai or Windows Freerouting (more compute than this
+   sandbox) and re-import the `.ses`.
 
 2. **Placement is done; refine as you route.** `gen_pcb.py` now does
    anchor-based placement with collision avoidance: decoupling caps ring the
