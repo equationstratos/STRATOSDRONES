@@ -10,12 +10,11 @@ JLCPCB. Items are ordered roughly by risk.
 
 1. **Signal routing — partial AI autoroute applied; finish in KiCad.**
    Re-routed on the **corrected placement** (Freerouting 1.9, 6 passes +
-   optimization, driven headless by `scripts/route_board.py`): **496 track
-   segments + 27 router vias on F.Cu/B.Cu**, plus **176 power stitch vias**
+   optimization, driven headless by `scripts/route_board.py`): **530 track
+   segments + 22 router vias on F.Cu/B.Cu**, plus **176 power stitch vias**
    (`connect_power()`), zones filled. Committed as `stratosdrone.ses` and
    applied to `stratosdrone.kicad_pcb`; gerbers re-exported. After fill+stitch
-   **99 ratsnest connections remain** (down from 221 pre-fill, and better than
-   the previous placement's ~114) — roughly ⅓ power (3V3/GND pads whose
+   **104 ratsnest connections remain** (down from 221 pre-fill) — roughly ⅓ power (3V3/GND pads whose
    cross-layer thermal link KiCad's GUI fill resolves authoritatively) and ⅔
    harder signal nets the dense 2-signal-layer board (In1/In2 are planes)
    couldn't squeeze headless. **Still to do in KiCad before ordering** (see
@@ -29,23 +28,24 @@ JLCPCB. Items are ordered roughly by risk.
    placement) on DeepPCB.ai or Windows Freerouting (more compute than this
    sandbox) and re-import the `.ses`.
 
-2. **Placement is done; refine as you route.** `gen_pcb.py` now does
-   anchor-based placement with collision avoidance: decoupling caps ring the
-   P4, each FET has its gate resistors + flyback at its corner, crystal caps
-   sit on the crystal, and the layout is verified to have **zero
-   copper-pad overlaps** and **every pad inside the 36×70 outline** (tightest
-   body-to-body gap 0.28 mm, JLCPCB-safe). The bottom-center window (U8
-   VL53L1X + U9 PMW3901) is kept clear. `assert_placement()` runs at the end
-   of every `make board` and **fails the build** if any pad lands off-board;
-   it also lists same-side courtyard overlaps (the remaining ones are the
-   oversized IPC courtyards of the ESP32-C6 / camera-FFC / USB-C modules, all
-   with ≥0.28 mm real clearance — cosmetic, not collisions). Fixed this pass:
-   the reset/boot slide switches (SW1/SW2) were hanging off the right edge and
-   colliding with the baro/flow cluster — rotated 90° onto a clear right-edge
-   column; the USB-C (J2) contact fingers straddled the left edge — moved fully
-   on-board; the battery JST (J1) and UART pads (J10/J11) were over the bottom
-   edge — pulled in. You may still micro-adjust during routing, but the board
-   is routable and DRC-clean on the outline as generated.
+2. **Placement is done — clean, courtyard-aware.** `gen_pcb.py` places on each
+   footprint's real **courtyard** (body + IPC clearance + module keepouts like
+   the ESP32-C6 antenna), not just pad extent: decoupling caps ring the P4,
+   each FET has its gate resistors + flyback at its corner, crystal caps sit on
+   the crystal. The layout is verified to have **zero same-side pad overlaps**,
+   **zero courtyard overlaps >0.3 mm**, and **every pad inside the 36×70
+   outline** (tightest body-to-body gap 0.35 mm, JLCPCB-safe). The bottom-center
+   window (U8 VL53L1X + U9 PMW3901) is kept clear. `assert_placement()` runs at
+   the end of every `make board` and **fails the build** if any pad lands
+   off-board; it also reports courtyard overlaps (currently "none"). Fixed over
+   the last passes: SW1/SW2 reset/boot switches hung off the right edge and hit
+   the baro/flow cluster → rotated 90° onto a clear right-edge column; the USB-C
+   (J2) contact fingers straddled the left edge → moved fully on-board; battery
+   JST (J1) + UART pads (J10/J11) were over the bottom edge → pulled in; the
+   ESP32-C6 (U3) antenna keepout overlapped the camera FFC → spaced down; the
+   wide DNP protection diode (D2) had no 7 mm gap left on top → moved to the
+   empty bottom-left, clear of the sensor windows. Micro-adjust as you route if
+   you like, but the board is DRC-clean on placement + outline as generated.
 
 3. ✅ **RESOLVED — ESP32-P4 core DC-DC topology + values.** The previous
    revision was **chip-fatal in three ways**, all confirmed against the official
