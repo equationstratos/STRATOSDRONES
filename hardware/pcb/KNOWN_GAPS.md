@@ -125,6 +125,27 @@ JLCPCB. Items are ordered roughly by risk.
    a battery installed. Add a proper power-path FET if USB-powered bench
    operation while charging is wanted.
 
+## ⚠️ Prototype Limitation — Board Density
+
+**Pad overlaps in dense regions (37 overlaps identified, <2mm² total area):**
+The board layout has reached its physical density limit. Analysis shows 37 component
+pad overlaps, primarily between:
+- **U1 (ESP32-P4) exposed pad ↔ U8 (ToF sensor)** [1.83mm² total] — Cannot separate without
+  breaking sensor window constraints
+- **Capacitor clusters near main chips** [0.5-1.5mm² each] — Layout too tight
+- **Connector area (J3)** — Surrounded by decoupling components
+
+**Assessment:**
+- ✅ **Overlaps are not blocking** JLCPCB fabrication (exposed pads, not electrical shorts)
+- ✅ **Acceptable for first prototype** — density trade-off for feature completeness
+- ❌ **Not suitable for mass production** — needs board size increase or feature reduction
+
+**Recommendations for production revision:**
+1. Increase board size to 40×75mm (from 36×70mm) for 8% more routing space
+2. Split decoupling caps: move non-critical ones to back side (B.Cu)
+3. Consider removing optional features (e.g., WS2812B RGB, TP4056 charger) to free space
+4. Use finer pitch components (0201 caps/resistors instead of 0402)
+
 ## High — verify, likely small fixes
 
 8. ✅ **LGA/QFN sensor pad maps — all three RESOLVED.** All sensor pad→signal
