@@ -171,10 +171,15 @@ JLCPCB. Items are ordered roughly by risk.
      ClockwisePinNumbering`) is KiCad's official land pattern and matches
      the reference design, so no geometry concern here.
 
-9. **PMW3901 (`U9`) is a placeholder footprint** (`lib/strat.pretty/`). The
-   COB land pattern is invented. Either draw the real PixArt land pattern, or
-   leave `U9` unpopulated and use the `J3` 2×4 header with a CJMCU-3901 module
-   (recommended for a first build — JLC reflow of the bare COB is unproven).
+9. ✅ **RESOLVED — PMW3901 (`U9`) marked DNP; use CJMCU-3901 module on J3.**
+   The placeholder COB footprint (9.5×6.1 mm) overlapped 24 components on the
+   dense board and was never practical for first-article JLC reflow. `U9` is
+   now marked **Do-Not-Populate**; use the external **CJMCU-3901 optical flow
+   module** connected to the `J3` 2×4 header (SPI: SCLK, MOSI, MISO, CS_FLOW).
+   The module is drop-in compatible, connects to the same signals, and avoids
+   the COB soldering difficulty. For users who still want the bare chip: draw
+   the real PixArt land pattern and position it elsewhere, or depopulate J3 and
+   route the header pads differently.
 
 10. ✅ **RESOLVED — Buck (`U5` SY8089) pinout + inductor.** SOT-23-5 pinout
     (1 EN, 2 GND, 3 LX/SW, 4 IN/VIN, 5 FB) confirmed against the Silergy
