@@ -298,41 +298,89 @@ OUTER_POUR_LAYER = {"GND": pcbnew.F_Cu, "VBAT": pcbnew.B_Cu}
 
 
 def connect_power():
-    """Stitch each plane-net pad to its plane with a via, so power connectivity
-    survives pour fragmentation by the signal traces. Skips fine-pitch pads
-    (where a via would overhang a neighbour) — those rely on the pour/escape —
-    and pads the router already stitched. 3V3 reaches In2, GND/VBAT go through
-    via to In1(GND)/B.Cu(VBAT)."""
+    """Stitch only the plane-net pads that actually need a cross-layer link, and
+    only where a via won't violate clearance.
+
+    A pad whose net already has a copper pour on the pad's own layer is connected
+    by the zone fill (thermal spokes) — no via. So GND pads on F.Cu (F.Cu carries
+    the GND pour) are left alone; only 3V3 pads (plane on In2), VBAT pads not on
+    B.Cu, and GND pads not on F.Cu/In1 get a stitch via — and each candidate via
+    is dropped if any different-net pad/track/via sits within clearance, so we
+    never manufacture the DRC errors the old blanket-stitch produced."""
     b = pcbnew.LoadBoard(BRD)
-    have_via = {(v.GetPosition().x, v.GetPosition().y)
-                for v in b.GetTracks() if isinstance(v, pcbnew.PCB_VIA)}
-    near = pcbnew.FromMM(0.15)
-    via_pad = pcbnew.FromMM(0.4)
-    added = 0
+    # layers that already carry each plane net's copper (In1=GND, In2=3V3)
+    POUR = {
+        "GND": {pcbnew.F_Cu, pcbnew.In1_Cu},
+        "3V3": {pcbnew.In2_Cu},
+        "VBAT": {pcbnew.B_Cu},
+    }
+    cu = (pcbnew.F_Cu, pcbnew.In1_Cu, pcbnew.In2_Cu, pcbnew.B_Cu)
+    via_w = pcbnew.FromMM(0.4)
+    reach = via_w / 2 + pcbnew.FromMM(0.25)       # via centre -> other-copper edge
+                                                  # (0.25 mm > JLCPCB min, headroom)
+
+    pads = [p for fp in b.GetFootprints() for p in fp.Pads()]
+    tracks = [t for t in b.GetTracks() if not isinstance(t, pcbnew.PCB_VIA)]
+    vias = [v for v in b.GetTracks() if isinstance(v, pcbnew.PCB_VIA)]
+
+    def rect_dist(px, py, bb):
+        dx = max(bb.GetLeft() - px, 0, px - bb.GetRight())
+        dy = max(bb.GetTop() - py, 0, py - bb.GetBottom())
+        return (dx * dx + dy * dy) ** 0.5
+
+    def seg_dist(px, py, a, bpt):
+        ax, ay, bx, by = a.x, a.y, bpt.x, bpt.y
+        dx, dy = bx - ax, by - ay
+        L2 = dx * dx + dy * dy
+        t = 0.0 if L2 == 0 else max(0.0, min(1.0, ((px - ax) * dx + (py - ay) * dy) / L2))
+        cx, cy = ax + t * dx, ay + t * dy
+        return ((px - cx) ** 2 + (py - cy) ** 2) ** 0.5
+
+    def clear_at(pos, netcode):
+        for p in pads:
+            if p.GetNetCode() == netcode:
+                continue
+            if rect_dist(pos.x, pos.y, p.GetBoundingBox()) < reach:
+                return False
+        for t in tracks:
+            if t.GetNetCode() == netcode:
+                continue
+            if seg_dist(pos.x, pos.y, t.GetStart(), t.GetEnd()) - t.GetWidth() / 2 < reach:
+                return False
+        for v in vias:
+            if v.GetNetCode() == netcode:
+                continue
+            vp = v.GetPosition()
+            if ((pos.x - vp.x) ** 2 + (pos.y - vp.y) ** 2) ** 0.5 - v.GetWidth() / 2 < reach:
+                return False
+        return True
+
+    added = skipped = nonet = 0
     for fp in b.GetFootprints():
         for p in fp.Pads():
             net = p.GetNetname()
-            if net not in PLANE_NETS:
+            if net not in POUR:
                 continue
-            sz = p.GetSize()
-            if min(sz.x, sz.y) < via_pad + pcbnew.FromMM(0.05):
-                continue  # fine-pitch: a via would overhang -> rely on pour
-            pp = p.GetPosition()
-            if any(abs(pp.x - vx) < near and abs(pp.y - vy) < near
-                   for vx, vy in have_via):
-                continue  # already stitched
+            on = {l for l in cu if p.IsOnLayer(l)}
+            if on & POUR[net]:
+                continue                        # zone fill already connects it
+            pos = p.GetPosition()
+            if not clear_at(pos, p.GetNetCode()):
+                skipped += 1
+                continue
             v = pcbnew.PCB_VIA(b)
-            v.SetPosition(p.GetPosition())
-            v.SetWidth(via_pad)
+            v.SetPosition(pos)
+            v.SetWidth(via_w)
             v.SetDrill(pcbnew.FromMM(0.2))
             v.SetLayerPair(pcbnew.F_Cu, pcbnew.B_Cu)
             v.SetNetCode(p.GetNetCode())
             b.Add(v)
-            have_via.add((pp.x, pp.y))
+            vias.append(v)                      # so the next via clears this one
             added += 1
     b.BuildConnectivity()
     pcbnew.SaveBoard(BRD, b)
-    print(f"  added {added} power stitch vias (GND/3V3/VBAT -> planes)")
+    print(f"  added {added} clearance-checked stitch vias "
+          f"({skipped} skipped as too tight; zone fill handles same-layer pads)")
     return added
 
 
