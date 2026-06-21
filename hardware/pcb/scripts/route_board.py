@@ -237,7 +237,10 @@ def import_ses(ses_path):
     lmap = {}
     for lid in range(pcbnew.PCB_LAYER_ID_COUNT):
         if pcbnew.IsCopperLayer(lid):
-            lmap[b.GetLayerName(lid)] = lid
+            try:
+                lmap[b.GetLayerName(lid)] = lid
+            except AttributeError:
+                pass
             lmap[pcbnew.BOARD.GetStandardLayerName(lid)] = lid
 
     nseg = nvia = 0
