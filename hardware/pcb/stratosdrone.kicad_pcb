@@ -936,7 +936,7 @@
 
   (footprint "SOT-23-6" (layer "F.Cu")
     (tstamp 24e92493-415e-4339-a9f2-e0ca4d29f32c)
-    (at 8.674616 14.128553)
+    (at 6 35)
     (descr "SOT, 6 Pin (https://www.jedec.org/sites/default/files/docs/Mo-178c.PDF variant AB), generated with kicad-footprint-generator ipc_gullwing_generator.py")
     (tags "SOT TO_SOT_SMD")
     (attr smd)
@@ -2057,7 +2057,7 @@
 
   (footprint "R_0402_1005Metric" (layer "F.Cu")
     (tstamp 5105b98a-a75c-4e4e-abc4-9af7ea45d5b3)
-    (at 18.876549 46.459474)
+    (at 22 49)
     (descr "Resistor SMD 0402 (1005 Metric), square (rectangular) end terminal, IPC_7351 nominal, (Body size source: IPC-SM-782 page 72, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf), generated with kicad-footprint-generator")
     (tags "resistor")
     (attr smd)
@@ -2106,7 +2106,7 @@
 
   (footprint "R_0402_1005Metric" (layer "F.Cu")
     (tstamp 520b0cf0-d4a3-4632-b99c-43bc3220bb73)
-    (at 25.566042 44.566042)
+    (at 16.5 47.5)
     (descr "Resistor SMD 0402 (1005 Metric), square (rectangular) end terminal, IPC_7351 nominal, (Body size source: IPC-SM-782 page 72, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf), generated with kicad-footprint-generator")
     (tags "resistor")
     (attr smd)
@@ -2812,7 +2812,7 @@
 
   (footprint "R_0402_1005Metric" (layer "F.Cu")
     (tstamp 6cb24fbb-0177-4a69-a0c8-aa1ddfa2f8cd)
-    (at 26.499594 50.385345)
+    (at 10 47)
     (descr "Resistor SMD 0402 (1005 Metric), square (rectangular) end terminal, IPC_7351 nominal, (Body size source: IPC-SM-782 page 72, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf), generated with kicad-footprint-generator")
     (tags "resistor")
     (attr smd)
@@ -3232,7 +3232,7 @@
 
   (footprint "C_0805_2012Metric" (layer "F.Cu")
     (tstamp 87a77719-19f0-4362-9245-1b35770a5c1a)
-    (at 28.55706 44.237987)
+    (at 21 42)
     (descr "Capacitor SMD 0805 (2012 Metric), square (rectangular) end terminal, IPC_7351 nominal, (Body size source: IPC-SM-782 page 76, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf, https://docs.google.com/spreadsheets/d/1BsfQQcO9C6DZCsRaXUlFlo91Tg2WpOkGARC1WS5S8t0/edit?usp=sharing), generated with kicad-footprint-generator")
     (tags "capacitor")
     (attr smd)
@@ -5483,7 +5483,7 @@
 
   (footprint "C_0402_1005Metric" (layer "F.Cu")
     (tstamp c935549b-f5e6-4649-b4f5-038272bab300)
-    (at 16.251362 45.113708)
+    (at 14.5 44.5)
     (descr "Capacitor SMD 0402 (1005 Metric), square (rectangular) end terminal, IPC_7351 nominal, (Body size source: IPC-SM-782 page 76, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf), generated with kicad-footprint-generator")
     (tags "capacitor")
     (attr smd)
@@ -6226,7 +6226,7 @@
 
   (footprint "C_0603_1608Metric" (layer "F.Cu")
     (tstamp fa2c4168-4255-4efe-8eed-84b64c3e29cc)
-    (at 24.001118 46.927062)
+    (at 23.5 48)
     (descr "Capacitor SMD 0603 (1608 Metric), square (rectangular) end terminal, IPC_7351 nominal, (Body size source: IPC-SM-782 page 76, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf), generated with kicad-footprint-generator")
     (tags "capacitor")
     (attr smd)
@@ -6398,7 +6398,7 @@
 
   (footprint "C_0402_1005Metric" (layer "B.Cu")
     (tstamp 41c13034-9818-4e80-890e-116188c45f02)
-    (at 18.528985 38.545618 180)
+    (at 12 37 180)
     (descr "Capacitor SMD 0402 (1005 Metric), square (rectangular) end terminal, IPC_7351 nominal, (Body size source: IPC-SM-782 page 76, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf), generated with kicad-footprint-generator")
     (tags "capacitor")
     (attr smd)
@@ -6607,7 +6607,7 @@
 
   (footprint "C_0402_1005Metric" (layer "B.Cu")
     (tstamp 97a231b8-68d6-449f-bfd8-9277fe6698e9)
-    (at 18.528985 46.545618 180)
+    (at 20 50 180)
     (descr "Capacitor SMD 0402 (1005 Metric), square (rectangular) end terminal, IPC_7351 nominal, (Body size source: IPC-SM-782 page 76, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf), generated with kicad-footprint-generator")
     (tags "capacitor")
     (attr smd)
@@ -6656,7 +6656,7 @@
 
   (footprint "D_SMA" (layer "B.Cu")
     (tstamp cfece3a1-3ecb-48b7-bcc9-ba4aa378c05f)
-    (at 11 13 180)
+    (at 8 31 180)
     (descr "Diode SMA (DO-214AC)")
     (tags "Diode SMA (DO-214AC)")
     (attr smd exclude_from_bom)
