@@ -569,8 +569,8 @@ POWER_NETS = ["VBAT", "VBUS", "3V3", "GND", "VDD_CORE", "VDD_MIPI"]
 # Tello-style mainboard: narrow PORTRAIT board (≈1:2), like the real Tello
 # main PCB — optical cluster at the nose, shielded MCU/RF zones in the middle,
 # motor pads at the four corners, USB on the side edge. y=0 is the camera nose.
-BOARD = dict(w=45.0, h=85.0, corner_r=4.0,
-             mount_pitch_x=35.0, mount_pitch_y=75.0, mount_d=2.2)
+BOARD = dict(w=38.0, h=74.0, corner_r=4.0,
+             mount_pitch_x=28.0, mount_pitch_y=64.0, mount_d=2.2)
 
 
 def all_components():

@@ -49,43 +49,45 @@ def vec(x, y):
 # the build if that ever regresses. Board expanded 36x70->45x85 to eliminate
 # all pad overlaps and allow proper spacing of all 115 components.
 PLACE = {
-    "J4": (22.5, 5.0, 0, "T"),    # camera FFC — nose
-    "U3": (22.5, 19, 0, "T"),     # ESP32-C6 module (large), RF zone — spaced
-                                  # down so its antenna keepout clears the
-                                  # camera FFC (J4)
-    "U1": (22.5, 44, 0, "T"),     # ESP32-P4, CPU zone
-    "U2": (11, 45, 0, "T"),       # flash, left of P4 (clear of USB)
-    "Y1": (35, 40, 0, "T"),       # crystal, right of P4
-    "U6": (10, 57, 0, "T"),       # IMU
-    "U7": (35, 57, 0, "T"),       # baro
-    "U8": (22.5, 38, 0, "B"),     # VL53L1X ToF (bottom, downward)
-    "U9": (22.5, 52, 0, "B"),     # PMW3901 flow (bottom, downward)
-    "J3": (35, 50, 0, "B"),       # flow fallback header (bottom)
-    "U4": (16, 70, 0, "T"),       # TP4056 charger
-    "U5": (26, 70, 0, "T"),       # buck
-    "L1": (32, 70, 0, "T"),
-    "J2": (5.2, 34, 90, "T"),     # USB-C, left side edge
-    "J1": (22.5, 80, 0, "T"),     # battery JST, rear edge
-    "LED1": (11, 9, 0, "T"),      # status LED, top-left
-    "LED2": (34, 27, 0, "T"),
-    "SW1": (43, 48, 90, "T"),     # reset — vertical along right edge
-    "SW2": (43, 62, 90, "T"),     # boot  — vertical along right edge
-    "J9": (4, 48, 0, "T"),        # expansion (left edge, mid)
-    "J10": (13, 78, 0, "T"),      # P4 uart pads
-    "J11": (34, 78, 0, "T"),      # c6 uart pads
+    "J4": (19.0, 5.2, 0, "T"),    # camera FFC — nose
+    "U3": (19.5, 18.6, 0, "T"),   # ESP32-C6 module (large), RF zone
+    "U1": (18.8, 38.6, 0, "T"),   # ESP32-P4, CPU zone
+    "U2": (9.6, 39.2, 0, "T"),    # flash, left of P4
+    "Y1": (29.6, 34.8, 0, "T"),   # crystal, right of P4
+    "U6": (8.4, 49.6, 0, "T"),    # IMU
+    "U7": (31.7, 49.3, 0, "T"),   # baro
+    "U8": (19.0, 33.1, 0, "B"),   # VL53L1X ToF (bottom, downward)
+    "U9": (19.0, 45.3, 0, "B"),   # PMW3901 flow (bottom, downward)
+    "J3": (29.6, 43.5, 0, "B"),   # flow fallback header (bottom)
+    "U4": (13.5, 60.9, 0, "T"),   # TP4056 charger
+    "U5": (22.0, 60.9, 0, "T"),   # buck
+    "L1": (27.0, 60.9, 0, "T"),
+    "J2": (5.6, 29.6, 90, "T"),   # USB-C, left side edge
+    "J1": (19.0, 68.6, 0, "T"),   # battery JST, rear edge
+    "LED1": (9.3, 7.8, 0, "T"),   # status LED, top-left
+    "LED2": (28.7, 23.5, 0, "T"),
+    "SW1": (35.6, 41.8, 90, "T"), # reset — vertical along right edge
+    "SW2": (35.6, 54.0, 90, "T"), # boot  — vertical along right edge
+    "J9": (3.4, 41.8, 0, "T"),    # expansion (left edge, mid)
+    "J10": (11.0, 67.9, 0, "T"),  # P4 uart pads
+    "J11": (28.7, 67.9, 0, "T"),  # c6 uart pads
+    "R19": (25.5, 43.0, 0, "T"),  # pinned clear of J3's through-hole pads
     # motor FETs + pads near the four corners, inboard of the mount holes
-    # (35x75 pitch -> holes at (5,5)/(40,5)/(5,80)/(40,80)). Header sits at the
-    # board edge (motor wire exit); the FET is shifted ~2 mm further from the
-    # header in Y so the two tall courtyards don't touch.
-    "Q1": (38, 22, 0, "T"), "J5": (40, 14, 0, "T"),
-    "Q2": (38, 63, 0, "T"), "J6": (40, 71, 0, "T"),
-    "Q3": (7, 63, 0, "T"),  "J7": (5, 71, 0, "T"),
-    "Q4": (7, 22, 0, "T"),  "J8": (5, 14, 0, "T"),
-    # D2 (DNP reverse-polarity Schottky, wide D_SMA): the top side has no 7 mm
-    # gap left, so the optional diode goes on the bottom in the empty top-left,
-    # well clear of the downward sensor windows (U8/U9, center).
-    "D2": (13, 13, 0, "B"),
+    # (28x64 pitch -> holes at (5,5)/(33,5)/(5,69)/(33,69)).
+    "Q1": (32.1, 19.2, 0, "T"), "J5": (33.8, 12.2, 0, "T"),
+    "Q2": (31.8, 54.7, 0, "T"), "J6": (33.8, 61.8, 0, "T"),
+    "Q3": (5.9, 54.8, 0, "T"),  "J7": (4.2, 61.8, 0, "T"),
+    "Q4": (5.9, 19.2, 0, "T"),  "J8": (4.2, 12.2, 0, "T"),
+    # D2 (DNP reverse-polarity Schottky) on the bottom, top-left, clear of the
+    # downward sensor windows (U8/U9, center).
+    "D2": (11.0, 11.3, 0, "B"),
 }
+
+# Decoupling/support capacitors moved to the BACK side (directly under/near
+# their ICs) to compact the board 45x85 -> 38x74 without pad shorts or body
+# collisions. Crystal load caps (C8/C9) stay on top with the crystal for the
+# shortest, lowest-parasitic oscillator loop.
+BACK_CAPS_KEEP_FRONT = {"C8", "C9"}
 
 
 def resolve_fp(spec):
@@ -427,10 +429,14 @@ def main():
     free = [c for c in loaded if c[0]["ref"] not in PLACE]
     free.sort(key=lambda c: (anchors.get(c[0]["ref"], "U1"), c[2] * c[3]))
     for comp, fp, w, h in free:
-        an = anchors.get(comp["ref"], "U1")
+        ref = comp["ref"]
+        an = anchors.get(ref, "U1")
         ax, ay = placed_ref.get(an, (bw / 2, bh / 2))
-        x, y = find_slot(comp["side"], ax, ay, w, h)
-        place(comp, fp, w, h, x, y, 0, comp["side"])
+        # decoupling caps go on the back (under their IC) to compact the board
+        side = "B" if (ref.startswith("C") and ref not in BACK_CAPS_KEEP_FRONT) \
+            else comp["side"]
+        x, y = find_slot(side, ax, ay, w, h)
+        place(comp, fp, w, h, x, y, 0, side)
 
     # ---- repair: relocate any non-anchor part still overlapping a neighbour ----
     fp_of = {c[0]["ref"]: c[1] for c in loaded if c[0]["ref"] in placed_ref}
@@ -569,11 +575,15 @@ def inject_zones(path):
             continue
         # For VBAT on bottom (B.Cu), create a polygon with aperture for U8/U9 sensors
         if nn == "VBAT" and layer == "B.Cu":
-            # Sensor window aperture (excludes area around U8 ToF @ (18,36) and U9 flow @ (18,44))
-            # Create a donut polygon: outer rect with inner hole
-            # Outer: (0.3, 0.3) -> (35.7, 0.3) -> (35.7, 69.7) -> (0.3, 69.7) -> back
-            # Inner hole: (11, 29) -> (25, 29) -> (25, 51) -> (11, 51) -> back (reversed direction)
-            polygon_str = "(pts (xy 0.3 0.3) (xy 35.7 0.3) (xy 35.7 69.7) (xy 0.3 69.7) (xy 0.3 0.3) (xy 11 29) (xy 11 51) (xy 25 51) (xy 25 29) (xy 11 29))"
+            # Sensor window aperture: excludes the bottom pour around the two
+            # downward optical sensors (U8 ToF + U9 flow, center column) so they
+            # have a clear field of view. Outer = board inset; inner hole spans
+            # both sensors with margin. Outer rect uses the live board size.
+            ax0, ay0, ax1, ay1 = 12.0, 28.0, 26.0, 50.0   # sensor keep-clear window
+            polygon_str = (f"(pts (xy {x0} {y0}) (xy {x1} {y0}) (xy {x1} {y1}) "
+                           f"(xy {x0} {y1}) (xy {x0} {y0}) "
+                           f"(xy {ax0} {ay0}) (xy {ax0} {ay1}) (xy {ax1} {ay1}) "
+                           f"(xy {ax1} {ay0}) (xy {ax0} {ay0}))")
         else:
             polygon_str = f"(pts (xy {x0} {y0}) (xy {x1} {y0}) (xy {x1} {y1}) (xy {x0} {y1}))"
 
