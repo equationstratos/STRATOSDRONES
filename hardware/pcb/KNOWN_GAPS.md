@@ -28,24 +28,25 @@ JLCPCB. Items are ordered roughly by risk.
    DeepPCB.ai or Windows Freerouting (more compute than this sandbox) and
    re-import the `.ses`.
 
-2. **Placement is done — clean, courtyard-aware.** `gen_pcb.py` places on each
-   footprint's real **courtyard** (body + IPC clearance + module keepouts like
-   the ESP32-C6 antenna), not just pad extent: decoupling caps ring the P4,
-   each FET has its gate resistors + flyback at its corner, crystal caps sit on
-   the crystal. The layout is verified to have **zero same-side pad overlaps**,
-   **zero courtyard overlaps >0.3 mm**, and **every pad inside the 36×70
-   outline** (tightest body-to-body gap 0.35 mm, JLCPCB-safe). The bottom-center
-   window (U8 VL53L1X + U9 PMW3901) is kept clear. `assert_placement()` runs at
-   the end of every `make board` and **fails the build** if any pad lands
-   off-board; it also reports courtyard overlaps (currently "none"). Fixed over
-   the last passes: SW1/SW2 reset/boot switches hung off the right edge and hit
-   the baro/flow cluster → rotated 90° onto a clear right-edge column; the USB-C
-   (J2) contact fingers straddled the left edge → moved fully on-board; battery
-   JST (J1) + UART pads (J10/J11) were over the bottom edge → pulled in; the
-   ESP32-C6 (U3) antenna keepout overlapped the camera FFC → spaced down; the
-   wide DNP protection diode (D2) had no 7 mm gap left on top → moved to the
-   empty bottom-left, clear of the sensor windows. Micro-adjust as you route if
-   you like, but the board is DRC-clean on placement + outline as generated.
+2. **Placement is done — clean, courtyard-aware, double-sided, 38×74 mm.**
+   `gen_pcb.py` places on each footprint's real **courtyard** (body + IPC
+   clearance + module keepouts like the ESP32-C6 antenna), not just pad extent.
+   The board was **compacted from 45×85 to 38×74 mm (−26 % area)** by moving the
+   40 decoupling/support capacitors to the **back side**, directly under their
+   ICs (crystal load caps C8/C9 stay on top for the shortest oscillator loop).
+   The layout is verified to have **zero same-face different-net pad shorts**
+   (side-aware check — pads on opposite copper faces can't short), **zero
+   courtyard overlaps >0.3 mm**, and **every pad inside the 38×74 outline**.
+   The bottom-center optical window (U8 VL53L1X ToF + U9 PMW3901 flow) is kept
+   clear of the B.Cu VBAT pour by a sensor aperture that tracks the sensors'
+   placed position. `assert_placement()` runs at the end of every `make board`
+   and **fails the build** if any pad lands off-board. Tello-exact size
+   (~30–40 mm) is **not** achievable with this part set — the ESP32-C6 module
+   alone is 21 mm long, so 74 mm is the practical minimum length for the
+   camera→C6→P4→power→battery column. **Trade-off:** the 40 back-side caps add
+   cross-layer vias to route (done in KiCad); in return the board is smaller and
+   lighter. Micro-adjust as you route if you like; the board is DRC-clean on
+   placement + outline as generated.
 
 3. ✅ **RESOLVED — ESP32-P4 core DC-DC topology + values.** The previous
    revision was **chip-fatal in three ways**, all confirmed against the official
