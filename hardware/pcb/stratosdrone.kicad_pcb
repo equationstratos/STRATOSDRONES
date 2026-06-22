@@ -763,7 +763,7 @@
 
   (footprint "R_0402_1005Metric" (layer "F.Cu")
     (tstamp 14d9b84d-25ae-48da-b6d7-e9f0b23a01c8)
-    (at 20 54)
+    (at 19.292893 53.292893)
     (descr "Resistor SMD 0402 (1005 Metric), square (rectangular) end terminal, IPC_7351 nominal, (Body size source: IPC-SM-782 page 72, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf), generated with kicad-footprint-generator")
     (tags "resistor")
     (attr smd)
@@ -1055,7 +1055,7 @@
 
   (footprint "C_0402_1005Metric" (layer "F.Cu")
     (tstamp 1e10538f-81c8-4c32-8ced-ef61a9a84657)
-    (at 24 65)
+    (at 24 64.5)
     (descr "Capacitor SMD 0402 (1005 Metric), square (rectangular) end terminal, IPC_7351 nominal, (Body size source: IPC-SM-782 page 76, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf), generated with kicad-footprint-generator")
     (tags "capacitor")
     (attr smd)
@@ -2032,7 +2032,7 @@
 
   (footprint "R_0402_1005Metric" (layer "F.Cu")
     (tstamp 44a98cb4-28d1-445f-8719-c053fd35314e)
-    (at 28 54)
+    (at 27.5 54.866025)
     (descr "Resistor SMD 0402 (1005 Metric), square (rectangular) end terminal, IPC_7351 nominal, (Body size source: IPC-SM-782 page 72, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf), generated with kicad-footprint-generator")
     (tags "resistor")
     (attr smd)
@@ -4420,7 +4420,7 @@
 
   (footprint "Bosch_LGA-8_2x2.5mm_P0.65mm_ClockwisePinNumbering" (layer "F.Cu")
     (tstamp a7edb705-db77-4744-9838-ddfcb6d087e7)
-    (at 35 57)
+    (at 36.06066 58.06066)
     (descr "LGA-8, https://ae-bst.resource.bosch.com/media/_tech/media/datasheets/BST-BMP280-DS001-18.pdf")
     (tags "lga land grid array")
     (attr smd)
