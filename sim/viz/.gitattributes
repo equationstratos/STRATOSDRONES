@@ -1,0 +1,4 @@
+# The viewer embeds Three.js as a base64 blob; the vendored libs are upstream.
+# Mark them generated/vendored so GitHub skips diffs and language stats.
+drone_viewer.html -diff linguist-generated
+vendor/** -diff linguist-vendored

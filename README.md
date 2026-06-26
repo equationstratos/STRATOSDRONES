@@ -25,6 +25,7 @@ fc_core/            Platform-independent flight control core (pure C99, no RTOS 
                     — compiled into BOTH the ESP32-P4 firmware and the Gazebo plugin
 firmware/           ESP-IDF project for ESP32-P4 (esp32p4 target)
 sim/                Gazebo Harmonic plugin, drone SDF model, worlds, swarm launcher
+sim/viz/            Self-contained 3-D drone viewer (open drone_viewer.html) generated from the SDF
 sdk/python/         stratospy: thin djitellopy add-on for STRATOS extensions + examples
 hardware/pcb/       KiCad project + JLCPCB fab outputs (gerbers, BOM, CPL) + component map
 hardware/frame/     Parametric OpenSCAD frames → STL:
