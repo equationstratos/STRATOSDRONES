@@ -1,14 +1,17 @@
 // STRATOSDRONE — Tello-style closed-body shell, LOWER half (structural).
 //
 // Same footprint class as a DJI Tello (≈98 × 92.5 mm, 118 mm wheelbase, 3"
-// props) but visually distinct: hexagonal motor nacelles, a chamfered camera
-// nose, a slide-in rear battery, and a bevelled pod. This is the bottom
-// clamshell — it carries the PCB, the four arms, the motor pockets and the
-// bottom sensor window. Pair with body_top.scad.
+// props) but visually distinct. This is the bottom clamshell — it carries the
+// PCB, the four arms, the motor mounts and the bottom sensor window. Pair with
+// body_top.scad.
+//
+// LIGHTWEIGHT revision: round thin-wall motor mounts (was solid hex blocks),
+// slimmer tapered arms, smoother rounder pod, thinner walls/floor — a lighter
+// and more Tello-like shell. See README for the measured mass.
 //
 //   openscad -o stl/body_bottom.stl --export-format binstl body_bottom.scad
 // SPDX-License-Identifier: CERN-OHL-P-2.0
-$fn = 64;
+$fn = 72;
 eps = 0.01;
 
 /* ---------- shared geometry (keep in sync with body_top.scad) ---------- */
@@ -17,15 +20,22 @@ span_y      = 92.5;   // overall length (front-back), incl. motors
 wheelbase   = 118;    // motor-to-motor diagonal
 motor_off   = wheelbase/2/sqrt(2);   // 41.72 mm in x and y
 motor_d     = 8.5;    // 8520 motor diameter
-motor_h     = 16;     // motor pocket depth
-nacelle_d   = 15;     // outer hex nacelle across-flats
-pod_x       = 40;     // central pod width  (narrow, Tello-like)
-pod_y       = 74;     // central pod length (elongated)
-wall        = 1.6;
-half_h      = 13;     // height of the lower shell
-floor_t     = 1.4;
-arm_w       = 9;      // arm width (slimmer, Tello-like)
-arm_h       = 6.0;    // arm thickness (structural)
+
+/* ---- lightweight tuning (the levers that set the printed mass) ---- */
+nacelle_wall = 1.9;                          // wall around the press-fit motor
+nacelle_d    = motor_d + 2*nacelle_wall + 0.4;   // ≈12.7 round mount (was hex 15)
+motor_grip   = 12;                           // pocket depth gripping the motor (was 16)
+floor_t      = 1.2;                           // pod floor (was 1.4)
+nacelle_h    = motor_grip + floor_t;          // ≈13.2 → flush with the pod, no tall blocks
+pod_x        = 40;    // central pod width  (narrow, Tello-like)
+pod_y        = 74;    // central pod length (elongated)
+pod_r        = 9;     // corner radius — rounder, Tello-smooth (was 6)
+wall         = 1.5;   // pod side wall (was 1.6)
+half_h       = 13;    // height of the lower shell (keep: assembly offset)
+arm_w        = 7.5;   // arm root width  (slimmer, was 9)
+arm_w_tip    = 6.0;   // arm width at the motor (taper → sleeker + lighter)
+arm_h        = 5.0;   // arm thickness (was 6)
+
 pcb_x       = 36;     // Tello-style portrait mainboard (see design.py BOARD)
 pcb_y       = 70;
 pcb_hole    = 26;     // PCB mount hole pitch X (26 x 60)
@@ -42,28 +52,26 @@ module rrect(x, y, r, h) {            // rounded rect prism, centered
     linear_extrude(h) offset(r) square([x-2*r, y-2*r], center=true);
 }
 
-module hex(across_flats, h) {
-    r = across_flats/sqrt(3);
-    cylinder(r=r, h=h, $fn=6);
-}
-
 /* central pod outer wall + floor */
 module pod_shell() {
     difference() {
-        rrect(pod_x, pod_y, 6, half_h);
+        rrect(pod_x, pod_y, pod_r, half_h);
         // hollow interior
         translate([0,0,floor_t])
-            rrect(pod_x-2*wall, pod_y-2*wall, 5, half_h);
+            rrect(pod_x-2*wall, pod_y-2*wall, max(pod_r-wall,1), half_h);
         // bottom sensor window (flow + ToF look straight down; long enough to
         // clear both U8/U9 which are spaced along the board spine)
         translate([0,3,-eps]) rrect(sensor_win, sensor_win+10, 2, floor_t+2*eps);
         // camera aperture at the front nose (-y)
         translate([0,-pod_y/2-eps,half_h*0.5])
             rotate([-90,0,0]) cylinder(d=cam_w+0.6, h=wall+2);
-        // USB-C slot on the LEFT side wall (like the Tello micro-USB), forward of centre
+        // USB-C slot on the LEFT side wall, forward of centre
         translate([-pod_x/2-eps,-15,2.5]) cube([wall+2,12,5.5]);
+        // two slim under-floor vent slots at the rear (lighten + airflow)
+        for (s=[-1,1])
+            translate([s*9, pod_y/2-12, -eps]) rrect(4, 16, 2, floor_t+2*eps);
     }
-    // chamfered camera nose bump
+    // smooth chamfered camera nose bump
     translate([0,-pod_y/2+1,half_h*0.5])
         rotate([-90,0,0])
             difference() {
@@ -73,22 +81,22 @@ module pod_shell() {
             }
 }
 
-/* one arm + hex motor nacelle at signed corner (sx, sy) */
+/* one slim tapered arm + ROUND thin-wall motor mount at corner (sx, sy) */
 module arm(sx, sy) {
     ang = atan2(sy, sx);
-    // arm bridge from pod edge to motor
+    // tapered arm bridge from pod edge to motor (wide root → slim tip)
     hull() {
-        translate([sx*(pod_x/2-6), sy*(pod_y/2-6), 0]) cylinder(d=arm_w, h=arm_h);
-        translate([sx*motor_off, sy*motor_off, 0]) cylinder(d=arm_w, h=arm_h);
+        translate([sx*(pod_x/2-5), sy*(pod_y/2-5), 0]) cylinder(d=arm_w, h=arm_h);
+        translate([sx*motor_off, sy*motor_off, 0]) cylinder(d=arm_w_tip, h=arm_h);
     }
-    // hex nacelle with press-fit motor pocket + wire channel
+    // round nacelle: a light conical collar holding the press-fit motor
     translate([sx*motor_off, sy*motor_off, 0]) {
         difference() {
-            hex(nacelle_d, motor_h);
-            translate([0,0,floor_t]) cylinder(d=motor_d+0.15, h=motor_h);
-            cylinder(d=motor_d-3, h=motor_h*3, center=true);            // vent
-            // wire channel toward pod
-            rotate([0,0,ang+180]) translate([0,-1.6,floor_t]) cube([nacelle_d, 3.2, motor_h]);
+            cylinder(d1=nacelle_d, d2=nacelle_d-1, h=nacelle_h);   // slim taper
+            translate([0,0,floor_t]) cylinder(d=motor_d+0.15, h=nacelle_h);  // motor pocket
+            cylinder(d=motor_d-3, h=nacelle_h*3, center=true);     // bottom wire/vent hole
+            // wire channel toward the pod
+            rotate([0,0,ang+180]) translate([0,-1.5,floor_t]) cube([nacelle_d, 3, nacelle_h]);
         }
     }
 }
