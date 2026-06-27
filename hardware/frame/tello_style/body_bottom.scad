@@ -49,7 +49,10 @@ arm_root_z   = 6.5;   // arm attaches HIGH on the pod corner (upper body)
 motor_lift   = 1.0;   // motors sit LOW → arms slope DOWN from body to motor
                       // (anhedral, inverted) — the Tello stance
 
-sensor_win  = 16;     // flow + ToF window
+tof_d       = 7;      // VL53L1X ToF (IR) aperture  — at board U8
+flow_d      = 7;      // PMW3901 optical-flow aperture — at board U9
+tof_pos     = [0, -3.9];   // frame coords of U8 (board 19,33.1 -> centred)
+flow_pos    = [0,  8.3];   // frame coords of U9 (board 19,45.3 -> centred)
 cam_w       = 9;      // camera barrel
 snap_n      = 8;
 
@@ -76,14 +79,37 @@ module inner_cavity() {
         rrect(pod_x-2*wall, pod_y-2*wall, max(pod_r-wall,1), half_h+1);
 }
 
+/* honeycomb ventilation field cut through the floor — a hex grid that skips a
+   clear zone around each sensor aperture and a solid pad under each PCB boss,
+   and keeps a solid floor border (for the walls). */
+module floor_vents() {
+    R = 2.5; gap = 1.1;                       // hex radius + wall
+    pitch = R*sqrt(3) + gap; dy = pitch*sqrt(3)/2;
+    sensors = [tof_pos, flow_pos];
+    bosses  = [for (sx=[-1,1], sy=[-1,1]) [sx*pcb_hole/2, sy*pcb_hole_y/2]];
+    for (iy=[-7:7], ix=[-4:4]) {
+        x = ix*pitch + (iy%2 ? pitch/2 : 0);
+        y = iy*dy;
+        keep = abs(x) < 15 && abs(y) < 33
+            && min([for (s=sensors) norm([x-s[0], y-s[1]])]) > 6
+            && min([for (b=bosses)  norm([x-b[0], y-b[1]])]) > 7;
+        if (keep)
+            translate([x, y, -eps]) rotate([0,0,30])
+                cylinder(r=R, h=floor_t+2*eps, $fn=6);
+    }
+}
+
 /* central pod outer wall + floor */
 module pod_shell() {
     difference() {
         pod_outer();
         inner_cavity();
-        // bottom sensor window (flow + ToF look straight down; long enough to
-        // clear both U8/U9 which are spaced along the board spine)
-        translate([0,3,-eps]) rrect(sensor_win, sensor_win+10, 2, floor_t+2*eps);
+        // dedicated apertures for the two DOWNWARD sensors (clean, surrounded
+        // by solid floor so stray light/air doesn't bleed across them)
+        translate([tof_pos[0],  tof_pos[1],  -eps]) cylinder(d=tof_d,  h=floor_t+2*eps);  // ToF (IR)
+        translate([flow_pos[0], flow_pos[1], -eps]) cylinder(d=flow_d, h=floor_t+2*eps);  // optical flow
+        // honeycomb ventilation grid across the rest of the floor
+        floor_vents();
         // camera aperture at the front nose (-y)
         translate([0,-pod_y/2-eps,half_h*0.5])
             rotate([-90,0,0]) cylinder(d=cam_w+0.6, h=wall+2);

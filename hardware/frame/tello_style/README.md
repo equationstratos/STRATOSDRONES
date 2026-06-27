@@ -18,12 +18,13 @@ fillet with a 4.9 mm fab margin — straight from `design.py` `BOARD`); the body
 also has a **rounded belly** (filleted bottom edge, less flat from the front)
 and the arm roots are trimmed flush to the cavity so nothing bulges inside. The
 1S pack sits on top of
-the board, held by a **cradle moulded into the canopy** (bottom-side flow + ToF
-sensors look down through the floor window, so nothing mounts beneath the board).
+the board, held by a **cradle moulded into the canopy**. The floor is a
+**honeycomb vent grid** with two clean **downward apertures** for the IR ToF
+(VL53L1X) and optical-flow (PMW3901) sensors; nothing mounts beneath the board.
 
 | File | Part |
 |---|---|
-| `body_bottom.scad` | lower shell — PCB bay + bosses, 4 Eiffel-truss arms + motor mounts, bottom sensor window, camera nose |
+| `body_bottom.scad` | lower shell — PCB bay + bosses, 4 Eiffel-truss arms + motor mounts, honeycomb floor vents + ToF/flow apertures, camera nose |
 | `body_top.scad` | upper canopy — hex vents, LED light pipes, snap clips, battery cradle with snap retention |
 | `battery_dummy.scad` | **print-fit gauge** — solid 1S pack at real size (22×53×9.5), adjust to your pack |
 | `pcb_dummy.scad` | **print-fit gauge** — board outline + holes + key components, to check fit/alignment |
@@ -67,9 +68,9 @@ print, mostly thin walls, lands close to this:
 
 | Shell | Volume | ~Mass (PLA) |
 |---|---|---|
-| `body_bottom` | 13.5 cm³ | **16.7 g** |
-| `body_top` | 4.8 cm³ | **6.0 g** (incl. battery cradle) |
-| **Frame total** | 18.3 cm³ | **≈ 22.6 g** |
+| `body_bottom` | 12.3 cm³ | **15.3 g** |
+| `body_top` | 5.7 cm³ | **7.1 g** (incl. battery cradle) |
+| **Frame total** | 18.0 cm³ | **≈ 22.3 g** |
 
 Down from ≈ 39 g (the original hex-block shells) — ~35 % lighter, *and* it now
 fits the real 38 × 74 board (the old 37 mm inner pod could not) and retains the
