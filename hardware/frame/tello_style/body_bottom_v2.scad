@@ -101,6 +101,26 @@ module blade(A, B, thick, h) {
         translate(B) rotate([0,0,ang]) cube([eps, thick, h], center=true);
     }
 }
+// a strut = the slim blade PLUS a flared root fairing where it meets the body:
+// the root grows wider and deepens DOWN toward the floor, and is pushed a few mm
+// INTO the wall so it welds through the full wall thickness (inner_cavity then
+// trims it flush inside). This makes the arm look moulded into the body — a
+// gusset — instead of a thin tab grazing the surface.
+module strut(A, B, thick, h) {
+    ang = atan2(B[1]-A[1], B[0]-A[0]);
+    dir = (B - A) / norm(B - A);            // unit, motor -> body
+    L   = norm(B - A);
+    blade(A, B, thick, h);                  // slim flat blade
+    Po  = A + dir*(L - 8);                  // 8 mm outboard of the body — still slim
+    Pi  = B + dir*2.2;                      // 2.2 mm INTO the wall (volumetric weld)
+    z0  = floor_t + 1.0;                    // fair right down toward the floor
+    z1  = arm_root_z + h/2;                 // up to the blade top
+    hull() {
+        translate(Po) rotate([0,0,ang]) cube([eps, thick,       h     ], center=true);
+        translate([Pi[0], Pi[1], (z0+z1)/2])
+            rotate([0,0,ang])             cube([eps, thick + 2.6, z1-z0], center=true);
+    }
+}
 module nacelle(m, ang) {
     translate([m[0]*motor_off, m[1]*motor_off, motor_lift]) difference() {
         cylinder(d1=nacelle_d, d2=nacelle_d-1, h=nacelle_h);
@@ -111,8 +131,8 @@ module nacelle(m, ang) {
 blade_h = 4.5;    // blade height (vertical) — flat face, not a tube
 module twin_arms() {
     for (m = MOTORS) {
-        blade(Mtop(m), P_side(m), 4.4, blade_h);   // wire blade (holds the channel)
-        blade(Mtop(m), P_end(m),  2.8, blade_h);   // plain flat blade
+        strut(Mtop(m), P_side(m), 4.4, blade_h);   // wire strut (holds the channel)
+        strut(Mtop(m), P_end(m),  2.8, blade_h);   // plain flat strut
         nacelle(m);
     }
 }
@@ -141,7 +161,15 @@ module pcb_bosses() {
 module snap_posts() {
     for (i=[0:snap_n-1]) {
         a = 45 + i*360/snap_n; rx = pod_x/2-2.2; ry = pod_y/2-2.2;
-        translate([rx*cos(a), ry*sin(a), half_h-2.4]) cylinder(d=2.2, h=2.4);
+        px = rx*cos(a); py = ry*sin(a); sx = sign(px);
+        // the clip post itself (the canopy socket drops over it)
+        translate([px, py, half_h-2.4]) cylinder(d=2.2, h=2.4);
+        // anchor rib to the inner side wall so the post isn't a floating pillar
+        // (it sits in the corner gap, outboard of the battery, hidden inside)
+        hull() {
+            translate([px, py, half_h-2.4]) cylinder(d=2.0, h=2.4);
+            translate([sx*(pod_x/2-wall*0.4), py, half_h-2.4]) cylinder(d=2.0, h=2.4);
+        }
     }
 }
 

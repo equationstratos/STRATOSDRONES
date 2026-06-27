@@ -39,8 +39,10 @@ the board, held by a **cradle moulded into the canopy**. The floor is a
 `body_bottom_v2.scad` + `body_top_v2.scad` are an alternative pair styled closer
 to the reference Tello: **two splayed flat blades per motor** (instead of one
 truss arm) that start high on the body and slope down to the motor pods, meeting
-each pod at its **mid-height**; the **motor wires hide inside a channel** in one
-blade of each pair and exit into the PCB bay. The 1S pack loads from the **rear**
+each pod at its **mid-height**. Each blade root **flares into a moulded gusset**
+that fairs down the body wall and welds through it (it doubles as an internal
+buttress) so the arms look part of the shell, not tabs stuck on. The **motor
+wires hide inside a channel** in one blade of each pair and exit into the PCB bay. The 1S pack loads from the **rear**
 through a slot in the lower shell and a matching opening + guide rails in the
 capot, so you never have to pull the canopy to swap a battery. The capot is a
 smooth low dome that stays just under the spinning props (lowered motors).
@@ -50,7 +52,8 @@ smooth low dome that stays just under the spinning props (lowered motors).
 
 Print `body_bottom_v2.stl` + `body_top_v2.stl` as a set (light tree supports under
 the down-swept blades / motor pods). Solid-volume estimate in PLA (1.24 g/cm³):
-**≈ 14.8 g** lower + **≈ 7.7 g** capot = **≈ 22.5 g** — same class as the v1 pair.
+**≈ 16.3 g** lower (incl. the moulded arm gussets) + **≈ 7.7 g** capot = **≈ 24 g**
+— same class as the v1 pair.
 
 ## Print-fit prototype (test before the real board)
 
