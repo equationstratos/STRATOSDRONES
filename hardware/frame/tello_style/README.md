@@ -13,8 +13,11 @@ from the upper body to low motor mounts** (descending dihedral, like a Tello) �
 a non-flat stance with the body riding high and the props clearing above the
 (lowered) canopy, plus a faceted hex-vented canopy (solid over the lens) and a
 chamfered camera nose. The pod is sized to the
-**real mainboard** (38 × 74 mm; M2 mounts at **30 × 66**, i.e. one in each
-corner_r=4 fillet — straight from `design.py` `BOARD`); the 1S pack sits on top of
+**real mainboard** (38 × 74 mm; M2 mounts at **26 × 62**, one in each corner_r=6
+fillet with a 4.9 mm fab margin — straight from `design.py` `BOARD`); the body
+also has a **rounded belly** (filleted bottom edge, less flat from the front)
+and the arm roots are trimmed flush to the cavity so nothing bulges inside. The
+1S pack sits on top of
 the board, held by a **cradle moulded into the canopy** (bottom-side flow + ToF
 sensors look down through the floor window, so nothing mounts beneath the board).
 
@@ -34,8 +37,8 @@ the lower shell needs **light supports under the descending arms / motor pods**
 (the down-swept arms overhang) — tree supports at the four motor mounts are
 enough. The pod fits the **38 × 74 mm Tello-style PCB** (see
 `../../pcb/`, board outline `BOARD` in `design.py`); the four M2 bosses are at
-a **30 × 66 mm** pitch — one in each corner (matching the board's real holes),
-filleted with a screw lead-in. Press the 8520 motors into the round mounts, route the wires through
+a **26 × 62 mm** pitch — one in each rounded corner (matching the board's real
+holes), filleted with a screw lead-in. Press the 8520 motors into the round mounts, route the wires through
 the arm channels to the board's corner motor pads, drop the board onto the four
 bosses, slide the 1S pack into the canopy cradle, and snap the canopy on.
 
@@ -49,9 +52,9 @@ print, mostly thin walls, lands close to this:
 
 | Shell | Volume | ~Mass (PLA) |
 |---|---|---|
-| `body_bottom` | 14.4 cm³ | **17.9 g** |
+| `body_bottom` | 13.5 cm³ | **16.7 g** |
 | `body_top` | 4.8 cm³ | **6.0 g** (incl. battery cradle) |
-| **Frame total** | 19.2 cm³ | **≈ 23.9 g** |
+| **Frame total** | 18.3 cm³ | **≈ 22.6 g** |
 
 Down from ≈ 39 g (the original hex-block shells) — ~35 % lighter, *and* it now
 fits the real 38 × 74 board (the old 37 mm inner pod could not) and retains the

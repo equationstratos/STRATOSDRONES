@@ -569,10 +569,11 @@ POWER_NETS = ["VBAT", "VBUS", "3V3", "GND", "VDD_CORE", "VDD_MIPI"]
 # Tello-style mainboard: narrow PORTRAIT board (≈1:2), like the real Tello
 # main PCB — optical cluster at the nose, shielded MCU/RF zones in the middle,
 # motor pads at the four corners, USB on the side edge. y=0 is the camera nose.
-# Mount pitch 30x66 puts the holes at (4,4)/(34,4)/(4,70)/(34,70) — centred in
-# each corner_r=4 fillet, a clean classic 4-corner pattern.
-BOARD = dict(w=38.0, h=74.0, corner_r=4.0,
-             mount_pitch_x=30.0, mount_pitch_y=66.0, mount_d=2.2)
+# Corners rounded to r=6 so the M2 holes sit in roomy fillets with a generous
+# fab margin: mount pitch 26x62 -> holes at (6,6)/(32,6)/(6,68)/(32,68), each
+# 6 mm from both edges = 4.9 mm of board between the drill and the board edge.
+BOARD = dict(w=38.0, h=74.0, corner_r=6.0,
+             mount_pitch_x=26.0, mount_pitch_y=62.0, mount_d=2.2)
 
 
 def all_components():

@@ -31,8 +31,8 @@ nacelle_h    = motor_grip + floor_t;          // ≈13.2 → flush with the pod,
 // (w=38, h=74, mount_pitch 28x64). The pod is sized to seat this board.
 pcb_x       = 38;     // real mainboard width  (was a stale 36)
 pcb_y       = 74;     // real mainboard length (was a stale 70)
-pcb_hole    = 30;     // M2 mount pitch X — holes nestled in the corners
-pcb_hole_y  = 66;     // M2 mount pitch Y  (4 mm from each edge = corner_r)
+pcb_hole    = 26;     // M2 mount pitch X — holes in r6 corner fillets
+pcb_hole_y  = 62;     // M2 mount pitch Y  (6 mm from each edge, 4.9 mm margin)
 pcb_clear   = 0.5;    // wall-to-board clearance per side (drop-in fit)
 boss_h      = 3.0;    // standoff: PCB sits at floor_t+boss_h, bottom sensors
                       // (U8 ToF + U9 flow, side B) clear the floor + window
@@ -57,13 +57,30 @@ module rrect(x, y, r, h) {            // rounded rect prism, centered
     linear_extrude(h) offset(r) square([x-2*r, y-2*r], center=true);
 }
 
+/* rounded-bottom outer pod solid — the belly edge is filleted so the body reads
+   less flat / boxy from the front (the top stays flat to meet the canopy). */
+module pod_outer() {
+    br  = 3;                                    // bottom fillet radius
+    isq = [pod_x - 2*pod_r, pod_y - 2*pod_r];    // shared inner square
+    hull() {
+        translate([0,0,br]) linear_extrude(half_h - br) offset(pod_r) square(isq, center=true);
+        for (i = [0:6])                          // quarter-round bottom edge
+            translate([0,0, br*(1 - cos(i/6*90))]) linear_extrude(0.02)
+                offset(pod_r - br*(1 - sin(i/6*90))) square(isq, center=true);
+    }
+}
+
+/* the hollow interior — also re-cut from the arms so they never bulge inward */
+module inner_cavity() {
+    translate([0,0,floor_t])
+        rrect(pod_x-2*wall, pod_y-2*wall, max(pod_r-wall,1), half_h+1);
+}
+
 /* central pod outer wall + floor */
 module pod_shell() {
     difference() {
-        rrect(pod_x, pod_y, pod_r, half_h);
-        // hollow interior
-        translate([0,0,floor_t])
-            rrect(pod_x-2*wall, pod_y-2*wall, max(pod_r-wall,1), half_h);
+        pod_outer();
+        inner_cavity();
         // bottom sensor window (flow + ToF look straight down; long enough to
         // clear both U8/U9 which are spaced along the board spine)
         translate([0,3,-eps]) rrect(sensor_win, sensor_win+10, 2, floor_t+2*eps);
@@ -187,7 +204,8 @@ module snap_posts() {
 
 module body_bottom() {
     pod_shell();
-    for (sx=[-1,1], sy=[-1,1]) arm(sx, sy);
+    // trim each arm to the cavity so its root can't bulge into the interior
+    for (sx=[-1,1], sy=[-1,1]) difference() { arm(sx, sy); inner_cavity(); }
     pcb_bosses();
     snap_posts();
 }
