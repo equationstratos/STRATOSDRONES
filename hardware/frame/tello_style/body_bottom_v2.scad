@@ -28,8 +28,9 @@ pod_x = pcb_x + 2*pcb_clear + 2*1.5;   // ≈42
 pod_y = pcb_y + 2*pcb_clear + 2*1.5;   // ≈78
 pod_r = 9; wall = 1.5; half_h = 13;
 
-arm_root_z = 7.0;   // struts attach HIGH on the pod (upper body)
-motor_lift = 1.0;   // motors sit LOW → struts descend (the Tello stance)
+arm_root_z = 11.0;  // struts attach near the TOP of the pod (like the Tello)
+motor_lift = -1.0;  // motor cylinders dropped so they hang below the body and
+                    // their TOP sits just under the pod top (body rides higher)
 
 tof_d = 7; flow_d = 7; tof_pos = [0,-3.9]; flow_pos = [0,8.3]; cam_w = 9; snap_n = 4;
 
@@ -87,7 +88,7 @@ module pod_shell() {
 MOTORS = [for (sx=[-1,1], sy=[-1,1]) [sx,sy]];
 
 // per motor: the motor junction (low) + two splayed pod attach points (high)
-function Mtop(m) = [m[0]*motor_off, m[1]*motor_off, motor_lift+2.5];
+function Mtop(m) = [m[0]*motor_off, m[1]*motor_off, motor_lift + nacelle_h/2];  // arms meet the cylinder at MID-height
 function P_side(m) = [m[0]*21, m[1]*20, arm_root_z];   // onto the long side wall
 function P_end(m)  = [m[0]*14, m[1]*38, arm_root_z];   // onto the end corner
 
@@ -107,7 +108,7 @@ module nacelle(m, ang) {
         cylinder(d=motor_d-3, h=nacelle_h*3, center=true);                 // bottom wire/vent
     }
 }
-blade_h = 5.5;    // blade height (vertical) — flat face, not a tube
+blade_h = 4.5;    // blade height (vertical) — flat face, not a tube
 module twin_arms() {
     for (m = MOTORS) {
         blade(Mtop(m), P_side(m), 4.4, blade_h);   // wire blade (holds the channel)
