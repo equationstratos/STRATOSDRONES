@@ -25,7 +25,7 @@ the board, held by a **cradle moulded into the canopy**. The floor is a
 | File | Part |
 |---|---|
 | `body_bottom.scad` | lower shell — PCB bay + bosses, 4 Eiffel-truss arms + motor mounts, honeycomb floor vents + ToF/flow apertures, camera nose |
-| `body_bottom_v2.scad` | **WIP alternative lower shell** — twin Tello-style splayed struts per motor with hidden motor-wire channels + a rear battery slot (needs a matching rear-slot canopy) |
+| `body_bottom_v2.scad` | **WIP alternative lower shell** — twin flat Tello-style splayed blades (descending) per motor with hidden motor-wire channels + a rear battery slot (needs a matching rear-slot canopy) |
 | `body_top.scad` | upper canopy — hex vents, LED light pipes, snap clips, battery cradle with snap retention |
 | `body_top_smooth.scad` | **alternative canopy** — smooth shell, no vents/pipes (same cradle + clips); print *instead of* `body_top` |
 | `body_top_dome.scad` | **alternative canopy** — fully-rounded dome (no flat top); cradle clipped to the dome so it never shows through; print *instead of* `body_top` |

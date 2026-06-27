@@ -91,8 +91,14 @@ function Mtop(m) = [m[0]*motor_off, m[1]*motor_off, motor_lift+2.5];
 function P_side(m) = [m[0]*21, m[1]*20, arm_root_z];   // onto the long side wall
 function P_end(m)  = [m[0]*14, m[1]*38, arm_root_z];   // onto the end corner
 
-module strut(A, B, d) {
-    hull() { translate(A) sphere(d=d, $fn=22); translate(B) sphere(d=d*1.05, $fn=22); }
+// flat strut: a vertical BLADE between A and B (thin horizontally, taller
+// vertically) — a flat face, no round-tube look.
+module blade(A, B, thick, h) {
+    ang = atan2(B[1]-A[1], B[0]-A[0]);
+    hull() {
+        translate(A) rotate([0,0,ang]) cube([eps, thick, h], center=true);
+        translate(B) rotate([0,0,ang]) cube([eps, thick, h], center=true);
+    }
 }
 module nacelle(m, ang) {
     translate([m[0]*motor_off, m[1]*motor_off, motor_lift]) difference() {
@@ -101,10 +107,11 @@ module nacelle(m, ang) {
         cylinder(d=motor_d-3, h=nacelle_h*3, center=true);                 // bottom wire/vent
     }
 }
+blade_h = 5.5;    // blade height (vertical) — flat face, not a tube
 module twin_arms() {
     for (m = MOTORS) {
-        strut(Mtop(m), P_side(m), 4.7);   // wire strut (channel cut later)
-        strut(Mtop(m), P_end(m),  4.4);   // plain structural strut
+        blade(Mtop(m), P_side(m), 4.4, blade_h);   // wire blade (holds the channel)
+        blade(Mtop(m), P_end(m),  2.8, blade_h);   // plain flat blade
         nacelle(m);
     }
 }
