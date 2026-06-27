@@ -31,8 +31,8 @@ nacelle_h    = motor_grip + floor_t;          // ≈13.2 → flush with the pod,
 // (w=38, h=74, mount_pitch 28x64). The pod is sized to seat this board.
 pcb_x       = 38;     // real mainboard width  (was a stale 36)
 pcb_y       = 74;     // real mainboard length (was a stale 70)
-pcb_hole    = 28;     // M2 mount pitch X (was a stale 26)
-pcb_hole_y  = 64;     // M2 mount pitch Y (was a stale 60)
+pcb_hole    = 30;     // M2 mount pitch X — holes nestled in the corners
+pcb_hole_y  = 66;     // M2 mount pitch Y  (4 mm from each edge = corner_r)
 pcb_clear   = 0.5;    // wall-to-board clearance per side (drop-in fit)
 boss_h      = 3.0;    // standoff: PCB sits at floor_t+boss_h, bottom sensors
                       // (U8 ToF + U9 flow, side B) clear the floor + window
@@ -44,7 +44,7 @@ wall         = 1.5;   // pod side wall (was 1.6); inner walls locate the board
 half_h       = 13;    // height of the lower shell (keep: assembly offset)
 arm_w        = 7.5;   // arm root width  (slimmer, was 9)
 arm_w_tip    = 6.0;   // arm width at the motor (taper → sleeker + lighter)
-arm_h        = 5.0;   // arm thickness (was 6)
+arm_h        = 6.5;   // arm height — taller so the side truss reads too
 
 sensor_win  = 16;     // flow + ToF window
 cam_w       = 9;      // camera barrel
@@ -84,24 +84,38 @@ module pod_shell() {
 }
 
 /* Eiffel-style open-truss arm beam (local frame, root at x=0 → motor at x=L).
-   A tapered beam with alternating triangular through-windows leaves a zigzag
-   lattice web between two solid edge chords — lighter, and reads like a girder.
-   Root and tip stay solid for a strong joint to the pod and the nacelle. */
+   A tapered beam is cut with alternating triangular windows on BOTH the top/
+   bottom faces (through Z) AND the side faces (through Y), offset by half a bay
+   so the cuts interleave. The result is a 3-D lattice girder: triangulation
+   reads from above AND from the front/side, with solid edge chords + solid
+   root/tip for the joints to the pod and nacelle. */
 module lattice_arm(L, w0, w1, h) {
-    chord = 1.6;                  // solid material kept on each Y edge
-    yi    = w1/2 - chord;          // half-height of the truss windows
+    chord = 1.5;
     xs = 5.5; xe = L - 4; n = 4; seg = (xe - xs)/n;
     difference() {
         hull() {                   // tapered beam, rounded ends
             cylinder(d=w0, h=h);
             translate([L,0,0]) cylinder(d=w1, h=h);
         }
+        // top/bottom lattice — triangles in X-Y, cut straight through Z
+        yi = w1/2 - chord;
         if (yi > 0.7)
             for (i = [0:n-1]) {
                 x0 = xs + i*seg; x1 = x0 + seg;
-                s = (i % 2 == 0) ? 1 : -1;     // alternate apex up/down → zigzag
+                s = (i % 2 == 0) ? 1 : -1;
                 translate([0,0,-eps]) linear_extrude(h + 2*eps)
                     polygon([[x0, s*yi], [x1, s*yi], [(x0+x1)/2, -s*yi]]);
+            }
+        // side lattice — triangles in X-Z, cut through Y, offset by half a bay
+        zi = h/2 - chord;
+        if (zi > 0.7)
+            for (i = [0:n-1]) {
+                x0 = xs + seg/2 + i*seg; x1 = min(x0 + seg, xe + seg/2);
+                s = (i % 2 == 0) ? 1 : -1;
+                translate([0, w0/2 + eps, 0]) rotate([90,0,0])
+                    linear_extrude(w0 + 2*eps)
+                        polygon([[x0, h/2 + s*zi], [x1, h/2 + s*zi],
+                                 [(x0+x1)/2, h/2 - s*zi]]);
             }
     }
 }

@@ -73,7 +73,7 @@ PLACE = {
     "J11": (28.7, 67.9, 0, "T"),  # c6 uart pads
     "R19": (25.5, 43.0, 0, "T"),  # pinned clear of J3's through-hole pads
     # motor FETs + pads near the four corners, inboard of the mount holes
-    # (28x64 pitch -> holes at (5,5)/(33,5)/(5,69)/(33,69)).
+    # (30x66 pitch -> holes at (4,4)/(34,4)/(4,70)/(34,70), in the corners).
     "Q1": (32.1, 19.2, 0, "T"), "J5": (33.8, 12.2, 0, "T"),
     "Q2": (31.8, 54.7, 0, "T"), "J6": (33.8, 61.8, 0, "T"),
     "Q3": (5.9, 54.8, 0, "T"),  "J7": (4.2, 61.8, 0, "T"),
