@@ -26,11 +26,14 @@ roof_t      = 1.2;    // was 1.4
 cam_w       = 9;
 snap_n      = 8;
 
-/* 1S pack, carried on top of the board by a cradle under the canopy */
-batt_w      = 27;     // pack width
+/* 1S pack, carried on top of the board by a cradle under the canopy.
+   Default ≈ a Tello-class 1S 1100 mAh LiHV pack — KEEP IN SYNC with
+   battery_dummy.scad and ADJUST to your real pack before the final print. */
+batt_w      = 22;     // pack width
 batt_l      = 53;     // pack length
+batt_h      = 9.5;    // pack thickness
 batt_clear  = 0.6;    // fit clearance per side
-rail_t      = 1.5;    // cradle wall thickness
+rail_t      = 1.6;    // cradle wall thickness
 
 module rrect(x, y, r, h) {
     linear_extrude(h) offset(r) square([x-2*r, y-2*r], center=true);
@@ -72,26 +75,30 @@ module canopy() {
     }
 }
 
-/* Integrated battery cradle: brackets the 1S pack (sitting on top of the board)
-   from inside the canopy — two side rails + a rear stop + a front retaining lip.
-   It grips the pack laterally and fore-aft; the closed canopy holds it down.
-   Lightening windows keep the rails from adding much mass. */
+/* Integrated battery cradle with a SNAP retention so the pack can't fall out.
+   Two side rails reach down from the roof into the pod to bracket the pack
+   sitting on the board; small detent bumps near the open end snap over the
+   pack so you can clip it into the canopy, flip it, and the pack stays put.
+   Front stop locates it; the rear is open for the lead to J1. */
 module battery_cradle() {
-    iw   = batt_w/2 + batt_clear;        // inner half-width
-    h    = top_h - roof_t;               // hang from the roof down to the pod rim
-    // two side rails with lightening windows
-    for (s = [-1,1])
-        translate([s*(iw + rail_t/2), 0, 0])
+    iw  = batt_w/2 + batt_clear;     // inner half-width
+    top =  top_h - roof_t;           // roof (canopy-local z)
+    bot = -5;                         // reach down into the pod to grip the pack
+    H   = top - bot;
+    for (s = [-1,1]) {
+        // side rail (lightening windows keep it from adding mass)
+        translate([s*(iw + rail_t/2), 0, bot])
             difference() {
-                translate([-rail_t/2, -batt_l/2, 0]) cube([rail_t, batt_l, h]);
-                for (k = [-1.5:1:1.5])
-                    translate([-rail_t/2-eps, k*12, h*0.5])
-                        cube([rail_t+2*eps, 7, h*0.55], center=true);
+                translate([-rail_t/2, -batt_l/2, 0]) cube([rail_t, batt_l, H]);
+                for (k = [-1:1:1])
+                    translate([0, k*15, H*0.55]) cube([rail_t+1, 9, H*0.5], center=true);
             }
-    // rear stop wall
-    translate([-iw-rail_t, batt_l/2, 0]) cube([2*(iw+rail_t), rail_t, h]);
-    // front retaining lip (low, leaves room for the battery lead)
-    translate([-iw*0.6, -batt_l/2 - rail_t, 0]) cube([iw*1.2, rail_t, h*0.55]);
+        // two snap detents per rail near the open end → retain the pack
+        for (yy = [-batt_l/4, batt_l/4])
+            translate([s*iw, yy, bot + 2.2]) sphere(r=0.9, $fn=18);
+    }
+    // front stop wall (nose side); rear left open for the battery lead
+    translate([0, -batt_l/2 - rail_t/2, bot + H/2]) cube([2*iw + 2*rail_t, rail_t, H], center=true);
 }
 
 module body_top() {

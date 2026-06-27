@@ -111,7 +111,7 @@ module pod_shell() {
    root/tip for the joints to the pod and nacelle. */
 module lattice_arm(L, w0, w1, h) {
     chord = 1.5;
-    xs = 5.5; xe = L - 4; n = 4; seg = (xe - xs)/n;
+    xs = 2.5; xe = L - 3; n = 5; seg = (xe - xs)/n;   // truss runs nearer the body
     difference() {
         hull() {                   // tapered beam, rounded ends
             cylinder(d=w0, h=h);

@@ -24,8 +24,23 @@ sensors look down through the floor window, so nothing mounts beneath the board)
 | File | Part |
 |---|---|
 | `body_bottom.scad` | lower shell — PCB bay + bosses, 4 Eiffel-truss arms + motor mounts, bottom sensor window, camera nose |
-| `body_top.scad` | upper canopy — hex vents, LED light pipes, snap clips, integrated battery cradle |
+| `body_top.scad` | upper canopy — hex vents, LED light pipes, snap clips, battery cradle with snap retention |
+| `battery_dummy.scad` | **print-fit gauge** — solid 1S pack at real size (22×53×9.5), adjust to your pack |
+| `pcb_dummy.scad` | **print-fit gauge** — board outline + holes + key components, to check fit/alignment |
 | `assembly.scad` | preview only (both shells + motors + prop disks) — do not print |
+
+## Print-fit prototype (test before the real board)
+
+Print all four parts and dry-assemble to validate the dimensions in plastic:
+
+1. `body_bottom.stl` + `body_top.stl` — the frame (light supports under the motor pods).
+2. `pcb_dummy.stl` — drop it onto the four bosses: check the holes line up and the
+   USB / camera / battery cut-outs and the floor sensor window all register.
+3. `battery_dummy.stl` — clip it into the canopy cradle; it should snap and not fall
+   when the canopy is flipped.
+
+Adjust `batt_*` (in both `body_top.scad` and `battery_dummy.scad`) and any opening
+that doesn't line up, then re-export and print the real frame.
 
 ```bash
 openscad -o stl/body_bottom.stl --export-format binstl body_bottom.scad
