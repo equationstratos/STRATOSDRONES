@@ -128,7 +128,10 @@ module lattice_arm(L, w0, w1, h) {
    at the pod corner just outside the PCB footprint; the nacelle stays vertical
    so the motor/prop axis is true. */
 module arm(sx, sy) {
-    rootx = sx*15;          rooty = sy*38;        // pod corner, clear of the board
+    // attach at the pod corner CLOSEST to the motor (on the rounded corner,
+    // just outside the board) so the arm radiates cleanly out — it no longer
+    // runs along / overhangs the body in top view.
+    rootx = sx*20;          rooty = sy*33;
     motx  = sx*motor_off;   moty  = sy*motor_off;
     ang   = atan2(moty-rooty, motx-rootx);
     Lh    = norm([motx-rootx, moty-rooty]);        // horizontal run
