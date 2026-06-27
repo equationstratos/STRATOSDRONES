@@ -1,12 +1,22 @@
 <!-- SPDX-License-Identifier: MIT -->
 # STRATOSDRONE — visualisateur 3D
 
-Un visualisateur 3D interactif du drone, **généré depuis le modèle de simulation**
-(`sim/models/stratosdrone/model.sdf`). Comme il est dérivé du SDF, il ne peut pas
-diverger de ce que Gazebo simule : éditez le SDF, régénérez, la vue 3D suit.
+Un visualisateur 3D interactif du drone, **ancré sur le modèle de simulation**
+(`sim/models/stratosdrone/model.sdf`). Le générateur lit les contraintes dures du
+SDF (positions moteurs, rayon hélice, entraxe, masse) ; éditez le SDF, régénérez,
+la vue 3D suit.
+
+Deux rendus, commutables en direct :
+
+- **Stylisé (Tello)** — un corps moderne *classe DJI Tello* construit
+  procéduralement (coque arrondie, canopy ventilée, nez caméra, bras balayés,
+  hélices 2 pales profilées, **anneaux protège-hélices**) avec matériaux PBR et
+  éclairage par image (reflets). Posé sur la vraie géométrie moteurs/hélices.
+- **Sim (SDF brut)** — les primitives de collision/visuel exactes de Gazebo,
+  pour vérifier que le modèle stylisé colle toujours au modèle simulé.
 
 Sert à **valider ou repenser** la géométrie sans ouvrir KiCad/OpenSCAD/Gazebo :
-implantation des moteurs, encombrement des hélices/carénages, empilage vertical,
+implantation des moteurs, encombrement des hélices/anneaux, empilage vertical,
 et — par glisser-déposer des STL — l'ajustement du frame imprimé sur l'électronique.
 
 ## Ouvrir
@@ -33,6 +43,7 @@ encombrement, masse) sont **recalculées depuis la géométrie** à chaque gén�
 
 | Zone | Action |
 |------|--------|
+| **Modèle** | bascule **Stylisé (Tello)** ↔ **Sim (SDF brut)** |
 | **Vues** | Isométrique / Dessus / Face / Côté |
 | **Composants** | masquer/afficher corps, bras, moteurs, hélices, carénages |
 | **Vue éclatée** | écarte radialement + verticalement pour inspecter l'empilage |

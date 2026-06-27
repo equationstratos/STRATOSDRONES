@@ -1,25 +1,24 @@
 #!/usr/bin/env python3
 """Generate a self-contained interactive 3-D viewer for the STRATOSDRONE.
 
-The drone's canonical geometry lives in ``sim/models/stratosdrone/model.sdf``
-(the same rigid body Gazebo simulates).  This script parses that SDF and bakes
-every ``<visual>`` — body, canopy, camera, battery, the four arms / motors /
-props / ducts — into a single ``drone_viewer.html`` powered by Three.js.
+The drone's *functional* geometry lives in ``sim/models/stratosdrone/model.sdf``
+(the rigid body Gazebo simulates).  This script parses that SDF for the hard
+constraints — motor positions, prop radius, wheelbase, mass — and bakes them
+into a single ``drone_viewer.html`` powered by Three.js.
 
-Because the viewer is generated *from the SDF*, it can never drift from the
-simulation model: re-run this script after editing ``model.sdf`` and the 3-D
-view updates to match.  The HTML is fully self-contained (Three.js pulled from
-a CDN via an import-map) — double-click it on any machine with a browser.
+The viewer shows the drone two ways, switchable live:
+  • **Stylisé (Tello)** — a sleek, modern, DJI-Tello-class body built
+    procedurally in Three.js (rounded shell, vented canopy, camera nose, swept
+    arms, two-blade props, circular prop guards) with PBR materials + image-
+    based lighting.  Anchored to the *real* motor/prop geometry from the SDF.
+  • **Sim (SDF brut)** — the raw collision/visual primitives Gazebo uses, for
+    cross-checking that the pretty model still matches the simulated one.
 
-What the viewer gives you, to *validate or rethink* the design:
-  • orbit / zoom / pan, plus ISO / TOP / FRONT / SIDE preset views
-  • per-group show/hide (shell, arms, motors, props, ducts) + wireframe
-  • an **exploded view** slider to inspect the vertical stack-up
-  • spinning props (with direction matching a real quad's CW/CCW layout)
-  • live dimension read-outs derived from the geometry (wheelbase, prop Ø,
-    tip-to-tip footprint, overall L×W×H, mass)
-  • drag-and-drop of the printed-frame STLs (hardware/frame/**/stl/*.stl) so you
-    can overlay the real 3-D-printed parts on the functional model and check fit
+Both modes share the same controls (per-group show/hide, exploded view,
+spinning props, view presets) and the printed-frame STL drag-and-drop overlay.
+
+Three.js (r160) is inlined as base64 ``data:`` URLs, so the HTML opens by
+double-click, fully offline — no CDN, no web server, no ``file://`` CORS issue.
 
 Run:  python3 sim/viz/gen_viewer.py            # -> sim/viz/drone_viewer.html
       python3 sim/viz/gen_viewer.py --open     # also print a file:// URL
@@ -49,7 +48,9 @@ def _floats(text, n=None):
 
 
 def category(name):
-    """Group a visual by name prefix, for the show/hide layer toggles."""
+    """Group a visual by name prefix, for the show/hide layer toggles.
+    ``duct_*`` maps to ``guards`` so the SDF ducts and the styled prop guards
+    share one toggle."""
     if name.startswith("arm"):
         return "arms"
     if name.startswith("motor"):
@@ -57,7 +58,7 @@ def category(name):
     if name.startswith("prop"):
         return "props"
     if name.startswith("duct"):
-        return "ducts"
+        return "guards"
     return "shell"          # body, canopy, camera, battery
 
 
@@ -74,20 +75,18 @@ def parse_sdf(path):
         box = geom.find("box") if geom is not None else None
         cyl = geom.find("cylinder") if geom is not None else None
 
-        # material diffuse rgba (fall back to a neutral grey)
         diffuse = [0.6, 0.6, 0.62, 1.0]
         mat = vis.find("material")
         if mat is not None and mat.findtext("diffuse"):
             diffuse = _floats(mat.findtext("diffuse"), 4)
 
-        # opacity: explicit <transparency> wins, else diffuse alpha
         tr = vis.findtext("transparency")
         opacity = (1.0 - float(tr)) if tr not in (None, "") else diffuse[3]
 
         part = {
             "name": name,
             "group": category(name),
-            "pose": pose,                       # x y z roll pitch yaw (m, rad)
+            "pose": pose,
             "color": [round(c, 4) for c in diffuse[:3]],
             "opacity": round(opacity, 3),
         }
@@ -102,7 +101,6 @@ def parse_sdf(path):
             continue
         parts.append(part)
 
-    # collision hull (shown as an optional wireframe envelope)
     hull = None
     col = link.find("collision")
     if col is not None:
@@ -123,7 +121,6 @@ def derive_dims(parts, mass):
     motors = [p for p in parts if p["group"] == "motors"]
     props = [p for p in parts if p["group"] == "props"]
 
-    # wheelbase = diagonal distance between opposite motors
     wheelbase = 0.0
     if len(motors) >= 2:
         xs = [m["pose"][0] for m in motors]
@@ -132,13 +129,11 @@ def derive_dims(parts, mass):
 
     prop_d = 2 * max((p.get("radius", 0) for p in props), default=0)
 
-    # tip-to-tip footprint: outermost prop edge across the diagonal
     tip = 0.0
     for p in props:
         x, y = p["pose"][0], p["pose"][1]
         tip = max(tip, 2 * (math.hypot(x, y) + p.get("radius", 0)) / math.sqrt(2))
 
-    # crude axis-aligned bounding box over part centres ± half-extent
     lo = [1e9, 1e9, 1e9]
     hi = [-1e9, -1e9, -1e9]
     for p in parts:
@@ -169,25 +164,21 @@ def derive_dims(parts, mass):
 # HTML emission
 # --------------------------------------------------------------------------
 def _data_url(path):
-    """Inline a JS file as a base64 data: URL module."""
     with open(path, "rb") as f:
         b64 = base64.b64encode(f.read()).decode("ascii")
     return "data:text/javascript;base64," + b64
 
 
 def build_importmap():
-    """Build an import-map whose entries are inlined data: URLs, so the viewer
-    is one self-contained file that opens by double-click (no CDN, no local web
-    server, no file:// CORS problem — ES modules from data: URLs are allowed).
-
-    OrbitControls / STLLoader import only the bare specifier ``three``, which
-    resolves through this same map, so the inlined modules chain correctly."""
+    """Import-map of inlined data: URLs -> one self-contained, offline file.
+    Every addon imports only the bare ``three`` specifier, resolved here too."""
+    v = lambda *p: _data_url(os.path.join(VENDOR, *p))
     imports = {
-        "three": _data_url(os.path.join(VENDOR, "three.module.js")),
-        "three/addons/controls/OrbitControls.js":
-            _data_url(os.path.join(VENDOR, "addons", "controls", "OrbitControls.js")),
-        "three/addons/loaders/STLLoader.js":
-            _data_url(os.path.join(VENDOR, "addons", "loaders", "STLLoader.js")),
+        "three": v("three.module.js"),
+        "three/addons/controls/OrbitControls.js": v("addons", "controls", "OrbitControls.js"),
+        "three/addons/loaders/STLLoader.js": v("addons", "loaders", "STLLoader.js"),
+        "three/addons/geometries/RoundedBoxGeometry.js": v("addons", "geometries", "RoundedBoxGeometry.js"),
+        "three/addons/environments/RoomEnvironment.js": v("addons", "environments", "RoomEnvironment.js"),
     }
     return json.dumps({"imports": imports}, separators=(",", ":"))
 
@@ -206,13 +197,13 @@ TEMPLATE = r"""<!DOCTYPE html>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>STRATOSDRONE — visualisateur 3D</title>
 <style>
-  :root{--bg:#0d1117;--panel:#161b22;--line:#30363d;--ink:#e6edf3;--mut:#8b949e;
+  :root{--bg:#0b0e14;--panel:#12161d;--line:#262d38;--ink:#e6edf3;--mut:#8b949e;
         --acc:#e6730d;--acc2:#2f81f7;}
   *{box-sizing:border-box}
   html,body{margin:0;height:100%;font:13px/1.5 -apple-system,Segoe UI,Roboto,sans-serif;
             background:var(--bg);color:var(--ink);overflow:hidden}
   #app{display:flex;height:100%}
-  #side{width:300px;flex:none;background:var(--panel);border-right:1px solid var(--line);
+  #side{width:304px;flex:none;background:var(--panel);border-right:1px solid var(--line);
         display:flex;flex-direction:column;overflow-y:auto}
   #view{flex:1;position:relative}
   canvas{display:block}
@@ -224,13 +215,13 @@ TEMPLATE = r"""<!DOCTYPE html>
   .sec h2{margin:0 0 9px;font-size:11px;text-transform:uppercase;letter-spacing:.6px;
           color:var(--mut);font-weight:600}
   .row{display:flex;align-items:center;gap:8px;margin:5px 0}
-  label.tog{display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none}
+  label.tog{display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none;margin:5px 0}
   label.tog input{accent-color:var(--acc)}
   .sw{width:11px;height:11px;border-radius:3px;flex:none}
   .btns{display:grid;grid-template-columns:1fr 1fr;gap:6px}
-  button{background:#21262d;color:var(--ink);border:1px solid var(--line);border-radius:6px;
+  button{background:#1b212b;color:var(--ink);border:1px solid var(--line);border-radius:6px;
          padding:7px 8px;font-size:12px;cursor:pointer;transition:.12s}
-  button:hover{background:#30363d;border-color:#484f58}
+  button:hover{background:#262d38;border-color:#3a4250}
   button.on{background:var(--acc);border-color:var(--acc);color:#fff}
   input[type=range]{width:100%;accent-color:var(--acc)}
   .val{color:var(--acc);font-variant-numeric:tabular-nums}
@@ -240,17 +231,17 @@ TEMPLATE = r"""<!DOCTYPE html>
   .spec td.v{color:var(--acc2)}
   #drop{border:1.5px dashed var(--line);border-radius:8px;padding:14px;text-align:center;
         color:var(--mut);font-size:11px;cursor:pointer;transition:.15s}
-  #drop.hot{border-color:var(--acc);color:var(--ink);background:#21262d}
-  #hud{position:absolute;left:12px;bottom:12px;background:rgba(13,17,23,.82);
+  #drop.hot{border-color:var(--acc);color:var(--ink);background:#1b212b}
+  #hud{position:absolute;left:12px;bottom:12px;background:rgba(11,14,20,.82);
        border:1px solid var(--line);border-radius:8px;padding:9px 12px;font-size:11px;
        color:var(--mut);backdrop-filter:blur(4px);pointer-events:none}
   #hud b{color:var(--acc)}
-  #tip{position:absolute;right:12px;top:12px;background:rgba(13,17,23,.82);
+  #tip{position:absolute;right:12px;top:12px;background:rgba(11,14,20,.82);
        border:1px solid var(--line);border-radius:8px;padding:8px 11px;font-size:11px;
-       color:var(--mut);max-width:210px}
+       color:var(--mut);max-width:212px}
   #tip b{color:var(--ink)}
   .mini{font-size:10px;color:var(--mut);margin-top:6px}
-  a{color:var(--acc2)}
+  code{color:var(--acc2)}
 </style>
 </head>
 <body>
@@ -258,8 +249,16 @@ TEMPLATE = r"""<!DOCTYPE html>
   <div id="side">
     <header>
       <h1><b>STRATOS</b>DRONE — 3D</h1>
-      <p>généré depuis <code>model.sdf</code> · Tello EDU class</p>
+      <p>Tello EDU class · 118 mm · 3"</p>
     </header>
+
+    <div class="sec">
+      <h2>Modèle</h2>
+      <div class="btns">
+        <button id="mStyled" class="on">Stylisé (Tello)</button>
+        <button id="mSdf">Sim (SDF brut)</button>
+      </div>
+    </div>
 
     <div class="sec">
       <h2>Vues</h2>
@@ -287,7 +286,7 @@ TEMPLATE = r"""<!DOCTYPE html>
       <div class="btns" style="margin-top:10px">
         <button id="bWire">Fil de fer</button>
         <button id="bGrid" class="on">Grille</button>
-        <button id="bAxes" class="on">Axes</button>
+        <button id="bAxes">Axes</button>
         <button id="bHull">Coque collision</button>
       </div>
     </div>
@@ -322,14 +321,13 @@ TEMPLATE = r"""<!DOCTYPE html>
 
   <div id="view">
     <div id="tip"><b>Souris :</b> glisser = orbite · molette = zoom ·
-      clic-droit = pan. Le drone est orienté <b>FLU</b> (X avant, Y gauche, Z haut).</div>
+      clic-droit = pan. Repère <b>FLU</b> (X avant, Y gauche, Z haut).</div>
     <div id="hud"></div>
   </div>
 </div>
 
-<!-- Three.js (r160) is inlined as base64 data: URLs by gen_viewer.py, so this
-     single file works fully offline and opens by double-click — no CDN, no web
-     server, no file:// CORS problem. Re-generate with sim/viz/gen_viewer.py. -->
+<!-- Three.js (r160) inlined as base64 data: URLs by gen_viewer.py -> single
+     offline file, opens by double-click (no CDN / server / file:// CORS). -->
 <script type="importmap">
 __IMPORTMAP__
 </script>
@@ -338,110 +336,261 @@ __IMPORTMAP__
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { STLLoader } from 'three/addons/loaders/STLLoader.js';
+import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 
 const DATA = /*__DATA__*/;
 const PARTS = DATA.parts, META = DATA.meta;
 
+const GROUPKEYS = ['shell','arms','motors','props','guards'];
 const GROUPS = {
-  shell:  {label:'Corps / canopy / caméra', color:'#c8821f'},
-  arms:   {label:'Bras',                    color:'#2f81f7'},
-  motors: {label:'Moteurs',                 color:'#9aa4ad'},
+  shell:  {label:'Corps / canopy / caméra', color:'#cfd3d9'},
+  arms:   {label:'Bras',                    color:'#3a3f47'},
+  motors: {label:'Moteurs',                 color:'#8b929c'},
   props:  {label:'Hélices',                 color:'#e6730d'},
-  ducts:  {label:'Carénages (ducts)',       color:'#6e7681'},
+  guards: {label:'Protège-hélices',         color:'#6b7280'},
 };
 
-// ---- scene (Z-up to match the SDF FLU frame) -------------------------------
+// real anchors from the SDF (so the styled body sits on the true geometry)
+const MOTORS = PARTS.filter(p=>p.group==='motors')
+  .map(p=>({x:p.pose[0], y:p.pose[1], name:p.name}));
+const PROP_R = Math.max(...PARTS.filter(p=>p.group==='props').map(p=>p.radius||0), 0.0381);
+
+// ---- renderer / scene (Z-up to match the SDF FLU frame) --------------------
 const view = document.getElementById('view');
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x0d1117);
+scene.background = new THREE.Color(0x0b0e14);
 
-const camera = new THREE.PerspectiveCamera(45, 1, 0.001, 100);
+const camera = new THREE.PerspectiveCamera(42, 1, 0.001, 100);
 camera.up.set(0, 0, 1);
 
 const renderer = new THREE.WebGLRenderer({antialias:true});
 renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.05;
 view.appendChild(renderer.domElement);
 
 const controls = new OrbitControls(camera, renderer.domElement);
-controls.enableDamping = true;
-controls.dampingFactor = 0.08;
+controls.enableDamping = true; controls.dampingFactor = 0.08;
 
-scene.add(new THREE.AmbientLight(0xffffff, 0.55));
-const key = new THREE.DirectionalLight(0xffffff, 1.5);
-key.position.set(0.1, 0.15, 0.3); scene.add(key);
-const fill = new THREE.DirectionalLight(0x88aaff, 0.5);
-fill.position.set(-0.2, -0.1, 0.1); scene.add(fill);
+// image-based lighting for soft, modern reflections
+const pmrem = new THREE.PMREMGenerator(renderer);
+scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
 
-// ground grid on the XY plane (Z up), axes gizmo
-const grid = new THREE.GridHelper(0.3, 30, 0x30363d, 0x21262d);
+scene.add(new THREE.HemisphereLight(0xbfd3ff, 0x202024, 0.55));
+const key = new THREE.DirectionalLight(0xffffff, 2.0);
+key.position.set(0.12, 0.16, 0.30); scene.add(key);
+const rim = new THREE.DirectionalLight(0x88aaff, 0.7);
+rim.position.set(-0.2, -0.18, 0.10); scene.add(rim);
+
+const grid = new THREE.GridHelper(0.3, 30, 0x262d38, 0x171c24);
 grid.rotation.x = Math.PI / 2; scene.add(grid);
-const axes = new THREE.AxesHelper(0.06); scene.add(axes);
+const axes = new THREE.AxesHelper(0.06); axes.visible = false; scene.add(axes);
 
-// ---- build meshes from the SDF parts --------------------------------------
-const groupObjs = {};               // group -> THREE.Group
-for (const g in GROUPS){ groupObjs[g] = new THREE.Group(); scene.add(groupObjs[g]); }
-const propMeshes = [];
+// soft contact shadow blob under the drone
+const shadow = new THREE.Mesh(new THREE.CircleGeometry(0.085, 48),
+  new THREE.MeshBasicMaterial({color:0x000000, transparent:true, opacity:0.28}));
+shadow.position.z = -0.0235; scene.add(shadow);
 
-function sdfMatrix(pose){            // SDF pose -> Matrix4 (R = Rz·Ry·Rx, then T)
+// ---- two model roots (styled / sdf) ---------------------------------------
+const ROOTS = {styled:new THREE.Group(), sdf:new THREE.Group()};
+scene.add(ROOTS.styled, ROOTS.sdf);
+function makeGroups(root){const g={};for(const k of GROUPKEYS){g[k]=new THREE.Group();root.add(g[k]);}return g;}
+const G = {styled:makeGroups(ROOTS.styled), sdf:makeGroups(ROOTS.sdf)};
+const propMeshes = {styled:[], sdf:[]};
+let mode = 'styled';
+
+function reg(group, mesh){ mesh.userData.home = mesh.position.clone(); group.add(mesh); return mesh; }
+
+// ===========================================================================
+//  SDF primitive model (raw simulation geometry — validation mode)
+// ===========================================================================
+function sdfMatrix(pose){
   const [x,y,z,r,p,yw] = pose;
   const m = new THREE.Matrix4().makeRotationZ(yw)
     .multiply(new THREE.Matrix4().makeRotationY(p))
     .multiply(new THREE.Matrix4().makeRotationX(r));
-  m.setPosition(x, y, z);
-  return m;
+  m.setPosition(x, y, z); return m;
 }
-
 for (const part of PARTS){
   let geo;
   if (part.type === 'box'){
     geo = new THREE.BoxGeometry(part.size[0], part.size[1], part.size[2]);
-  } else {                          // SDF cylinder axis = Z; Three axis = Y
+  } else {
     geo = new THREE.CylinderGeometry(part.radius, part.radius, part.length, 40);
     geo.rotateX(Math.PI/2);
   }
   const mat = new THREE.MeshStandardMaterial({
-    color:new THREE.Color(part.color[0], part.color[1], part.color[2]),
-    transparent: part.opacity < 1, opacity: part.opacity,
-    metalness:0.25, roughness:0.55, side:THREE.DoubleSide,
-  });
+    color:new THREE.Color(part.color[0],part.color[1],part.color[2]),
+    transparent: part.opacity<1, opacity: part.opacity,
+    metalness:0.25, roughness:0.55, side:THREE.DoubleSide});
   const mesh = new THREE.Mesh(geo, mat);
   mesh.applyMatrix4(sdfMatrix(part.pose));
-  mesh.userData = {part, home:mesh.position.clone()};
-  groupObjs[part.group].add(mesh);
-
+  reg(G.sdf[part.group], mesh);
   if (part.group === 'props'){
-    // visible 2-blade spinner so rotation reads clearly
     const blade = new THREE.Mesh(
       new THREE.BoxGeometry(part.radius*1.9, part.radius*0.16, 0.0016),
       new THREE.MeshStandardMaterial({color:mat.color, metalness:.2, roughness:.6}));
     blade.applyMatrix4(sdfMatrix(part.pose));
-    blade.userData = {home:blade.position.clone()};
-    // CW/CCW by diagonal (FR & BL one way; FL & BR the other)
-    const n = part.name;
-    blade.userData.dir = (n.endsWith('fr')||n.endsWith('bl')) ? 1 : -1;
-    groupObjs.props.add(blade);
-    propMeshes.push(blade);
+    blade.userData.dir = (part.name.endsWith('fr')||part.name.endsWith('bl'))?1:-1;
+    reg(G.sdf.props, blade); propMeshes.sdf.push(blade);
   }
 }
 
-// collision hull wireframe (hidden by default)
+// ===========================================================================
+//  Styled Tello-class model (procedural, PBR) — anchored to the SDF geometry
+// ===========================================================================
+const M = {
+  bodyDark:  new THREE.MeshStandardMaterial({color:0x2b303a, metalness:.45, roughness:.42}),
+  bodyLight: new THREE.MeshStandardMaterial({color:0xcdd2da, metalness:.25, roughness:.5}),
+  canopy:    new THREE.MeshStandardMaterial({color:0x12151c, metalness:.5, roughness:.18}),
+  accent:    new THREE.MeshStandardMaterial({color:0xe6730d, metalness:.3, roughness:.35}),
+  guard:     new THREE.MeshStandardMaterial({color:0x5b626d, metalness:.5, roughness:.4}),
+  motor:     new THREE.MeshStandardMaterial({color:0x474d57, metalness:.85, roughness:.3}),
+  hub:       new THREE.MeshStandardMaterial({color:0x383d45, metalness:.8, roughness:.32}),
+  lens:      new THREE.MeshStandardMaterial({color:0x05070b, metalness:.2, roughness:.08}),
+  led:       new THREE.MeshStandardMaterial({color:0xe6730d, emissive:0xe6730d, emissiveIntensity:1.4,
+               metalness:0, roughness:.5}),
+  propO:     new THREE.MeshStandardMaterial({color:0xe6730d, metalness:.2, roughness:.4, side:THREE.DoubleSide}),
+  propD:     new THREE.MeshStandardMaterial({color:0x20242c, metalness:.3, roughness:.45, side:THREE.DoubleSide}),
+};
+
+function rbox(w,d,h,r,mat){ return new THREE.Mesh(new RoundedBoxGeometry(w,d,h,4,Math.min(r,Math.min(w,d,h)/2-1e-4)), mat); }
+function zcyl(rt,rb,h,mat,seg=36){ const g=new THREE.CylinderGeometry(rt,rb,h,seg); g.rotateX(Math.PI/2); return new THREE.Mesh(g,mat); }
+function at(mesh,x,y,z,rz){ mesh.position.set(x,y,z); if(rz)mesh.rotation.z=rz; return mesh; }
+
+function bladeMesh(r, mat){
+  const s = new THREE.Shape();
+  s.moveTo(0.004,-0.0035);
+  s.quadraticCurveTo(r*0.55,-0.0095, r,-0.0016);
+  s.quadraticCurveTo(r*1.03,0, r,0.0016);
+  s.quadraticCurveTo(r*0.55,0.0095, 0.004,0.0035);
+  s.closePath();
+  const g = new THREE.ExtrudeGeometry(s,{depth:0.0011, bevelEnabled:false});
+  g.translate(0,0,-0.00055);
+  const m = new THREE.Mesh(g, mat); m.rotation.x = 0.24; return m;   // blade pitch
+}
+function buildProp(cx,cy,cz, orange){
+  const grp = new THREE.Group(); grp.position.set(cx,cy,cz);
+  grp.add(zcyl(0.0042,0.0042,0.006, M.hub));
+  const mat = orange ? M.propO : M.propD;
+  for (let i=0;i<2;i++){ const b = bladeMesh(PROP_R, mat); b.rotation.z = i*Math.PI; grp.add(b); }
+  return grp;
+}
+function buildGuard(cx,cy,cz){
+  const grp = new THREE.Group();
+  const R = PROP_R + 0.004;
+  const ring = new THREE.Mesh(new THREE.TorusGeometry(R, 0.0017, 12, 64), M.guard);
+  ring.position.set(cx,cy,cz); grp.add(ring);
+  const ring2 = new THREE.Mesh(new THREE.TorusGeometry(R, 0.0011, 10, 64), M.guard);
+  ring2.position.set(cx,cy,cz-0.006); grp.add(ring2);
+  // four slim struts bridging the motor nacelle to the ring (a clean cage,
+  // not a spoked wheel)
+  const r0 = 0.0095, len = R - r0, mid = (r0 + R) / 2;
+  for (let k=0;k<4;k++){
+    const a = k*Math.PI/2 + Math.PI/4;
+    const strut = rbox(len, 0.0019, 0.0019, 0.0008, M.guard);
+    strut.position.set(cx+Math.cos(a)*mid, cy+Math.sin(a)*mid, cz-0.001);
+    strut.rotation.z = a; grp.add(strut);
+  }
+  return grp;
+}
+
+function buildStyled(){
+  const Gs = G.styled;
+
+  // ---- lower shell / belly (ties the arms into one body) ----
+  const belly = rbox(0.092,0.072,0.012, 0.014, M.bodyDark);
+  at(belly,0,0,-0.004); reg(Gs.shell, belly);
+
+  // ---- main body block ----
+  const body = rbox(0.078,0.056,0.024, 0.012, M.bodyDark);
+  at(body,0,0,0.006); reg(Gs.shell, body);
+
+  // ---- vented canopy (glossy, slightly forward, tapered) ----
+  const canopy = rbox(0.062,0.05,0.014, 0.013, M.canopy);
+  at(canopy,0.004,0,0.019); canopy.scale.set(1,1,1); reg(Gs.shell, canopy);
+  // hex-ish vent slots (dark insets) + an accent stripe
+  for (let i=0;i<3;i++) for (let j=0;j<2;j++){
+    const v = zcyl(0.0035,0.0035,0.004, M.lens, 6);
+    at(v,-0.012+i*0.012, -0.008+j*0.016, 0.026); reg(Gs.shell, v);
+  }
+  const stripe = rbox(0.05,0.006,0.0035,0.0015, M.accent);
+  at(stripe,0.004,0,0.0265); reg(Gs.shell, stripe);
+
+  // ---- camera nose (raised module + glossy lens + accent ring) ----
+  const nose = rbox(0.016,0.022,0.016, 0.005, M.bodyLight);
+  at(nose,0.038,0,0.004); reg(Gs.shell, nose);
+  const lensRing = zcyl(0.0058,0.0058,0.004, M.accent).rotateY(Math.PI/2);
+  lensRing.position.set(0.046,0,0.004); reg(Gs.shell, lensRing);
+  const lens = new THREE.Mesh(new THREE.SphereGeometry(0.0046,24,16), M.lens);
+  lens.position.set(0.047,0,0.004); reg(Gs.shell, lens);
+  // status LED on the tail
+  const led = rbox(0.014,0.004,0.003,0.0015, M.led);
+  at(led,-0.04,0,0.012); reg(Gs.shell, led);
+
+  // ---- rear battery slab (subtle, underside) ----
+  const batt = rbox(0.03,0.03,0.014, 0.003, M.bodyDark);
+  at(batt,-0.024,0,-0.012); reg(Gs.shell, batt);
+
+  // ---- landing feet ----
+  for (const sx of [1,-1]) for (const sy of [1,-1]){
+    const foot = zcyl(0.0035,0.0045,0.008, M.bodyDark);
+    foot.position.set(sx*0.03, sy*0.026, -0.013); reg(Gs.shell, foot);
+  }
+
+  // ---- per-motor: arm, nacelle, motor, prop, guard ----
+  for (const mo of MOTORS){
+    const ang = Math.atan2(mo.y, mo.x);
+    const len = Math.hypot(mo.x, mo.y);
+    // swept arm from body centre out to the motor
+    const arm = rbox(len+0.012, 0.013, 0.008, 0.004, M.bodyDark);
+    at(arm, mo.x*0.52, mo.y*0.52, 0.001, ang); reg(Gs.arms, arm);
+    // nacelle
+    const nac = zcyl(0.0085,0.0095,0.014, M.bodyDark);
+    nac.position.set(mo.x, mo.y, 0.006); reg(Gs.motors, nac);
+    // motor can + shaft
+    const can = zcyl(0.0058,0.0058,0.013, M.motor);
+    can.position.set(mo.x, mo.y, 0.0125); reg(Gs.motors, can);
+    const shaft = zcyl(0.0014,0.0014,0.006, M.hub);
+    shaft.position.set(mo.x, mo.y, 0.02); reg(Gs.motors, shaft);
+    // prop (orange on the FR/FL diagonal, like the SDF)
+    const orange = mo.name.endsWith('fr') || mo.name.endsWith('fl');
+    const prop = buildProp(mo.x, mo.y, 0.0215, orange);
+    reg(Gs.props, prop); propMeshes.styled.push(prop);
+    // guard ring
+    const guard = buildGuard(mo.x, mo.y, 0.012);
+    reg(Gs.guards, guard);
+  }
+}
+buildStyled();
+
+// ---- collision hull wireframe (shared) ------------------------------------
 let hullMesh = null;
 if (META.hull){
   const h = META.hull;
-  const g = new THREE.BoxGeometry(h.size[0], h.size[1], h.size[2]);
-  hullMesh = new THREE.LineSegments(new THREE.EdgesGeometry(g),
+  hullMesh = new THREE.LineSegments(
+    new THREE.EdgesGeometry(new THREE.BoxGeometry(h.size[0],h.size[1],h.size[2])),
     new THREE.LineBasicMaterial({color:0x3fb950}));
   hullMesh.applyMatrix4(sdfMatrix(h.pose));
   hullMesh.visible = false; scene.add(hullMesh);
 }
 
-// ---- explode: push each group's meshes radially + up -----------------------
-const EXPLODE = {shell:[0,0], arms:[0.022,0], motors:[0.045,0.004],
-                 props:[0.045,0.06], ducts:[0.045,0.03]};   // [radial, z] metres
+// ---- mode + group visibility ----------------------------------------------
+const groupVis = {shell:true,arms:true,motors:true,props:true,guards:true};
+function applyMode(){ ROOTS.styled.visible = mode==='styled'; ROOTS.sdf.visible = mode==='sdf'; }
+function applyGroupVis(){ for (const r of ['styled','sdf']) for (const k of GROUPKEYS) G[r][k].visible = groupVis[k]; }
+applyMode(); applyGroupVis();
+
+// ---- explode ---------------------------------------------------------------
+const EXPLODE = {shell:[0,0], arms:[0.022,0], motors:[0.045,0.006],
+                 props:[0.045,0.06], guards:[0.045,0.03]};
+let explodeT = 0;
 function applyExplode(t){
-  for (const g in groupObjs){
-    const [kr,kz] = EXPLODE[g] || [0,0];
-    for (const m of groupObjs[g].children){
+  explodeT = t;
+  for (const r of ['styled','sdf']) for (const k of GROUPKEYS){
+    const [kr,kz] = EXPLODE[k] || [0,0];
+    for (const m of G[r][k].children){
       const h = m.userData.home; if(!h) continue;
       const rad = Math.hypot(h.x, h.y) || 1;
       m.position.set(h.x*(1 + t*kr/rad*8), h.y*(1 + t*kr/rad*8), h.z + t*kz);
@@ -449,75 +598,59 @@ function applyExplode(t){
   }
 }
 
-// ---- STL drag & drop (printed frame overlay) ------------------------------
+// ---- STL drag & drop (printed-frame overlay) ------------------------------
 const stlGroup = new THREE.Group(); scene.add(stlGroup);
-const stlLoader = new STLLoader();
-let stlOpacity = 1;
+const stlLoader = new STLLoader(); let stlOpacity = 1;
 function addSTL(name, buf){
-  const geo = stlLoader.parse(buf);
-  geo.computeVertexNormals();
-  const mat = new THREE.MeshStandardMaterial({color:0x58a6ff, transparent:true,
-    opacity:stlOpacity, metalness:.1, roughness:.7, side:THREE.DoubleSide});
-  const mesh = new THREE.Mesh(geo, mat);
-  // OpenSCAD STLs are in mm, modelled around origin; SDF is metres -> scale.
-  mesh.scale.setScalar(0.001);
+  const geo = stlLoader.parse(buf); geo.computeVertexNormals();
+  const mesh = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({color:0x58a6ff,
+    transparent:true, opacity:stlOpacity, metalness:.1, roughness:.7, side:THREE.DoubleSide}));
+  mesh.scale.setScalar(0.001);                 // OpenSCAD STLs are in mm
   stlGroup.add(mesh);
-  const d = document.getElementById('stlList');
-  d.innerHTML += `<div>+ ${name}</div>`;
+  document.getElementById('stlList').innerHTML += `<div>+ ${name}</div>`;
 }
 const drop = document.getElementById('drop');
-function readFiles(files){
-  for (const f of files){
-    if(!f.name.toLowerCase().endsWith('.stl')) continue;
-    const rd = new FileReader();
-    rd.onload = e => addSTL(f.name, e.target.result);
-    rd.readAsArrayBuffer(f);
-  }
-}
-['dragenter','dragover'].forEach(ev=>drop.addEventListener(ev,e=>{
-  e.preventDefault(); drop.classList.add('hot');}));
-['dragleave','drop'].forEach(ev=>drop.addEventListener(ev,e=>{
-  e.preventDefault(); drop.classList.remove('hot');}));
+function readFiles(files){ for (const f of files){ if(!f.name.toLowerCase().endsWith('.stl'))continue;
+  const rd = new FileReader(); rd.onload = e => addSTL(f.name, e.target.result); rd.readAsArrayBuffer(f); } }
+['dragenter','dragover'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.add('hot');}));
+['dragleave','drop'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.remove('hot');}));
 drop.addEventListener('drop', e=>readFiles(e.dataTransfer.files));
-drop.addEventListener('click', ()=>{
-  const i=document.createElement('input'); i.type='file'; i.accept='.stl'; i.multiple=true;
-  i.onchange=()=>readFiles(i.files); i.click();});
-document.getElementById('stlOp').addEventListener('input', e=>{
-  stlOpacity = e.target.value/100;
-  document.getElementById('stlOpV').textContent = e.target.value+'%';
-  stlGroup.traverse(o=>{ if(o.material){o.material.opacity=stlOpacity;} });
-});
+drop.addEventListener('click', ()=>{const i=document.createElement('input');i.type='file';i.accept='.stl';
+  i.multiple=true; i.onchange=()=>readFiles(i.files); i.click();});
+document.getElementById('stlOp').addEventListener('input', e=>{ stlOpacity=e.target.value/100;
+  document.getElementById('stlOpV').textContent=e.target.value+'%';
+  stlGroup.traverse(o=>{ if(o.material) o.material.opacity=stlOpacity; }); });
 
 // ---- UI: component toggles -------------------------------------------------
 const gEl = document.getElementById('groups');
-for (const g in GROUPS){
+for (const k of GROUPKEYS){
   const lab = document.createElement('label'); lab.className='tog';
-  lab.innerHTML = `<input type="checkbox" checked data-g="${g}">
-    <span class="sw" style="background:${GROUPS[g].color}"></span>${GROUPS[g].label}`;
+  lab.innerHTML = `<input type="checkbox" checked data-g="${k}">
+    <span class="sw" style="background:${GROUPS[k].color}"></span>${GROUPS[k].label}`;
   gEl.appendChild(lab);
 }
-gEl.addEventListener('change', e=>{
-  const g = e.target.dataset.g; if(!g) return;
-  groupObjs[g].visible = e.target.checked;
-});
+gEl.addEventListener('change', e=>{ const k=e.target.dataset.g; if(!k)return;
+  groupVis[k]=e.target.checked; applyGroupVis(); });
+
+// ---- UI: model mode --------------------------------------------------------
+const mStyled=document.getElementById('mStyled'), mSdf=document.getElementById('mSdf');
+function setMode(x){ mode=x; mStyled.classList.toggle('on',x==='styled');
+  mSdf.classList.toggle('on',x==='sdf'); applyMode(); }
+mStyled.onclick=()=>setMode('styled'); mSdf.onclick=()=>setMode('sdf');
 
 // ---- UI: display toggles + sliders ----------------------------------------
 let wire=false, spinRate=0;
 const bWire=document.getElementById('bWire'), bGrid=document.getElementById('bGrid'),
       bAxes=document.getElementById('bAxes'), bHull=document.getElementById('bHull');
 bWire.onclick=()=>{wire=!wire; bWire.classList.toggle('on',wire);
-  scene.traverse(o=>{ if(o.isMesh && o.material && stlGroup!==o.parent){o.material.wireframe=wire;} });};
+  for (const r of ['styled','sdf']) ROOTS[r].traverse(o=>{ if(o.material&&o.material.wireframe!==undefined) o.material.wireframe=wire; });};
 bGrid.onclick=()=>{grid.visible=!grid.visible; bGrid.classList.toggle('on',grid.visible);};
 bAxes.onclick=()=>{axes.visible=!axes.visible; bAxes.classList.toggle('on',axes.visible);};
-bHull.onclick=()=>{ if(hullMesh){hullMesh.visible=!hullMesh.visible;
-  bHull.classList.toggle('on',hullMesh.visible);} };
-
-document.getElementById('explode').addEventListener('input', e=>{
-  const t=e.target.value/100; applyExplode(t);
+bHull.onclick=()=>{ if(hullMesh){hullMesh.visible=!hullMesh.visible; bHull.classList.toggle('on',hullMesh.visible);} };
+document.getElementById('explode').addEventListener('input', e=>{ applyExplode(e.target.value/100);
   document.getElementById('explodeV').textContent=e.target.value+'%';});
-document.getElementById('spin').addEventListener('input', e=>{
-  spinRate = e.target.value/100 * 40;
-  document.getElementById('spinV').textContent = e.target.value==0?'arrêt':e.target.value+'%';});
+document.getElementById('spin').addEventListener('input', e=>{ spinRate=e.target.value/100*48;
+  document.getElementById('spinV').textContent=e.target.value==0?'arrêt':e.target.value+'%';});
 
 // ---- dimensions table + HUD -----------------------------------------------
 const d = META.dims;
@@ -530,30 +663,21 @@ document.getElementById('dims').innerHTML = `
   <tr><td>Hauteur (Z)</td><td class="v">${d.hgt_mm} mm</td></tr>
   <tr><td>Masse (sim)</td><td class="v">${d.mass_g} g</td></tr>`;
 document.getElementById('hud').innerHTML =
-  `<b>${PARTS.length}</b> composants · entraxe <b>${d.wheelbase_mm}mm</b> ·
-   Ø hélice <b>${d.prop_d_mm}mm</b> · <b>${d.mass_g}g</b>`;
+  `entraxe <b>${d.wheelbase_mm}mm</b> · Ø hélice <b>${d.prop_d_mm}mm</b> ·
+   tip-to-tip <b>${d.tip_mm}mm</b> · <b>${d.mass_g}g</b>`;
 
 // ---- camera presets --------------------------------------------------------
-const R = 0.22;
-const VIEWS = {
-  iso:[R*0.8, -R*0.8, R*0.6], top:[0.0001, 0, R*1.1],
-  front:[R*1.2, 0, 0.02], side:[0, -R*1.2, 0.02],
-};
-function setView(v){
-  const p = VIEWS[v] || VIEWS.iso;
-  camera.position.set(p[0], p[1], p[2]);
-  controls.target.set(0, 0, 0.005);
-  controls.update();
-}
-document.querySelectorAll('[data-view]').forEach(b=>
-  b.onclick=()=>setView(b.dataset.view));
+const R = 0.2;
+const VIEWS = {iso:[R*0.85,-R*0.85,R*0.55], top:[0.0001,0,R*1.15],
+               front:[R*1.25,0,0.02], side:[0,-R*1.25,0.02]};
+function setView(v){ const p=VIEWS[v]||VIEWS.iso; camera.position.set(p[0],p[1],p[2]);
+  controls.target.set(0,0,0.004); controls.update(); }
+document.querySelectorAll('[data-view]').forEach(b=> b.onclick=()=>setView(b.dataset.view));
 setView('iso');
 
 // ---- resize + render loop --------------------------------------------------
-function resize(){
-  const w=view.clientWidth, h=view.clientHeight;
-  renderer.setSize(w,h); camera.aspect=w/h; camera.updateProjectionMatrix();
-}
+function resize(){ const w=view.clientWidth,h=view.clientHeight;
+  renderer.setSize(w,h); camera.aspect=w/h; camera.updateProjectionMatrix(); }
 addEventListener('resize', resize); resize();
 
 const clock = new THREE.Clock();
@@ -561,8 +685,10 @@ function loop(){
   requestAnimationFrame(loop);
   const dt = clock.getDelta();
   if (spinRate){
-    for (const b of propMeshes){
-      b.rotateOnAxis(new THREE.Vector3(0,0,1), spinRate*dt*b.userData.dir);
+    for (const pr of propMeshes[mode]){
+      const dir = pr.userData.dir!==undefined ? pr.userData.dir
+                : ((pr.position.x>0)===(pr.position.y<0) ? 1 : -1);
+      pr.rotateOnAxis(new THREE.Vector3(0,0,1), spinRate*dt*dir);
     }
   }
   controls.update();
@@ -589,7 +715,7 @@ def main():
         f.write(html)
 
     d = meta["dims"]
-    print(f"== STRATOSDRONE 3D viewer ==")
+    print("== STRATOSDRONE 3D viewer ==")
     print(f"  parsed {len(parts)} visuals from {os.path.relpath(args.sdf, REPO)}")
     print(f"  wheelbase {d['wheelbase_mm']}mm · prop Ø{d['prop_d_mm']}mm · "
           f"tip-to-tip {d['tip_mm']}mm · mass {d['mass_g']}g")
