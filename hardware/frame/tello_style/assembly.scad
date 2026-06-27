@@ -6,7 +6,7 @@ $fn = 48;
 wheelbase  = 118;
 motor_off  = wheelbase/2/sqrt(2);
 prop_d     = 76.2;
-motor_lift = 6;          // keep in sync with body_bottom.scad (raised motors)
+motor_lift = 1;          // keep in sync with body_bottom.scad (low motors)
 
 use <body_bottom.scad>
 use <body_top.scad>

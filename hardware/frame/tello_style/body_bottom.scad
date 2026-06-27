@@ -45,9 +45,9 @@ half_h       = 13;    // height of the lower shell (keep: assembly offset)
 arm_w        = 7.5;   // arm root width  (slimmer, was 9)
 arm_w_tip    = 6.0;   // arm width at the motor (taper → sleeker + lighter)
 arm_h        = 6.5;   // arm height — taller so the side truss reads too
-arm_root_z   = 1.0;   // arm attaches just above the floor at the pod corner
-motor_lift   = 6.0;   // motors raised → swept-up dihedral arms (less "flat"),
-                      // and the props clear above the canopy crown
+arm_root_z   = 6.5;   // arm attaches HIGH on the pod corner (upper body)
+motor_lift   = 1.0;   // motors sit LOW → arms slope DOWN from body to motor
+                      // (anhedral, inverted) — the Tello stance
 
 sensor_win  = 16;     // flow + ToF window
 cam_w       = 9;      // camera barrel

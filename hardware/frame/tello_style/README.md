@@ -8,9 +8,10 @@ the DJI Tello size class, as an alternative to the open `../frame.scad` X-frame.
 Same flight envelope as a Tello (≈ 98 × 92.5 mm footprint, **118 mm
 wheelbase**, 3" / 76 mm props, 8520 motors): smooth rounded clamshell, round
 thin-wall motor mounts, **open 3-D Eiffel-truss arms** (triangulated on the top
-*and* the side faces, so the lattice reads from every angle) that **sweep upward
-to raised motor pods** for a lifted, non-flat stance with the props clearing
-above the canopy, plus a faceted hex-vented canopy (solid over the lens) and a
+*and* the side faces, so the lattice reads from every angle) that **slope down
+from the upper body to low motor mounts** (descending dihedral, like a Tello) —
+a non-flat stance with the body riding high and the props clearing above the
+(lowered) canopy, plus a faceted hex-vented canopy (solid over the lens) and a
 chamfered camera nose. The pod is sized to the
 **real mainboard** (38 × 74 mm; M2 mounts at **30 × 66**, i.e. one in each
 corner_r=4 fillet — straight from `design.py` `BOARD`); the 1S pack sits on top of
@@ -29,9 +30,9 @@ openscad -o stl/body_top.scad   --export-format binstl body_top.scad
 ```
 
 Print in PETG or tough PLA, 3 perimeters. The canopy still prints support-free;
-the lower shell now needs **light supports under the raised motor pods** (the
-swept-up arms leave them cantilevered) — or print the pod flat and accept tree
-supports only at the four motor mounts. The pod fits the **38 × 74 mm Tello-style PCB** (see
+the lower shell needs **light supports under the descending arms / motor pods**
+(the down-swept arms overhang) — tree supports at the four motor mounts are
+enough. The pod fits the **38 × 74 mm Tello-style PCB** (see
 `../../pcb/`, board outline `BOARD` in `design.py`); the four M2 bosses are at
 a **30 × 66 mm** pitch — one in each corner (matching the board's real holes),
 filleted with a screw lead-in. Press the 8520 motors into the round mounts, route the wires through
@@ -48,9 +49,9 @@ print, mostly thin walls, lands close to this:
 
 | Shell | Volume | ~Mass (PLA) |
 |---|---|---|
-| `body_bottom` | 14.3 cm³ | **17.8 g** |
-| `body_top` | 6.9 cm³ | **8.5 g** (incl. battery cradle) |
-| **Frame total** | 21.2 cm³ | **≈ 26.3 g** |
+| `body_bottom` | 14.4 cm³ | **17.9 g** |
+| `body_top` | 4.8 cm³ | **6.0 g** (incl. battery cradle) |
+| **Frame total** | 19.2 cm³ | **≈ 23.9 g** |
 
 Down from ≈ 39 g (the original hex-block shells) — ~35 % lighter, *and* it now
 fits the real 38 × 74 board (the old 37 mm inner pod could not) and retains the
