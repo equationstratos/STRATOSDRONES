@@ -25,13 +25,32 @@ the board, held by a **cradle moulded into the canopy**. The floor is a
 | File | Part |
 |---|---|
 | `body_bottom.scad` | lower shell — PCB bay + bosses, 4 Eiffel-truss arms + motor mounts, honeycomb floor vents + ToF/flow apertures, camera nose |
-| `body_bottom_v2.scad` | **WIP alternative lower shell** — twin flat Tello-style splayed blades (descending) per motor with hidden motor-wire channels + a rear battery slot (needs a matching rear-slot canopy) |
+| `body_bottom_v2.scad` | **alternative lower shell (Tello-look)** — twin flat splayed blades (descending dihedral, attach high on the body and meet the motor pods at mid-height) with hidden motor-wire channels + a **rear** battery slot; pairs with `body_top_v2.scad` |
+| `body_top_v2.scad` | **matching capot for v2** — smooth low canopy with a **rear** battery opening + side guide rails, a front stop and retention nubs (slide the 1S pack in from the back — no need to pull the capot), 4 corner snap clips; dome stays just under the prop plane |
 | `body_top.scad` | upper canopy — hex vents, LED light pipes, snap clips, battery cradle with snap retention |
 | `body_top_smooth.scad` | **alternative canopy** — smooth shell, no vents/pipes (same cradle + clips); print *instead of* `body_top` |
 | `body_top_dome.scad` | **alternative canopy** — fully-rounded dome (no flat top); cradle clipped to the dome so it never shows through; print *instead of* `body_top` |
 | `battery_dummy.scad` | **print-fit gauge** — solid 1S pack at real size (22×53×9.5), adjust to your pack |
 | `pcb_dummy.scad` | **print-fit gauge** — board outline + holes + key components, to check fit/alignment |
 | `assembly.scad` | preview only (both shells + motors + prop disks) — do not print |
+
+## Tello-look variant (v2): twin arms + rear-loading battery
+
+`body_bottom_v2.scad` + `body_top_v2.scad` are an alternative pair styled closer
+to the reference Tello: **two splayed flat blades per motor** (instead of one
+truss arm) that start high on the body and slope down to the motor pods, meeting
+each pod at its **mid-height**; the **motor wires hide inside a channel** in one
+blade of each pair and exit into the PCB bay. The 1S pack loads from the **rear**
+through a slot in the lower shell and a matching opening + guide rails in the
+capot, so you never have to pull the canopy to swap a battery. The capot is a
+smooth low dome that stays just under the spinning props (lowered motors).
+
+![v2 assembly](preview/v2_assembly.png)
+![v2 exploded — rear battery](preview/v2_exploded.png)
+
+Print `body_bottom_v2.stl` + `body_top_v2.stl` as a set (light tree supports under
+the down-swept blades / motor pods). Solid-volume estimate in PLA (1.24 g/cm³):
+**≈ 14.8 g** lower + **≈ 7.7 g** capot = **≈ 22.5 g** — same class as the v1 pair.
 
 ## Print-fit prototype (test before the real board)
 
