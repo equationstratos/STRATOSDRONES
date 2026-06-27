@@ -26,6 +26,7 @@ the board, held by a **cradle moulded into the canopy**. The floor is a
 |---|---|
 | `body_bottom.scad` | lower shell — PCB bay + bosses, 4 Eiffel-truss arms + motor mounts, honeycomb floor vents + ToF/flow apertures, camera nose |
 | `body_top.scad` | upper canopy — hex vents, LED light pipes, snap clips, battery cradle with snap retention |
+| `body_top_smooth.scad` | **alternative canopy** — smooth domed shell, no vents/pipes (same cradle + clips); print *instead of* `body_top` |
 | `battery_dummy.scad` | **print-fit gauge** — solid 1S pack at real size (22×53×9.5), adjust to your pack |
 | `pcb_dummy.scad` | **print-fit gauge** — board outline + holes + key components, to check fit/alignment |
 | `assembly.scad` | preview only (both shells + motors + prop disks) — do not print |
