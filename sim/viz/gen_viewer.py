@@ -477,21 +477,27 @@ function buildProp(cx,cy,cz, orange){
   for (let i=0;i<2;i++){ const b = bladeMesh(PROP_R, mat); b.rotation.z = i*Math.PI; grp.add(b); }
   return grp;
 }
+// a thin cylindrical strut between two 3-D points (for the guard posts)
+function strutBetween(a, b, thick, mat){
+  const len = a.distanceTo(b);
+  const m = new THREE.Mesh(new THREE.CylinderGeometry(thick, thick, len, 8), mat);
+  m.position.copy(a).add(b).multiplyScalar(0.5);
+  m.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), b.clone().sub(a).normalize());
+  return m;
+}
+// Prop guard placed AT THE PROPELLER PLANE (cz = prop height), held by three
+// slim posts rising from the motor — a light, real prop-guard, not a ring down
+// at the motor. The group sits at (cx,cy,cz) so it explodes radially too.
 function buildGuard(cx,cy,cz){
-  const grp = new THREE.Group();
-  const R = PROP_R + 0.004;
-  const ring = new THREE.Mesh(new THREE.TorusGeometry(R, 0.0017, 12, 64), M.guard);
-  ring.position.set(cx,cy,cz); grp.add(ring);
-  const ring2 = new THREE.Mesh(new THREE.TorusGeometry(R, 0.0011, 10, 64), M.guard);
-  ring2.position.set(cx,cy,cz-0.006); grp.add(ring2);
-  // four slim struts bridging the motor nacelle to the ring (a clean cage,
-  // not a spoked wheel)
-  const r0 = 0.0095, len = R - r0, mid = (r0 + R) / 2;
-  for (let k=0;k<4;k++){
-    const a = k*Math.PI/2 + Math.PI/4;
-    const strut = rbox(len, 0.0019, 0.0019, 0.0008, M.guard);
-    strut.position.set(cx+Math.cos(a)*mid, cy+Math.sin(a)*mid, cz-0.001);
-    strut.rotation.z = a; grp.add(strut);
+  const grp = new THREE.Group(); grp.position.set(cx,cy,cz);
+  const R = PROP_R + 0.003;                       // just outside the prop tips
+  grp.add(new THREE.Mesh(new THREE.TorusGeometry(R, 0.0013, 12, 72), M.guard));
+  const rIn = 0.0085, zIn = 0.013 - cz;           // motor-can top, local frame
+  for (let k=0;k<3;k++){
+    const a = k*2*Math.PI/3 + Math.PI/6;
+    const p0 = new THREE.Vector3(Math.cos(a)*rIn, Math.sin(a)*rIn, zIn);
+    const p1 = new THREE.Vector3(Math.cos(a)*R,   Math.sin(a)*R,   0);
+    grp.add(strutBetween(p0, p1, 0.0011, M.guard));
   }
   return grp;
 }
@@ -530,68 +536,60 @@ function taperedArm(len, wRoot, wTip, h, mat){
 
 function buildStyled(){
   const Gs = G.styled;
+  const PROPZ = 0.0215;                 // propeller plane (guards sit here too)
 
-  // ---- sleek tapered hull (pointed nose, wide tail) ----
-  const hull = extrudedFlat(hullShape(), 0.018, 0.0045, M.bodyDark);
-  hull.position.z = 0.005; reg(Gs.shell, hull);
-  // thin under-skid for a finished underside
-  const skid = extrudedFlat(hullShape(), 0.004, 0.002, M.bodyDark);
-  skid.scale.set(0.95,0.95,1); skid.position.z = -0.007; reg(Gs.shell, skid);
+  // ---- slim, low tapered hull (finer + lighter than the previous block) ----
+  const hull = extrudedFlat(hullShape(), 0.013, 0.0035, M.bodyDark);
+  hull.scale.set(1, 0.9, 1); hull.position.z = 0.004; reg(Gs.shell, hull);
 
-  // ---- swept bubble canopy (glossy, raised at rear, sloping to the nose) ----
-  const canopy = new THREE.Mesh(new THREE.SphereGeometry(1,44,30), M.canopy);
-  canopy.scale.set(0.037,0.027,0.018);
-  canopy.position.set(-0.006,0,0.013); canopy.rotation.y = -0.14;
+  // ---- low faired canopy following the fuselage lines (clean, not a bubble) ----
+  const canopy = extrudedFlat(hullShape(), 0.006, 0.003, M.canopy);
+  canopy.scale.set(0.66, 0.55, 1); canopy.position.set(-0.004,0,0.0145);
   reg(Gs.shell, canopy);
-  // accent spine along the canopy + two vent slits each side at its base
-  const stripe = rbox(0.052,0.005,0.003,0.0015, M.accent);
-  at(stripe,-0.003,0,0.030); stripe.rotation.y = -0.09; reg(Gs.shell, stripe);
-  for (const sy of [1,-1]) for (let i=0;i<2;i++){
-    const slit = rbox(0.013,0.0018,0.003,0.0008, M.lens);
-    at(slit, 0.004 - i*0.009, sy*0.023, 0.015); reg(Gs.shell, slit);
-  }
+  const stripe = rbox(0.046,0.004,0.0024,0.0012, M.accent);
+  at(stripe,-0.004,0,0.0185); reg(Gs.shell, stripe);
 
-  // ---- pronounced camera nose at the hull tip (housing + lens + accent ring) ----
-  const noseH = zcyl(0.0072,0.0092,0.013, M.bodyLight).rotateY(Math.PI/2);
+  // ---- pronounced but slim camera nose (housing + lens + accent ring) ----
+  const noseH = zcyl(0.006,0.0078,0.012, M.bodyLight).rotateY(Math.PI/2);
   noseH.position.set(0.05,0,0.004); reg(Gs.shell, noseH);
-  const lensRing = zcyl(0.0062,0.0062,0.004, M.accent).rotateY(Math.PI/2);
-  lensRing.position.set(0.056,0,0.004); reg(Gs.shell, lensRing);
-  const lens = new THREE.Mesh(new THREE.SphereGeometry(0.0052,26,18), M.lens);
-  lens.position.set(0.057,0,0.004); reg(Gs.shell, lens);
+  const lensRing = zcyl(0.0052,0.0052,0.0035, M.accent).rotateY(Math.PI/2);
+  lensRing.position.set(0.0555,0,0.004); reg(Gs.shell, lensRing);
+  const lens = new THREE.Mesh(new THREE.SphereGeometry(0.0044,26,18), M.lens);
+  lens.position.set(0.0565,0,0.004); reg(Gs.shell, lens);
 
-  // ---- tail status LED + battery underside ----
-  const led = rbox(0.016,0.004,0.003,0.0015, M.led);
-  at(led,-0.047,0,0.008); reg(Gs.shell, led);
-  const batt = rbox(0.03,0.03,0.013,0.003, M.bodyDark);
-  at(batt,-0.024,0,-0.011); reg(Gs.shell, batt);
+  // ---- tail status LED + slim battery underside ----
+  const led = rbox(0.014,0.0035,0.0024,0.0012, M.led);
+  at(led,-0.046,0,0.006); reg(Gs.shell, led);
+  const batt = rbox(0.028,0.026,0.011,0.003, M.bodyDark);
+  at(batt,-0.022,0,-0.008); reg(Gs.shell, batt);
 
-  // ---- landing feet ----
+  // ---- slim landing feet ----
   for (const sx of [1,-1]) for (const sy of [1,-1]){
-    const foot = zcyl(0.0033,0.0044,0.008, M.bodyDark);
-    foot.position.set(sx*0.028, sy*0.024, -0.013); reg(Gs.shell, foot);
+    const foot = zcyl(0.0026,0.0036,0.007, M.bodyDark);
+    foot.position.set(sx*0.026, sy*0.022, -0.0105); reg(Gs.shell, foot);
   }
 
-  // ---- per-motor: tapered swept arm, nacelle, motor, prop, guard ----
+  // ---- per-motor: slim swept arm, nacelle, motor, prop, prop-plane guard ----
   for (const mo of MOTORS){
     const ang = Math.atan2(mo.y, mo.x);
     const md = Math.hypot(mo.x, mo.y);
-    const rRoot = 0.015;
-    const arm = taperedArm(md - rRoot + 0.006, 0.019, 0.011, 0.0072, M.bodyDark);
+    const rRoot = 0.014;
+    const arm = taperedArm(md - rRoot + 0.006, 0.015, 0.009, 0.006, M.bodyDark);
     arm.position.set(Math.cos(ang)*rRoot, Math.sin(ang)*rRoot, 0.001);
     arm.rotation.z = ang; reg(Gs.arms, arm);
 
-    const nac = zcyl(0.0085,0.0098,0.014, M.bodyDark);
-    nac.position.set(mo.x, mo.y, 0.006); reg(Gs.motors, nac);
-    const can = zcyl(0.0058,0.0058,0.013, M.motor);
-    can.position.set(mo.x, mo.y, 0.0125); reg(Gs.motors, can);
-    const shaft = zcyl(0.0014,0.0014,0.006, M.hub);
-    shaft.position.set(mo.x, mo.y, 0.02); reg(Gs.motors, shaft);
+    const nac = zcyl(0.0078,0.0088,0.013, M.bodyDark);
+    nac.position.set(mo.x, mo.y, 0.0055); reg(Gs.motors, nac);
+    const can = zcyl(0.0055,0.0055,0.012, M.motor);
+    can.position.set(mo.x, mo.y, 0.012); reg(Gs.motors, can);
+    const shaft = zcyl(0.0013,0.0013,0.006, M.hub);
+    shaft.position.set(mo.x, mo.y, 0.019); reg(Gs.motors, shaft);
 
     const orange = mo.name.endsWith('fr') || mo.name.endsWith('fl');
-    const prop = buildProp(mo.x, mo.y, 0.0215, orange);
+    const prop = buildProp(mo.x, mo.y, PROPZ, orange);
     reg(Gs.props, prop); propMeshes.styled.push(prop);
 
-    const guard = buildGuard(mo.x, mo.y, 0.012);
+    const guard = buildGuard(mo.x, mo.y, PROPZ);
     reg(Gs.guards, guard);
   }
 }
