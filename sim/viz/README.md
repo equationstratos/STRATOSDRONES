@@ -6,14 +6,22 @@ Un visualisateur 3D interactif du drone, **ancré sur le modèle de simulation**
 SDF (positions moteurs, rayon hélice, entraxe, masse) ; éditez le SDF, régénérez,
 la vue 3D suit.
 
-Deux rendus, commutables en direct :
+Trois rendus, commutables en direct :
 
+- **Frame imprimé** *(par défaut)* — le **vrai frame `tello_style`** (les deux
+  coques assemblées) embarqué depuis `frame.stl`, pour voir la pièce réelle à
+  imprimer en 3D interactif. ![frame](preview/frame_iso.png)
 - **Stylisé (Tello)** — un corps moderne *classe DJI Tello* construit
   procéduralement (coque arrondie, canopy ventilée, nez caméra, bras balayés,
   hélices 2 pales profilées, **anneaux protège-hélices**) avec matériaux PBR et
   éclairage par image (reflets). Posé sur la vraie géométrie moteurs/hélices.
 - **Sim (SDF brut)** — les primitives de collision/visuel exactes de Gazebo,
   pour vérifier que le modèle stylisé colle toujours au modèle simulé.
+
+> `frame.stl` est un assemblage basse résolution généré depuis
+> `hardware/frame/tello_style/frame_assembled.scad` (`openscad -D '$fn=24'`),
+> copié ici et inliné en base64 par `gen_viewer.py`. Régénérez-le après une
+> retouche du frame.
 
 Sert à **valider ou repenser** la géométrie sans ouvrir KiCad/OpenSCAD/Gazebo :
 implantation des moteurs, encombrement des hélices/anneaux, empilage vertical,

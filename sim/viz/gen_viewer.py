@@ -185,9 +185,17 @@ def build_importmap():
 
 def build_html(parts, meta):
     payload = json.dumps({"parts": parts, "meta": meta}, separators=(",", ":"))
+    # the actual printed tello_style frame (both shells), embedded so the
+    # viewer can show the real part — a low-poly STL kept next to this script.
+    frame_b64 = ""
+    fstl = os.path.join(HERE, "frame.stl")
+    if os.path.exists(fstl):
+        with open(fstl, "rb") as f:
+            frame_b64 = base64.b64encode(f.read()).decode("ascii")
     return (TEMPLATE
             .replace("/*__DATA__*/", payload)
-            .replace("__IMPORTMAP__", build_importmap()))
+            .replace("__IMPORTMAP__", build_importmap())
+            .replace("__FRAME_STL_B64__", frame_b64))
 
 
 TEMPLATE = r"""<!DOCTYPE html>
@@ -255,7 +263,8 @@ TEMPLATE = r"""<!DOCTYPE html>
     <div class="sec">
       <h2>Modèle</h2>
       <div class="btns">
-        <button id="mStyled" class="on">Stylisé (Tello)</button>
+        <button id="mFrame" class="on">Frame imprimé</button>
+        <button id="mStyled">Stylisé (Tello)</button>
         <button id="mSdf">Sim (SDF brut)</button>
       </div>
     </div>
@@ -398,7 +407,9 @@ scene.add(ROOTS.styled, ROOTS.sdf);
 function makeGroups(root){const g={};for(const k of GROUPKEYS){g[k]=new THREE.Group();root.add(g[k]);}return g;}
 const G = {styled:makeGroups(ROOTS.styled), sdf:makeGroups(ROOTS.sdf)};
 const propMeshes = {styled:[], sdf:[]};
-let mode = 'styled';
+let mode = 'frame';
+// the embedded printed-frame STL is parsed further down into this group
+const frameRoot = new THREE.Group(); scene.add(frameRoot); frameRoot.visible = false;
 
 function reg(group, mesh){ mesh.userData.home = mesh.position.clone(); group.add(mesh); return mesh; }
 
@@ -608,7 +619,8 @@ if (META.hull){
 
 // ---- mode + group visibility ----------------------------------------------
 const groupVis = {shell:true,arms:true,motors:true,props:true,guards:true};
-function applyMode(){ ROOTS.styled.visible = mode==='styled'; ROOTS.sdf.visible = mode==='sdf'; }
+function applyMode(){ ROOTS.styled.visible = mode==='styled'; ROOTS.sdf.visible = mode==='sdf';
+  frameRoot.visible = mode==='frame'; }
 function applyGroupVis(){ for (const r of ['styled','sdf']) for (const k of GROUPKEYS) G[r][k].visible = groupVis[k]; }
 applyMode(); applyGroupVis();
 
@@ -631,6 +643,19 @@ function applyExplode(t){
 // ---- STL drag & drop (printed-frame overlay) ------------------------------
 const stlGroup = new THREE.Group(); scene.add(stlGroup);
 const stlLoader = new STLLoader(); let stlOpacity = 1;
+
+// ---- embedded printed frame (the real tello_style shells, both halves) ----
+(function(){
+  const b64 = "__FRAME_STL_B64__";
+  if (!b64) return;
+  const bin = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
+  const geo = stlLoader.parse(bin.buffer); geo.computeVertexNormals();
+  const m = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({
+    color:0x9298a3, metalness:.4, roughness:.5}));
+  m.scale.setScalar(0.001);          // OpenSCAD mm -> m
+  m.rotation.z = Math.PI/2;          // frame -Y nose -> viewer +X (FLU forward)
+  frameRoot.add(m);
+})();
 function addSTL(name, buf){
   const geo = stlLoader.parse(buf); geo.computeVertexNormals();
   const mesh = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({color:0x58a6ff,
@@ -663,17 +688,18 @@ gEl.addEventListener('change', e=>{ const k=e.target.dataset.g; if(!k)return;
   groupVis[k]=e.target.checked; applyGroupVis(); });
 
 // ---- UI: model mode --------------------------------------------------------
-const mStyled=document.getElementById('mStyled'), mSdf=document.getElementById('mSdf');
+const mStyled=document.getElementById('mStyled'), mSdf=document.getElementById('mSdf'),
+      mFrame=document.getElementById('mFrame');
 function setMode(x){ mode=x; mStyled.classList.toggle('on',x==='styled');
-  mSdf.classList.toggle('on',x==='sdf'); applyMode(); }
-mStyled.onclick=()=>setMode('styled'); mSdf.onclick=()=>setMode('sdf');
+  mSdf.classList.toggle('on',x==='sdf'); mFrame.classList.toggle('on',x==='frame'); applyMode(); }
+mStyled.onclick=()=>setMode('styled'); mSdf.onclick=()=>setMode('sdf'); mFrame.onclick=()=>setMode('frame');
 
 // ---- UI: display toggles + sliders ----------------------------------------
 let wire=false, spinRate=0;
 const bWire=document.getElementById('bWire'), bGrid=document.getElementById('bGrid'),
       bAxes=document.getElementById('bAxes'), bHull=document.getElementById('bHull');
 bWire.onclick=()=>{wire=!wire; bWire.classList.toggle('on',wire);
-  for (const r of ['styled','sdf']) ROOTS[r].traverse(o=>{ if(o.material&&o.material.wireframe!==undefined) o.material.wireframe=wire; });};
+  for (const root of [ROOTS.styled, ROOTS.sdf, frameRoot]) root.traverse(o=>{ if(o.material&&o.material.wireframe!==undefined) o.material.wireframe=wire; });};
 bGrid.onclick=()=>{grid.visible=!grid.visible; bGrid.classList.toggle('on',grid.visible);};
 bAxes.onclick=()=>{axes.visible=!axes.visible; bAxes.classList.toggle('on',axes.visible);};
 bHull.onclick=()=>{ if(hullMesh){hullMesh.visible=!hullMesh.visible; bHull.classList.toggle('on',hullMesh.visible);} };
