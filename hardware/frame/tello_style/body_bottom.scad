@@ -45,6 +45,9 @@ half_h       = 13;    // height of the lower shell (keep: assembly offset)
 arm_w        = 7.5;   // arm root width  (slimmer, was 9)
 arm_w_tip    = 6.0;   // arm width at the motor (taper → sleeker + lighter)
 arm_h        = 6.5;   // arm height — taller so the side truss reads too
+arm_root_z   = 1.0;   // arm attaches just above the floor at the pod corner
+motor_lift   = 6.0;   // motors raised → swept-up dihedral arms (less "flat"),
+                      // and the props clear above the canopy crown
 
 sensor_win  = 16;     // flow + ToF window
 cam_w       = 9;      // camera barrel
@@ -120,16 +123,24 @@ module lattice_arm(L, w0, w1, h) {
     }
 }
 
-/* one Eiffel-truss arm + ROUND thin-wall motor mount at corner (sx, sy) */
+/* one Eiffel-truss arm that SWEEPS UP from the pod corner to a RAISED motor
+   mount (dihedral) — gives the drone a lifted, non-flat stance. The root sits
+   at the pod corner just outside the PCB footprint; the nacelle stays vertical
+   so the motor/prop axis is true. */
 module arm(sx, sy) {
-    rootx = sx*(pod_x/2-5); rooty = sy*(pod_y/2-5);
+    rootx = sx*15;          rooty = sy*38;        // pod corner, clear of the board
     motx  = sx*motor_off;   moty  = sy*motor_off;
     ang   = atan2(moty-rooty, motx-rootx);
-    L     = norm([motx-rootx, moty-rooty]);
-    // truss beam from pod edge to motor
-    translate([rootx, rooty, 0]) rotate([0,0,ang]) lattice_arm(L, arm_w, arm_w_tip, arm_h);
-    // round nacelle: a light conical collar holding the press-fit motor
-    translate([motx, moty, 0]) {
+    Lh    = norm([motx-rootx, moty-rooty]);        // horizontal run
+    rise  = (motor_lift + 2) - arm_root_z;          // climb to meet the nacelle
+    theta = atan2(rise, Lh);                        // dihedral angle
+    L3    = norm([Lh, rise]);                        // true beam length
+    // swept-up truss beam
+    translate([rootx, rooty, arm_root_z])
+        rotate([0,0,ang]) rotate([0,-theta,0])
+            lattice_arm(L3, arm_w, arm_w_tip, arm_h);
+    // raised vertical nacelle holding the press-fit motor
+    translate([motx, moty, motor_lift]) {
         difference() {
             cylinder(d1=nacelle_d, d2=nacelle_d-1, h=nacelle_h);   // slim taper
             translate([0,0,floor_t]) cylinder(d=motor_d+0.15, h=nacelle_h);  // motor pocket
