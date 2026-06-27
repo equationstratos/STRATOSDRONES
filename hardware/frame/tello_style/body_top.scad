@@ -26,6 +26,12 @@ roof_t      = 1.2;    // was 1.4
 cam_w       = 9;
 snap_n      = 8;
 
+/* 1S pack, carried on top of the board by a cradle under the canopy */
+batt_w      = 27;     // pack width
+batt_l      = 53;     // pack length
+batt_clear  = 0.6;    // fit clearance per side
+rail_t      = 1.5;    // cradle wall thickness
+
 module rrect(x, y, r, h) {
     linear_extrude(h) offset(r) square([x-2*r, y-2*r], center=true);
 }
@@ -42,9 +48,8 @@ module canopy() {
             translate([0,0,-eps]) rrect(pod_x-2*wall, pod_y-2*wall, max(pod_r-wall,1), eps);
             translate([0,0,top_h-roof_t]) rrect(pod_x-12-2*wall, pod_y-14-2*wall, 7, eps);
         }
-        // camera window at the nose
-        translate([0,-pod_y/2-eps,top_h*0.42])
-            rotate([-90,0,0]) cylinder(d=cam_w+0.6, h=wall+3);
+        // (no camera window here — the camera exits through the lower shell's
+        //  nose bump, so the canopy stays solid above the lens)
         // wider hex vent field on the crown (lighter + Tello-vented look)
         for (ix=[-2:2], iy=[-2:2])
             if (abs(ix)+abs(iy) <= 3)
@@ -67,8 +72,31 @@ module canopy() {
     }
 }
 
+/* Integrated battery cradle: brackets the 1S pack (sitting on top of the board)
+   from inside the canopy — two side rails + a rear stop + a front retaining lip.
+   It grips the pack laterally and fore-aft; the closed canopy holds it down.
+   Lightening windows keep the rails from adding much mass. */
+module battery_cradle() {
+    iw   = batt_w/2 + batt_clear;        // inner half-width
+    h    = top_h - roof_t;               // hang from the roof down to the pod rim
+    // two side rails with lightening windows
+    for (s = [-1,1])
+        translate([s*(iw + rail_t/2), 0, 0])
+            difference() {
+                translate([-rail_t/2, -batt_l/2, 0]) cube([rail_t, batt_l, h]);
+                for (k = [-1.5:1:1.5])
+                    translate([-rail_t/2-eps, k*12, h*0.5])
+                        cube([rail_t+2*eps, 7, h*0.55], center=true);
+            }
+    // rear stop wall
+    translate([-iw-rail_t, batt_l/2, 0]) cube([2*(iw+rail_t), rail_t, h]);
+    // front retaining lip (low, leaves room for the battery lead)
+    translate([-iw*0.6, -batt_l/2 - rail_t, 0]) cube([iw*1.2, rail_t, h*0.55]);
+}
+
 module body_top() {
-    canopy();   // pod cover only — the arms live on the lower shell
+    canopy();           // pod cover — the arms live on the lower shell
+    battery_cradle();   // holds the 1S pack on top of the board
 }
 
 body_top();

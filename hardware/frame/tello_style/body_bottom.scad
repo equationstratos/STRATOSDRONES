@@ -83,33 +83,61 @@ module pod_shell() {
             }
 }
 
-/* one slim tapered arm + ROUND thin-wall motor mount at corner (sx, sy) */
-module arm(sx, sy) {
-    ang = atan2(sy, sx);
-    // tapered arm bridge from pod edge to motor (wide root → slim tip)
-    hull() {
-        translate([sx*(pod_x/2-5), sy*(pod_y/2-5), 0]) cylinder(d=arm_w, h=arm_h);
-        translate([sx*motor_off, sy*motor_off, 0]) cylinder(d=arm_w_tip, h=arm_h);
+/* Eiffel-style open-truss arm beam (local frame, root at x=0 → motor at x=L).
+   A tapered beam with alternating triangular through-windows leaves a zigzag
+   lattice web between two solid edge chords — lighter, and reads like a girder.
+   Root and tip stay solid for a strong joint to the pod and the nacelle. */
+module lattice_arm(L, w0, w1, h) {
+    chord = 1.6;                  // solid material kept on each Y edge
+    yi    = w1/2 - chord;          // half-height of the truss windows
+    xs = 5.5; xe = L - 4; n = 4; seg = (xe - xs)/n;
+    difference() {
+        hull() {                   // tapered beam, rounded ends
+            cylinder(d=w0, h=h);
+            translate([L,0,0]) cylinder(d=w1, h=h);
+        }
+        if (yi > 0.7)
+            for (i = [0:n-1]) {
+                x0 = xs + i*seg; x1 = x0 + seg;
+                s = (i % 2 == 0) ? 1 : -1;     // alternate apex up/down → zigzag
+                translate([0,0,-eps]) linear_extrude(h + 2*eps)
+                    polygon([[x0, s*yi], [x1, s*yi], [(x0+x1)/2, -s*yi]]);
+            }
     }
+}
+
+/* one Eiffel-truss arm + ROUND thin-wall motor mount at corner (sx, sy) */
+module arm(sx, sy) {
+    rootx = sx*(pod_x/2-5); rooty = sy*(pod_y/2-5);
+    motx  = sx*motor_off;   moty  = sy*motor_off;
+    ang   = atan2(moty-rooty, motx-rootx);
+    L     = norm([motx-rootx, moty-rooty]);
+    // truss beam from pod edge to motor
+    translate([rootx, rooty, 0]) rotate([0,0,ang]) lattice_arm(L, arm_w, arm_w_tip, arm_h);
     // round nacelle: a light conical collar holding the press-fit motor
-    translate([sx*motor_off, sy*motor_off, 0]) {
+    translate([motx, moty, 0]) {
         difference() {
             cylinder(d1=nacelle_d, d2=nacelle_d-1, h=nacelle_h);   // slim taper
             translate([0,0,floor_t]) cylinder(d=motor_d+0.15, h=nacelle_h);  // motor pocket
             cylinder(d=motor_d-3, h=nacelle_h*3, center=true);     // bottom wire/vent hole
-            // wire channel toward the pod
+            // wire channel back toward the pod
             rotate([0,0,ang+180]) translate([0,-1.5,floor_t]) cube([nacelle_d, 3, nacelle_h]);
         }
     }
 }
 
-/* PCB mounting bosses (4) inside the pod, at the 26 x 60 mm hole pitch */
+/* PCB mounting bosses (4), at the real 28 x 64 mm M2 pitch (design.py BOARD).
+   Filleted base for strength + a screw lead-in chamfer for a clean assembly. */
 module pcb_bosses() {
     for (sx=[-1,1], sy=[-1,1])
         translate([sx*pcb_hole/2, sy*pcb_hole_y/2, floor_t-eps])
             difference() {
-                cylinder(d=6, h=boss_h);
-                translate([0,0,0.8]) cylinder(d=1.7, h=boss_h);   // M2 self-tap
+                union() {
+                    cylinder(d=6, h=boss_h);
+                    cylinder(d1=8, d2=6, h=1.2);                       // clean filleted base
+                }
+                translate([0,0,0.8]) cylinder(d=1.7, h=boss_h);        // M2 self-tap
+                translate([0,0,boss_h-0.55]) cylinder(d1=1.7, d2=3, h=0.6); // screw lead-in
             }
 }
 
