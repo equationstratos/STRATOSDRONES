@@ -24,7 +24,7 @@ wall        = 1.5;    // was 1.6
 top_h       = 6.5;    // lower canopy — props (on the LOW motors) clear above it
 roof_t      = 1.2;    // was 1.4
 cam_w       = 9;
-snap_n      = 8;
+snap_n      = 4;      // 4 corner clips only (the 4 edge-mid "ears" are gone)
 
 /* 1S pack, carried on top of the board by a cradle under the canopy.
    Default ≈ a Tello-class 1S 1100 mAh LiHV pack — KEEP IN SYNC with
@@ -63,9 +63,9 @@ module canopy() {
             translate([s*(pod_x/2-9), -pod_y/2+8, top_h-roof_t-eps])
                 cylinder(d=3.2, h=roof_t+2*eps);
     }
-    // internal snap clips matching body_bottom posts
+    // internal snap clips matching body_bottom posts (corners only)
     for (i=[0:snap_n-1]) {
-        a = i*360/snap_n;
+        a = 45 + i*360/snap_n;
         rx = pod_x/2-2.2; ry = pod_y/2-2.2;
         translate([rx*cos(a), ry*sin(a), 0])
             difference() {

@@ -54,7 +54,7 @@ flow_d      = 7;      // PMW3901 optical-flow aperture — at board U9
 tof_pos     = [0, -3.9];   // frame coords of U8 (board 19,33.1 -> centred)
 flow_pos    = [0,  8.3];   // frame coords of U9 (board 19,45.3 -> centred)
 cam_w       = 9;      // camera barrel
-snap_n      = 8;
+snap_n      = 4;      // 4 corner posts (match body_top — no edge-mid "ears")
 
 module rrect(x, y, r, h) {            // rounded rect prism, centered
     linear_extrude(h) offset(r) square([x-2*r, y-2*r], center=true);
@@ -221,7 +221,7 @@ module pcb_bosses() {
 /* snap posts around the pod rim to receive body_top */
 module snap_posts() {
     for (i=[0:snap_n-1]) {
-        a = i*360/snap_n;
+        a = 45 + i*360/snap_n;
         rx = pod_x/2-2.2; ry = pod_y/2-2.2;
         x = rx*cos(a); y = ry*sin(a);
         translate([x,y,half_h-2.4]) cylinder(d=2.2, h=2.4);
