@@ -17,15 +17,13 @@ span_x      = 98;
 span_y      = 92.5;
 wheelbase   = 118;
 motor_off   = wheelbase/2/sqrt(2);
-pod_x       = 40;
-pod_y       = 74;
+pod_x       = 42;     // match body_bottom (sized to the real 38x74 PCB)
+pod_y       = 78;
 pod_r       = 9;      // rounder corners — match body_bottom (was 6)
 wall        = 1.5;    // was 1.6
 top_h       = 11;     // canopy height
 roof_t      = 1.2;    // was 1.4
 cam_w       = 9;
-arm_w       = 7.5;    // match the slimmer lower arms
-arm_h_top   = 3.0;
 snap_n      = 8;
 
 module rrect(x, y, r, h) {
@@ -69,18 +67,8 @@ module canopy() {
     }
 }
 
-/* light covers over the four arm roots (cosmetic continuity with the body) */
-module arm_caps() {
-    for (sx=[-1,1], sy=[-1,1])
-        hull() {
-            translate([sx*(pod_x/2-5), sy*(pod_y/2-5), 0]) cylinder(d=arm_w, h=arm_h_top);
-            translate([sx*motor_off*0.7, sy*motor_off*0.7, 0]) cylinder(d=arm_w-2, h=arm_h_top);
-        }
-}
-
 module body_top() {
-    canopy();
-    arm_caps();
+    canopy();   // pod cover only — the arms live on the lower shell
 }
 
 body_top();

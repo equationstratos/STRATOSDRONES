@@ -27,23 +27,25 @@ nacelle_d    = motor_d + 2*nacelle_wall + 0.4;   // ≈12.7 round mount (was hex
 motor_grip   = 12;                           // pocket depth gripping the motor (was 16)
 floor_t      = 1.2;                           // pod floor (was 1.4)
 nacelle_h    = motor_grip + floor_t;          // ≈13.2 → flush with the pod, no tall blocks
-pod_x        = 40;    // central pod width  (narrow, Tello-like)
-pod_y        = 74;    // central pod length (elongated)
+// PCB envelope — AUTHORITATIVE values from hardware/pcb design.py BOARD
+// (w=38, h=74, mount_pitch 28x64). The pod is sized to seat this board.
+pcb_x       = 38;     // real mainboard width  (was a stale 36)
+pcb_y       = 74;     // real mainboard length (was a stale 70)
+pcb_hole    = 28;     // M2 mount pitch X (was a stale 26)
+pcb_hole_y  = 64;     // M2 mount pitch Y (was a stale 60)
+pcb_clear   = 0.5;    // wall-to-board clearance per side (drop-in fit)
+boss_h      = 3.0;    // standoff: PCB sits at floor_t+boss_h, bottom sensors
+                      // (U8 ToF + U9 flow, side B) clear the floor + window
+
+pod_x        = pcb_x + 2*pcb_clear + 2*1.5;   // ≈42 — inner just clears the board
+pod_y        = pcb_y + 2*pcb_clear + 2*1.5;   // ≈78
 pod_r        = 9;     // corner radius — rounder, Tello-smooth (was 6)
-wall         = 1.5;   // pod side wall (was 1.6)
+wall         = 1.5;   // pod side wall (was 1.6); inner walls locate the board
 half_h       = 13;    // height of the lower shell (keep: assembly offset)
 arm_w        = 7.5;   // arm root width  (slimmer, was 9)
 arm_w_tip    = 6.0;   // arm width at the motor (taper → sleeker + lighter)
 arm_h        = 5.0;   // arm thickness (was 6)
 
-pcb_x       = 36;     // Tello-style portrait mainboard (see design.py BOARD)
-pcb_y       = 70;
-pcb_hole    = 26;     // PCB mount hole pitch X (26 x 60)
-pcb_hole_y  = 60;
-boss_h      = 3.0;
-batt_w      = 27;     // 1S pack
-batt_l      = 53;
-batt_h      = 13;
 sensor_win  = 16;     // flow + ToF window
 cam_w       = 9;      // camera barrel
 snap_n      = 8;
@@ -111,14 +113,11 @@ module pcb_bosses() {
             }
 }
 
-/* rear battery cradle (slide-in from +y) */
-module battery_bay() {
-    for (s=[-1,1])
-        translate([s*(batt_w/2+1.3), pod_y/2-batt_l-2, floor_t-eps])
-            cube([2.6, batt_l, batt_h*0.6]);
-    // floor stops
-    translate([-batt_w/2, pod_y/2-batt_l-2, floor_t-eps]) cube([batt_w,2.5,3]);
-}
+// NOTE: the 1S pack mounts on TOP of the board (under the canopy), not on the
+// floor — the board fills the pod and its bottom-side sensors (U8 ToF, U9 flow)
+// must see straight down through the floor window, so nothing sits beneath it.
+// (The old floor battery rails were removed: they collided with the real-size
+//  board.) A canopy-side battery cradle can be added to body_top if wanted.
 
 /* snap posts around the pod rim to receive body_top */
 module snap_posts() {
@@ -134,7 +133,6 @@ module body_bottom() {
     pod_shell();
     for (sx=[-1,1], sy=[-1,1]) arm(sx, sy);
     pcb_bosses();
-    battery_bay();
     snap_posts();
 }
 
