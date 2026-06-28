@@ -130,17 +130,24 @@ module lattice_arm(L, w0, w1, h) {
     }
 }
 
-// root just inside the body corner (clear of the camera face); descends to meet
-// the motor pod at mid-height (the dihedral the user asked for).
-function arm_root(m) = [m[0]*17.5, m[1]*34.5, arm_root_z];
-module truss_arm(m) {
-    R = arm_root(m);
-    M = [m[0]*motor_off, m[1]*motor_off, motor_lift + nacelle_h/2];
+// DOUBLE arm (like the Tello): TWO thin struts per motor, splayed from two body
+// attach points to the motor pod — forming a clean triangle. Both roots sit near
+// the body corner (clear of the camera face) and descend to the pod mid-height.
+strut_w0 = 4.7;    // strut width at the body
+strut_w1 = 3.7;    // strut width at the motor
+function P_side(m) = [m[0]*20.5, m[1]*25,   arm_root_z];   // onto the side face
+function P_end(m)  = [m[0]*13,   m[1]*36.5, arm_root_z];   // onto the end/corner face
+module one_strut(R, M) {
     ang  = atan2(M[1]-R[1], M[0]-R[0]);
     Lh   = norm([M[0]-R[0], M[1]-R[1]]);
     rise = M[2]-R[2]; theta = atan2(rise, Lh); L3 = norm([Lh, rise]);
     translate(R) rotate([0,0,ang]) rotate([0,-theta,0])
-        lattice_arm(L3, arm_w, arm_w_tip, arm_h);
+        lattice_arm(L3, strut_w0, strut_w1, arm_h);
+}
+module truss_arm(m) {
+    M = [m[0]*motor_off, m[1]*motor_off, motor_lift + nacelle_h/2];
+    one_strut(P_side(m), M);
+    one_strut(P_end(m),  M);
 }
 // motor pod — SOLID outer shell, rounded rims (minkowski). The pocket/vent are
 // cut last (motor_bores) so the bore is always clear for the 8520.
