@@ -84,12 +84,8 @@ module pod_shell() {
         translate([0, pod_y/2-wall/2, floor_t+boss_h+batt_h/2+0.3])
             cube([batt_w+1.5, wall+3, batt_h+1.2], center=true);
     }
-    // camera nose bump
-    translate([0,-pod_y/2+1,half_h*0.5]) rotate([-90,0,0]) difference() {
-        cylinder(d=cam_w+5, h=3.5);
-        translate([0,0,-eps]) cylinder(d=cam_w+0.5, h=4);
-        translate([-cam_w,-cam_w-2,-eps]) cube([2*cam_w,cam_w+2,5]);
-    }
+    // (camera nose bump removed — it left a little tab hanging below the body;
+    //  the front camera is just a clean through-hole now)
 }
 
 /* ===== flat Tello-style lattice/truss arms — one tapered girder per motor ===== */
