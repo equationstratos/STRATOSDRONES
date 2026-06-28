@@ -39,6 +39,13 @@ batt_w = 22; batt_h = 9.5;
 
 module rrect(x, y, r, h) { linear_extrude(h) offset(r) square([x-2*r, y-2*r], center=true); }
 
+// rounded box centred at the origin: size sz=[x,y,z], every edge filleted by r.
+// Used to build the arm blades/gussets so they read smooth, not faceted.
+module rbox(sz, r) {
+    hull() for (i=[-1,1], j=[-1,1], k=[-1,1])
+        translate([i*(sz[0]/2-r), j*(sz[1]/2-r), k*(sz[2]/2-r)]) sphere(r, $fn=20);
+}
+
 /* ===== pod (carried over from v1) ===== */
 module pod_outer() {
     br = 3; isq = [pod_x-2*pod_r, pod_y-2*pod_r];
@@ -93,12 +100,15 @@ function P_side(m) = [m[0]*21, m[1]*20, arm_root_z];   // onto the long side wal
 function P_end(m)  = [m[0]*14, m[1]*38, arm_root_z];   // onto the end corner
 
 // flat strut: a vertical BLADE between A and B (thin horizontally, taller
-// vertically) — a flat face, no round-tube look.
+// vertically) — flat faces, but every edge filleted (rbox) so it reads smooth,
+// not faceted. Still a flat blade, no round-tube look.
+arm_r = 0.9;   // edge fillet radius on the arms (maximum-smooth)
 module blade(A, B, thick, h) {
     ang = atan2(B[1]-A[1], B[0]-A[0]);
+    r = min(arm_r, thick/2 - 0.05, h/2 - 0.05);
     hull() {
-        translate(A) rotate([0,0,ang]) cube([eps, thick, h], center=true);
-        translate(B) rotate([0,0,ang]) cube([eps, thick, h], center=true);
+        translate(A) rotate([0,0,ang]) rbox([2*r, thick, h], r);
+        translate(B) rotate([0,0,ang]) rbox([2*r, thick, h], r);
     }
 }
 // a strut = the slim blade PLUS a flared root fairing where it meets the body:
@@ -111,19 +121,32 @@ module strut(A, B, thick, h) {
     dir = (B - A) / norm(B - A);            // unit, motor -> body
     L   = norm(B - A);
     blade(A, B, thick, h);                  // slim flat blade
+    // gentle flare where the blade washes into the motor pod (softens the crease)
+    Pn  = A + dir*5.5;
+    hull() {
+        translate(A)  rotate([0,0,ang]) rbox([2*arm_r, thick+1.8, h+0.6], arm_r);
+        translate(Pn) rotate([0,0,ang]) rbox([2*arm_r, thick,     h     ], arm_r);
+    }
     Po  = A + dir*(L - 8);                  // 8 mm outboard of the body — still slim
     Pi  = B + dir*2.2;                      // 2.2 mm INTO the wall (volumetric weld)
     z0  = floor_t + 1.0;                    // fair right down toward the floor
     z1  = arm_root_z + h/2;                 // up to the blade top
+    rg  = arm_r;
     hull() {
-        translate(Po) rotate([0,0,ang]) cube([eps, thick,       h     ], center=true);
+        translate(Po) rotate([0,0,ang]) rbox([2*rg, thick,       h     ], rg);
         translate([Pi[0], Pi[1], (z0+z1)/2])
-            rotate([0,0,ang])             cube([eps, thick + 2.6, z1-z0], center=true);
+            rotate([0,0,ang])           rbox([2*rg, thick + 2.6, z1-z0], rg);
     }
 }
+// motor pod — outer shell rounded at both rims (minkowski) so there is no sharp
+// lip where the blades wash into it; bores cut afterwards stay crisp inside.
 module nacelle(m, ang) {
+    rn = 0.6;
     translate([m[0]*motor_off, m[1]*motor_off, motor_lift]) difference() {
-        cylinder(d1=nacelle_d, d2=nacelle_d-1, h=nacelle_h);
+        minkowski() {
+            cylinder(d1=nacelle_d-2*rn, d2=nacelle_d-1-2*rn, h=nacelle_h-2*rn);
+            sphere(r=rn, $fn=22);
+        }
         translate([0,0,floor_t]) cylinder(d=motor_d+0.15, h=nacelle_h);    // motor pocket
         cylinder(d=motor_d-3, h=nacelle_h*3, center=true);                 // bottom wire/vent
     }
