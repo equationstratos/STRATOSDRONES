@@ -96,8 +96,11 @@ MOTORS = [for (sx=[-1,1], sy=[-1,1]) [sx,sy]];
 
 // per motor: the motor junction (low) + two splayed pod attach points (high)
 function Mtop(m) = [m[0]*motor_off, m[1]*motor_off, motor_lift + nacelle_h/2];  // arms meet the cylinder at MID-height
-function P_side(m) = [m[0]*21, m[1]*20, arm_root_z];   // onto the long side wall
-function P_end(m)  = [m[0]*14, m[1]*38, arm_root_z];   // onto the end corner
+// both roots sit NEAR THE CORNER so the arm emerges level with the body faces
+// (no recessed step): one onto the END face beside the camera, one onto the
+// SIDE face near the corner.
+function P_side(m) = [m[0]*21, m[1]*29,   arm_root_z];   // side face, near the corner
+function P_end(m)  = [m[0]*10, m[1]*38.5, arm_root_z];   // end face, flush beside the lens
 
 // flat strut: a vertical BLADE between A and B (thin horizontally, taller
 // vertically) — flat faces, but every edge filleted (rbox) so it reads smooth,
