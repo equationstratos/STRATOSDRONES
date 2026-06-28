@@ -91,46 +91,57 @@ module pod_shell() {
     }
 }
 
-/* ===== twin Tello-style arms with a hidden motor-wire channel ===== */
+/* ===== flat Tello-style lattice/truss arms — one tapered girder per motor ===== */
 MOTORS = [for (sx=[-1,1], sy=[-1,1]) [sx,sy]];
 
-// per motor: the motor junction (low) + two splayed pod attach points (high)
-function Mtop(m) = [m[0]*motor_off, m[1]*motor_off, motor_lift + nacelle_h/2];  // arms meet the cylinder at MID-height
-// both roots sit at the CORNER (clear of the camera face) so the flat front
-// stays a clean uniform panel; the corner shoulder fairs them in smoothly.
-function P_side(m) = [m[0]*21, m[1]*27, arm_root_z];   // side face, near the corner
-function P_end(m)  = [m[0]*15, m[1]*37, arm_root_z];   // end face, onto the corner
+arm_w     = 7.4;   // beam width at the body root
+arm_w_tip = 6.2;   // beam width at the motor
+arm_h     = 5.6;   // beam height (a flat slab, flat top/bottom like the Tello)
 
-// flat strut: a vertical BLADE between A and B (thin horizontally, taller
-// vertically) — flat faces, but every edge filleted (rbox) so it reads smooth,
-// not faceted. Still a flat blade, no round-tube look.
-arm_r = 1.4;   // edge fillet radius on the arms — near-bullnose tops, no sharp edges
-module blade(A, B, thick, h) {
-    ang = atan2(B[1]-A[1], B[0]-A[0]);
-    r = min(arm_r, thick/2 - 0.05, h/2 - 0.05);
-    hull() {
-        translate(A) rotate([0,0,ang]) rbox([2*r, thick, h], r);
-        translate(B) rotate([0,0,ang]) rbox([2*r, thick, h], r);
+// open-truss beam along +x, root at x=0, tip at x=L, centred in Z. Alternating
+// triangular windows are cut on the top/bottom faces (through Z) AND the side
+// faces (through Y), offset by half a bay, so it reads as a 3-D lattice girder
+// from above AND from the side — solid edge chords + solid root/tip for the
+// joints. This is the flat, latticed Tello arm (not a blade, not a tube).
+module lattice_arm(L, w0, w1, h) {
+    chord = 1.6;
+    xs = 3.5; xe = L - 5; n = 4; seg = (xe - xs)/n;
+    difference() {
+        hull() {                                   // tapered flat beam, rounded plan ends
+            cylinder(d=w0, h=h, center=true, $fn=36);
+            translate([L,0,0]) cylinder(d=w1, h=h, center=true, $fn=36);
+        }
+        yi = w1/2 - chord;                         // top/bottom windows (through Z)
+        if (yi > 0.6)
+            for (i=[0:n-1]) {
+                x0 = xs + i*seg; x1 = x0 + seg; s = (i%2==0)?1:-1;
+                translate([0,0,-h]) linear_extrude(2*h)
+                    polygon([[x0,s*yi],[x1,s*yi],[(x0+x1)/2,-s*yi]]);
+            }
+        zi = h/2 - chord;                          // side windows (through Y), half-bay offset
+        if (zi > 0.6)
+            for (i=[0:n-1]) {
+                x0 = xs + seg/2 + i*seg; x1 = min(x0+seg, xe+seg/2); s = (i%2==0)?1:-1;
+                translate([0, w0, 0]) rotate([90,0,0]) linear_extrude(2*w0)
+                    polygon([[x0, s*zi],[x1, s*zi],[(x0+x1)/2, -s*zi]]);
+            }
     }
 }
-// a strut = the rounded blade + a gentle flare where it washes into the motor
-// pod. The BODY-end root is handled by corner_blend (one smooth swelling both
-// blades grow out of), so there is no separate gusset here to add seams.
-module strut(A, B, thick, h) {
-    ang = atan2(B[1]-A[1], B[0]-A[0]);
-    dir = (B - A) / norm(B - A);            // unit, motor -> body
-    blade(A, B, thick, h);                  // rounded flat blade
-    // gentle flare where the blade washes into the motor pod (softens the crease)
-    Pn  = A + dir*5.5;
-    hull() {
-        translate(A)  rotate([0,0,ang]) rbox([2*arm_r, thick+1.8, h+0.6], arm_r);
-        translate(Pn) rotate([0,0,ang]) rbox([2*arm_r, thick,     h     ], arm_r);
-    }
+
+// root just inside the body corner (clear of the camera face); descends to meet
+// the motor pod at mid-height (the dihedral the user asked for).
+function arm_root(m) = [m[0]*17.5, m[1]*34.5, arm_root_z];
+module truss_arm(m) {
+    R = arm_root(m);
+    M = [m[0]*motor_off, m[1]*motor_off, motor_lift + nacelle_h/2];
+    ang  = atan2(M[1]-R[1], M[0]-R[0]);
+    Lh   = norm([M[0]-R[0], M[1]-R[1]]);
+    rise = M[2]-R[2]; theta = atan2(rise, Lh); L3 = norm([Lh, rise]);
+    translate(R) rotate([0,0,ang]) rotate([0,-theta,0])
+        lattice_arm(L3, arm_w, arm_w_tip, arm_h);
 }
-// motor pod — SOLID outer shell, rounded at both rims (minkowski) so there is no
-// sharp lip where the blades wash into it. The motor pocket + wire vent are NOT
-// cut here: they are subtracted at the very end (motor_bores), AFTER the blades
-// are unioned, so a blade rooting at the pod axis can never block the bore.
+// motor pod — SOLID outer shell, rounded rims (minkowski). The pocket/vent are
+// cut last (motor_bores) so the bore is always clear for the 8520.
 module nacelle_outer(m) {
     rn = 0.6;
     translate([m[0]*motor_off, m[1]*motor_off, motor_lift])
@@ -139,60 +150,19 @@ module nacelle_outer(m) {
             sphere(r=rn, $fn=22);
         }
 }
-// the motor bores (pocket the 8520 presses into + a bottom wire/cooling vent),
-// cut last so the pocket is guaranteed clear for the motor.
 module motor_bores() {
-    for (m = MOTORS)
+    for (m = MOTORS) {
+        ang = atan2(-m[1], -m[0]);                 // toward the body (for the wire slot)
         translate([m[0]*motor_off, m[1]*motor_off, motor_lift]) {
             translate([0,0,floor_t]) cylinder(d=motor_d+0.15, h=nacelle_h+1);  // motor pocket
             cylinder(d=motor_d-3, h=nacelle_h*3, center=true);                 // bottom vent
-        }
-}
-blade_h = 4.5;    // blade height (vertical) — flat face, not a tube
-// corner shoulder: a moulded fill that bridges the two strut roots to the body
-// corner, so the arms emerge from a solid shoulder flush with the walls — no
-// recessed step and no open slot between the arm and the body near the corner.
-// ONE smooth swelling at each corner that both blades grow out of: a generous
-// minkowski-rounded dome enveloping the two roots and reaching part-way toward
-// the motor. Its anchor sits deep inside the body corner so the dome meets the
-// wall nearly tangentially — a smooth blend, not a stuck-on shoulder with edges.
-module corner_blend(m) {
-    rb = 2.0;                                   // smoothing radius (minkowski)
-    z0 = 4.2; z1 = arm_root_z + blade_h/2 - rb; zc = (z0+z1)/2; H = z1 - z0;
-    c  = [m[0]*(pod_x/2 - 7), m[1]*(pod_y/2 - 7)];   // deep in the corner (tangent-ish blend)
-    ps = P_side(m); pe = P_end(m); A = Mtop(m);
-    qs = ps + (A - ps)*0.18;                    // a touch toward the motor (side blade)
-    qe = pe + (A - pe)*0.18;                    // a touch toward the motor (end blade)
-    minkowski() {
-        hull() {
-            translate([c[0],  c[1],  zc]) cube([1.0, 1.0, H], center=true);
-            translate([ps[0], ps[1], zc]) cube([1.0, 1.0, H], center=true);
-            translate([pe[0], pe[1], zc]) cube([1.0, 1.0, H], center=true);
-            translate([qs[0], qs[1], arm_root_z]) cube([1.0, 1.0, blade_h-2*rb], center=true);
-            translate([qe[0], qe[1], arm_root_z]) cube([1.0, 1.0, blade_h-2*rb], center=true);
-        }
-        sphere(r=rb, $fn=22);
-    }
-}
-module twin_arms() {
-    for (m = MOTORS) {
-        corner_blend(m);                           // solid shoulder at the body corner
-        strut(Mtop(m), P_side(m), 4.4, blade_h);   // wire strut (holds the channel)
-        strut(Mtop(m), P_end(m),  2.8, blade_h);   // plain flat strut
-        nacelle_outer(m);
-    }
-}
-// the hidden wire channels (subtracted from the body so they pierce the strut
-// and the pod wall, opening into the cavity at the PCB)
-module wire_channels() {
-    for (m = MOTORS) {
-        A = Mtop(m); B = P_side(m);
-        dir = (B - A) / norm(B - A);
-        hull() {
-            translate(A - dir*1) sphere(d=2.2, $fn=14);   // open at the motor
-            translate(B + dir*9) sphere(d=2.2, $fn=14);   // open into the cavity
+            rotate([0,0,ang]) translate([0,-1.4,floor_t])                      // motor-wire slot
+                cube([nacelle_d, 2.8, nacelle_h]);
         }
     }
+}
+module arms() {
+    for (m = MOTORS) { truss_arm(m); nacelle_outer(m); }
 }
 
 /* ===== PCB bosses + snap posts (carried over) ===== */
@@ -221,10 +191,9 @@ module snap_posts() {
 
 module body_bottom_v2() {
     difference() {
-        union() { pod_shell(); twin_arms(); }
-        wire_channels();   // hidden motor-wire passages
-        inner_cavity();    // keep the interior clean (trims struts inside)
-        motor_bores();     // pockets + vents LAST → bores always clear for the motors
+        union() { pod_shell(); arms(); }
+        inner_cavity();    // keep the interior clean (trims the arm roots inside)
+        motor_bores();     // pockets + vents + wire slots LAST → bores always clear
     }
     pcb_bosses();
     snap_posts();

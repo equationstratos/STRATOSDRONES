@@ -25,7 +25,7 @@ the board, held by a **cradle moulded into the canopy**. The floor is a
 | File | Part |
 |---|---|
 | `body_bottom.scad` | lower shell — PCB bay + bosses, 4 Eiffel-truss arms + motor mounts, honeycomb floor vents + ToF/flow apertures, camera nose |
-| `body_bottom_v2.scad` | **alternative lower shell (Tello-look)** — twin flat splayed blades (descending dihedral, attach high on the body and meet the motor pods at mid-height) with hidden motor-wire channels + a **rear** battery slot; pairs with `body_top_v2.scad` |
+| `body_bottom_v2.scad` | **alternative lower shell (Tello-look)** — flat **lattice/truss arms** (one tapered girder per motor, triangulated top + sides, descending dihedral to the motor pods) + a **rear** battery slot; pairs with `body_top_v2.scad` |
 | `body_top_v2.scad` | **matching capot for v2** — smooth low canopy with a **rear** battery opening + side guide rails, a front stop and retention nubs (slide the 1S pack in from the back — no need to pull the capot), 4 corner snap clips; dome stays just under the prop plane |
 | `body_top.scad` | upper canopy — hex vents, LED light pipes, snap clips, battery cradle with snap retention |
 | `body_top_smooth.scad` | **alternative canopy** — smooth shell, no vents/pipes (same cradle + clips); print *instead of* `body_top` |
@@ -34,38 +34,28 @@ the board, held by a **cradle moulded into the canopy**. The floor is a
 | `pcb_dummy.scad` | **print-fit gauge** — board outline + holes + key components, to check fit/alignment |
 | `assembly.scad` | preview only (both shells + motors + prop disks) — do not print |
 
-## Tello-look variant (v2): twin arms + rear-loading battery
+## Tello-look variant (v2): lattice arms + rear-loading battery
 
-`body_bottom_v2.scad` + `body_top_v2.scad` are an alternative pair styled closer
-to the reference Tello: **two splayed flat blades per motor** (instead of one
-truss arm) that start high on the body and slope down to the motor pods, meeting
-each pod at its **mid-height**. The two blades **emerge from the body corners**
-out of **one smooth minkowski-rounded swelling per corner** (no separate gussets
-to add seams) — clear of the camera face, which stays a clean uniform panel — and
-the roots stay **above the rounded belly** so the bottom edge reads as one
-continuous curve. The blades themselves are near-bullnose (rounded tops, flat
-sides) so the whole arm reads smooth with no sharp edges. The motor
-pocket + wire vent are cut **last**, so the bore is always clear for the 8520 to
-press in (the blades can't intrude into it). The nose carries a **clean recessed
-camera lens housing** (rounded bezel + recessed cup + small lens bore, with solid
-floor behind it) instead of a raw hole that looked into the vents. Each blade root **flares into a moulded gusset**
-that fairs down the body wall and welds through it (it doubles as an internal
-buttress) so the arms look part of the shell, not tabs stuck on. Every arm edge
-is **filleted** (the blades/gussets are built from rounded boxes, the motor-pod
-rims are rounded) and each blade **flares where it washes into the pod**, so the
-whole arm reads smooth and moulded rather than faceted. The **motor wires hide
-inside a channel** in one blade of each pair and exit into the PCB bay. The 1S pack loads from the **rear**
-through a slot in the lower shell and a matching opening + guide rails in the
-capot, so you never have to pull the canopy to swap a battery. The capot is a
-smooth low dome that stays just under the spinning props (lowered motors).
+`body_bottom_v2.scad` + `body_top_v2.scad` are an alternative pair styled after
+the reference Tello: **flat lattice/truss arms** — one tapered girder per motor,
+flat-topped, with alternating triangular windows cut on the top/bottom *and* the
+side faces (offset half a bay) so it reads as a 3-D lattice from above and from
+the side, with solid edge chords. Each arm **roots at the body corner** (clear of
+the camera face, which stays a clean uniform panel) and **descends** to meet the
+motor pod, like a Tello. The motor pocket + wire vent + a wire slot toward the
+arm are cut **last**, so the bore is always clear for the 8520 to press in. The
+1S pack loads from the **rear** through a slot in the lower shell and a matching
+opening + guide rails in the capot, so you never have to pull the canopy to swap
+a battery. The capot is a smooth low dome that stays just under the spinning
+props (lowered motors).
 
 ![v2 assembly](preview/v2_assembly.png)
 ![v2 exploded — rear battery](preview/v2_exploded.png)
 
 Print `body_bottom_v2.stl` + `body_top_v2.stl` as a set (light tree supports under
 the down-swept blades / motor pods). Solid-volume estimate in PLA (1.24 g/cm³):
-**≈ 16.6 g** lower (incl. the moulded, filleted arm gussets) + **≈ 7.7 g** capot
-= **≈ 24 g** — same class as the v1 pair.
+**≈ 13.5 g** lower (the latticed arms shed weight) + **≈ 7.7 g** capot
+= **≈ 21 g** — same class as the v1 pair.
 
 ## Print-fit prototype (test before the real board)
 
