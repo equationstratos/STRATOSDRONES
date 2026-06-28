@@ -43,8 +43,9 @@ end/corner face) to the motor pod, forming a clean triangle exactly like the
 Tello (set `arm_lattice=true` to open the struts into a triangular truss). The
 strut tops are kept **under the body rim** (z ≤ 13). The roots sit near the corner (clear of
 the camera face, which stays a clean uniform panel) and **descends** to meet the
-motor pod, like a Tello. The motor pocket + wire vent + a wire slot toward the
-arm are cut **last**, so the bore is always clear for the 8520 to press in. The
+motor pod, like a Tello — the two struts converge into the pod as one cohesive
+collar (no slot cut across the roots). The motor pocket + bottom wire/vent are
+cut **last**, so the bore is always clear for the 8520 to press in. The
 1S pack loads from the **rear** through a slot in the lower shell and a matching
 opening + guide rails in the capot, so you never have to pull the canopy to swap
 a battery. The capot is a smooth low dome that stays just under the spinning

@@ -160,15 +160,13 @@ module nacelle_outer(m) {
         }
 }
 module motor_bores() {
-    for (m = MOTORS) {
-        ang = atan2(-m[1], -m[0]);                 // toward the body (for the wire slot)
+    for (m = MOTORS)
         translate([m[0]*motor_off, m[1]*motor_off, motor_lift]) {
             translate([0,0,floor_t]) cylinder(d=motor_d+0.15, h=nacelle_h+1);  // motor pocket
-            cylinder(d=motor_d-3, h=nacelle_h*3, center=true);                 // bottom vent
-            rotate([0,0,ang]) translate([0,-1.4,floor_t])                      // motor-wire slot
-                cube([nacelle_d, 2.8, nacelle_h]);
+            cylinder(d=motor_d-3, h=nacelle_h*3, center=true);                 // bottom wire/vent
         }
-    }
+    // the motor wire drops through the bottom vent and runs under the struts —
+    // no slot cut across the strut roots (that was breaking the arm up).
 }
 module arms() {
     for (m = MOTORS) { truss_arm(m); nacelle_outer(m); }
