@@ -40,9 +40,11 @@ the board, held by a **cradle moulded into the canopy**. The floor is a
 to the reference Tello: **two splayed flat blades per motor** (instead of one
 truss arm) that start high on the body and slope down to the motor pods, meeting
 each pod at its **mid-height**. The two blades **emerge from the body corners**
-over a smooth (minkowski-rounded) shoulder — clear of the camera face, which
-stays a clean uniform panel — and the roots stop **above the rounded belly** so
-the bottom edge reads as one continuous curve (no steps at the junctions). The motor
+out of **one smooth minkowski-rounded swelling per corner** (no separate gussets
+to add seams) — clear of the camera face, which stays a clean uniform panel — and
+the roots stay **above the rounded belly** so the bottom edge reads as one
+continuous curve. The blades themselves are near-bullnose (rounded tops, flat
+sides) so the whole arm reads smooth with no sharp edges. The motor
 pocket + wire vent are cut **last**, so the bore is always clear for the 8520 to
 press in (the blades can't intrude into it). The nose carries a **clean recessed
 camera lens housing** (rounded bezel + recessed cup + small lens bore, with solid

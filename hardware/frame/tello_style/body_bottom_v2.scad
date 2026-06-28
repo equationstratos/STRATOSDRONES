@@ -65,39 +65,29 @@ module floor_vents() {
     for (iy=[-7:7], ix=[-4:4]) {
         x=ix*pitch + (iy%2?pitch/2:0); y=iy*dy;
         keep = abs(x)<15 && abs(y)<33
-            && !(abs(x)<9 && y<-15)                       // solid floor behind the camera
             && min([for(s=sensors) norm([x-s[0],y-s[1]])])>6
             && min([for(b=bosses) norm([x-b[0],y-b[1]])])>7;
         if (keep) translate([x,y,-eps]) rotate([0,0,30]) cylinder(r=R, h=floor_t+2*eps, $fn=6);
     }
 }
-cam_z = half_h*0.5;   // camera centre height
-// clean recessed lens housing (Tello-style) instead of a raw through-hole: a
-// smooth rounded bezel that protrudes from the nose, with a recessed lens cup
-// and a small lens bore. The floor right behind it is solid (see floor_vents),
-// so you no longer look through into the honeycomb.
-module camera_bezel() {
-    translate([0, -pod_y/2, cam_z]) rotate([90,0,0])
-        minkowski() { cylinder(d=10.5, h=1.6, $fn=48); sphere(r=1.2, $fn=22); }
-}
-module camera_cuts() {
-    translate([0, -pod_y/2 - 4, cam_z]) rotate([-90,0,0]) {
-        cylinder(d=8.6, h=4.0, $fn=44);        // recessed lens cup (clean face)
-        cylinder(d=5.2, h=wall+9, $fn=32);     // small lens bore through the wall
-    }
-}
 module pod_shell() {
     difference() {
-        union() { pod_outer(); camera_bezel(); }
+        pod_outer();
         inner_cavity();
         translate([tof_pos[0], tof_pos[1], -eps]) cylinder(d=tof_d, h=floor_t+2*eps);
         translate([flow_pos[0], flow_pos[1], -eps]) cylinder(d=flow_d, h=floor_t+2*eps);
         floor_vents();
-        camera_cuts();
+        translate([0,-pod_y/2-eps,half_h*0.5]) rotate([-90,0,0]) cylinder(d=cam_w+0.6, h=wall+2);
         translate([-pod_x/2-eps,-15,2.5]) cube([wall+2,12,5.5]);            // USB-C
         // REAR battery slot — the pack slides in from the back, on the board
         translate([0, pod_y/2-wall/2, floor_t+boss_h+batt_h/2+0.3])
             cube([batt_w+1.5, wall+3, batt_h+1.2], center=true);
+    }
+    // camera nose bump
+    translate([0,-pod_y/2+1,half_h*0.5]) rotate([-90,0,0]) difference() {
+        cylinder(d=cam_w+5, h=3.5);
+        translate([0,0,-eps]) cylinder(d=cam_w+0.5, h=4);
+        translate([-cam_w,-cam_w-2,-eps]) cube([2*cam_w,cam_w+2,5]);
     }
 }
 
@@ -114,7 +104,7 @@ function P_end(m)  = [m[0]*15, m[1]*37, arm_root_z];   // end face, onto the cor
 // flat strut: a vertical BLADE between A and B (thin horizontally, taller
 // vertically) — flat faces, but every edge filleted (rbox) so it reads smooth,
 // not faceted. Still a flat blade, no round-tube look.
-arm_r = 0.9;   // edge fillet radius on the arms (maximum-smooth)
+arm_r = 1.4;   // edge fillet radius on the arms — near-bullnose tops, no sharp edges
 module blade(A, B, thick, h) {
     ang = atan2(B[1]-A[1], B[0]-A[0]);
     r = min(arm_r, thick/2 - 0.05, h/2 - 0.05);
@@ -123,32 +113,18 @@ module blade(A, B, thick, h) {
         translate(B) rotate([0,0,ang]) rbox([2*r, thick, h], r);
     }
 }
-// a strut = the slim blade PLUS a flared root fairing where it meets the body:
-// the root grows wider and deepens DOWN toward the floor, and is pushed a few mm
-// INTO the wall so it welds through the full wall thickness (inner_cavity then
-// trims it flush inside). This makes the arm look moulded into the body — a
-// gusset — instead of a thin tab grazing the surface.
+// a strut = the rounded blade + a gentle flare where it washes into the motor
+// pod. The BODY-end root is handled by corner_blend (one smooth swelling both
+// blades grow out of), so there is no separate gusset here to add seams.
 module strut(A, B, thick, h) {
     ang = atan2(B[1]-A[1], B[0]-A[0]);
     dir = (B - A) / norm(B - A);            // unit, motor -> body
-    L   = norm(B - A);
-    blade(A, B, thick, h);                  // slim flat blade
+    blade(A, B, thick, h);                  // rounded flat blade
     // gentle flare where the blade washes into the motor pod (softens the crease)
     Pn  = A + dir*5.5;
     hull() {
         translate(A)  rotate([0,0,ang]) rbox([2*arm_r, thick+1.8, h+0.6], arm_r);
         translate(Pn) rotate([0,0,ang]) rbox([2*arm_r, thick,     h     ], arm_r);
-    }
-    Po  = A + dir*(L - 8);                  // 8 mm outboard of the body — still slim
-    Pi  = B + dir*2.2;                      // 2.2 mm INTO the wall (volumetric weld)
-    z0  = 3.8;                              // stop ABOVE the rounded belly so the
-                                            // bottom edge stays one smooth curve
-    z1  = arm_root_z + h/2;                 // up to the blade top
-    rg  = arm_r;
-    hull() {
-        translate(Po) rotate([0,0,ang]) rbox([2*rg, thick,       h     ], rg);
-        translate([Pi[0], Pi[1], (z0+z1)/2])
-            rotate([0,0,ang])           rbox([2*rg, thick + 2.6, z1-z0], rg);
     }
 }
 // motor pod — SOLID outer shell, rounded at both rims (minkowski) so there is no
@@ -176,18 +152,26 @@ blade_h = 4.5;    // blade height (vertical) — flat face, not a tube
 // corner shoulder: a moulded fill that bridges the two strut roots to the body
 // corner, so the arms emerge from a solid shoulder flush with the walls — no
 // recessed step and no open slot between the arm and the body near the corner.
+// ONE smooth swelling at each corner that both blades grow out of: a generous
+// minkowski-rounded dome enveloping the two roots and reaching part-way toward
+// the motor. Its anchor sits deep inside the body corner so the dome meets the
+// wall nearly tangentially — a smooth blend, not a stuck-on shoulder with edges.
 module corner_blend(m) {
-    rb = 1.3;                                   // smoothing radius (minkowski)
-    z0 = 3.8; z1 = arm_root_z + blade_h/2; zc = (z0+z1)/2; H = z1 - z0;
-    c  = [m[0]*(pod_x/2 - 3), m[1]*(pod_y/2 - 3)];   // anchor on the body corner
-    ps = P_side(m); pe = P_end(m);
-    minkowski() {                               // round the whole shoulder smooth
+    rb = 2.0;                                   // smoothing radius (minkowski)
+    z0 = 4.2; z1 = arm_root_z + blade_h/2 - rb; zc = (z0+z1)/2; H = z1 - z0;
+    c  = [m[0]*(pod_x/2 - 7), m[1]*(pod_y/2 - 7)];   // deep in the corner (tangent-ish blend)
+    ps = P_side(m); pe = P_end(m); A = Mtop(m);
+    qs = ps + (A - ps)*0.18;                    // a touch toward the motor (side blade)
+    qe = pe + (A - pe)*0.18;                    // a touch toward the motor (end blade)
+    minkowski() {
         hull() {
-            translate([c[0],  c[1],  zc]) cube([1.4, 1.4, H-2*rb], center=true);
-            translate([ps[0], ps[1], zc]) cube([1.4, 1.4, H-2*rb], center=true);
-            translate([pe[0], pe[1], zc]) cube([1.4, 1.4, H-2*rb], center=true);
+            translate([c[0],  c[1],  zc]) cube([1.0, 1.0, H], center=true);
+            translate([ps[0], ps[1], zc]) cube([1.0, 1.0, H], center=true);
+            translate([pe[0], pe[1], zc]) cube([1.0, 1.0, H], center=true);
+            translate([qs[0], qs[1], arm_root_z]) cube([1.0, 1.0, blade_h-2*rb], center=true);
+            translate([qe[0], qe[1], arm_root_z]) cube([1.0, 1.0, blade_h-2*rb], center=true);
         }
-        sphere(r=rb, $fn=18);
+        sphere(r=rb, $fn=22);
     }
 }
 module twin_arms() {
