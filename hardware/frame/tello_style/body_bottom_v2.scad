@@ -65,29 +65,39 @@ module floor_vents() {
     for (iy=[-7:7], ix=[-4:4]) {
         x=ix*pitch + (iy%2?pitch/2:0); y=iy*dy;
         keep = abs(x)<15 && abs(y)<33
+            && !(abs(x)<9 && y<-15)                       // solid floor behind the camera
             && min([for(s=sensors) norm([x-s[0],y-s[1]])])>6
             && min([for(b=bosses) norm([x-b[0],y-b[1]])])>7;
         if (keep) translate([x,y,-eps]) rotate([0,0,30]) cylinder(r=R, h=floor_t+2*eps, $fn=6);
     }
 }
+cam_z = half_h*0.5;   // camera centre height
+// clean recessed lens housing (Tello-style) instead of a raw through-hole: a
+// smooth rounded bezel that protrudes from the nose, with a recessed lens cup
+// and a small lens bore. The floor right behind it is solid (see floor_vents),
+// so you no longer look through into the honeycomb.
+module camera_bezel() {
+    translate([0, -pod_y/2, cam_z]) rotate([90,0,0])
+        minkowski() { cylinder(d=10.5, h=1.6, $fn=48); sphere(r=1.2, $fn=22); }
+}
+module camera_cuts() {
+    translate([0, -pod_y/2 - 4, cam_z]) rotate([-90,0,0]) {
+        cylinder(d=8.6, h=4.0, $fn=44);        // recessed lens cup (clean face)
+        cylinder(d=5.2, h=wall+9, $fn=32);     // small lens bore through the wall
+    }
+}
 module pod_shell() {
     difference() {
-        pod_outer();
+        union() { pod_outer(); camera_bezel(); }
         inner_cavity();
         translate([tof_pos[0], tof_pos[1], -eps]) cylinder(d=tof_d, h=floor_t+2*eps);
         translate([flow_pos[0], flow_pos[1], -eps]) cylinder(d=flow_d, h=floor_t+2*eps);
         floor_vents();
-        translate([0,-pod_y/2-eps,half_h*0.5]) rotate([-90,0,0]) cylinder(d=cam_w+0.6, h=wall+2);
+        camera_cuts();
         translate([-pod_x/2-eps,-15,2.5]) cube([wall+2,12,5.5]);            // USB-C
         // REAR battery slot — the pack slides in from the back, on the board
         translate([0, pod_y/2-wall/2, floor_t+boss_h+batt_h/2+0.3])
             cube([batt_w+1.5, wall+3, batt_h+1.2], center=true);
-    }
-    // camera nose bump
-    translate([0,-pod_y/2+1,half_h*0.5]) rotate([-90,0,0]) difference() {
-        cylinder(d=cam_w+5, h=3.5);
-        translate([0,0,-eps]) cylinder(d=cam_w+0.5, h=4);
-        translate([-cam_w,-cam_w-2,-eps]) cube([2*cam_w,cam_w+2,5]);
     }
 }
 

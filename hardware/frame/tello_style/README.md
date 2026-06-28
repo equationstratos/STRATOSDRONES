@@ -44,7 +44,9 @@ over a smooth (minkowski-rounded) shoulder — clear of the camera face, which
 stays a clean uniform panel — and the roots stop **above the rounded belly** so
 the bottom edge reads as one continuous curve (no steps at the junctions). The motor
 pocket + wire vent are cut **last**, so the bore is always clear for the 8520 to
-press in (the blades can't intrude into it). Each blade root **flares into a moulded gusset**
+press in (the blades can't intrude into it). The nose carries a **clean recessed
+camera lens housing** (rounded bezel + recessed cup + small lens bore, with solid
+floor behind it) instead of a raw hole that looked into the vents. Each blade root **flares into a moulded gusset**
 that fairs down the body wall and welds through it (it doubles as an internal
 buttress) so the arms look part of the shell, not tabs stuck on. Every arm edge
 is **filleted** (the blades/gussets are built from rounded boxes, the motor-pod
