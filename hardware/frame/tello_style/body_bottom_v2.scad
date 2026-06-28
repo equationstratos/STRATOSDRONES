@@ -28,7 +28,8 @@ pod_x = pcb_x + 2*pcb_clear + 2*1.5;   // ≈42
 pod_y = pcb_y + 2*pcb_clear + 2*1.5;   // ≈78
 pod_r = 9; wall = 1.5; half_h = 13;
 
-arm_root_z = 11.0;  // struts attach near the TOP of the pod (like the Tello)
+arm_root_z = 9.8;   // arm centre height — chosen so the beam TOP stays under the
+                    // body rim (half_h=13): root_z + arm_h/2 ≈ 12.6 < 13
 motor_lift = -1.0;  // motor cylinders dropped so they hang below the body and
                     // their TOP sits just under the pod top (body rides higher)
 
