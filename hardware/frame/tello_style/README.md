@@ -39,9 +39,10 @@ the board, held by a **cradle moulded into the canopy**. The floor is a
 `body_bottom_v2.scad` + `body_top_v2.scad` are an alternative pair styled closer
 to the reference Tello: **two splayed flat blades per motor** (instead of one
 truss arm) that start high on the body and slope down to the motor pods, meeting
-each pod at its **mid-height**. The two blades **emerge from the body corner**
-(one onto the end face beside the lens, one onto the side face) over a solid
-shoulder, so the arm sits **flush with the body — no recessed step**. The motor
+each pod at its **mid-height**. The two blades **emerge from the body corners**
+over a smooth (minkowski-rounded) shoulder — clear of the camera face, which
+stays a clean uniform panel — and the roots stop **above the rounded belly** so
+the bottom edge reads as one continuous curve (no steps at the junctions). The motor
 pocket + wire vent are cut **last**, so the bore is always clear for the 8520 to
 press in (the blades can't intrude into it). Each blade root **flares into a moulded gusset**
 that fairs down the body wall and welds through it (it doubles as an internal

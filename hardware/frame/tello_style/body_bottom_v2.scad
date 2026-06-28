@@ -96,11 +96,10 @@ MOTORS = [for (sx=[-1,1], sy=[-1,1]) [sx,sy]];
 
 // per motor: the motor junction (low) + two splayed pod attach points (high)
 function Mtop(m) = [m[0]*motor_off, m[1]*motor_off, motor_lift + nacelle_h/2];  // arms meet the cylinder at MID-height
-// both roots sit NEAR THE CORNER so the arm emerges level with the body faces
-// (no recessed step): one onto the END face beside the camera, one onto the
-// SIDE face near the corner.
-function P_side(m) = [m[0]*21, m[1]*29,   arm_root_z];   // side face, near the corner
-function P_end(m)  = [m[0]*10, m[1]*38.5, arm_root_z];   // end face, flush beside the lens
+// both roots sit at the CORNER (clear of the camera face) so the flat front
+// stays a clean uniform panel; the corner shoulder fairs them in smoothly.
+function P_side(m) = [m[0]*21, m[1]*27, arm_root_z];   // side face, near the corner
+function P_end(m)  = [m[0]*15, m[1]*37, arm_root_z];   // end face, onto the corner
 
 // flat strut: a vertical BLADE between A and B (thin horizontally, taller
 // vertically) — flat faces, but every edge filleted (rbox) so it reads smooth,
@@ -132,7 +131,8 @@ module strut(A, B, thick, h) {
     }
     Po  = A + dir*(L - 8);                  // 8 mm outboard of the body — still slim
     Pi  = B + dir*2.2;                      // 2.2 mm INTO the wall (volumetric weld)
-    z0  = floor_t + 1.0;                    // fair right down toward the floor
+    z0  = 3.8;                              // stop ABOVE the rounded belly so the
+                                            // bottom edge stays one smooth curve
     z1  = arm_root_z + h/2;                 // up to the blade top
     rg  = arm_r;
     hull() {
@@ -167,13 +167,17 @@ blade_h = 4.5;    // blade height (vertical) — flat face, not a tube
 // corner, so the arms emerge from a solid shoulder flush with the walls — no
 // recessed step and no open slot between the arm and the body near the corner.
 module corner_blend(m) {
-    z0 = floor_t + 1.0; z1 = arm_root_z + blade_h/2; zc = (z0+z1)/2;
-    c  = [m[0]*(pod_x/2 - 2.5), m[1]*(pod_y/2 - 2.5)];   // anchor on the body corner
+    rb = 1.3;                                   // smoothing radius (minkowski)
+    z0 = 3.8; z1 = arm_root_z + blade_h/2; zc = (z0+z1)/2; H = z1 - z0;
+    c  = [m[0]*(pod_x/2 - 3), m[1]*(pod_y/2 - 3)];   // anchor on the body corner
     ps = P_side(m); pe = P_end(m);
-    hull() {
-        translate([c[0],  c[1],  zc]) rbox([3, 3, z1-z0], arm_r);
-        translate([ps[0], ps[1], zc]) rbox([3, 3, z1-z0], arm_r);
-        translate([pe[0], pe[1], zc]) rbox([3, 3, z1-z0], arm_r);
+    minkowski() {                               // round the whole shoulder smooth
+        hull() {
+            translate([c[0],  c[1],  zc]) cube([1.4, 1.4, H-2*rb], center=true);
+            translate([ps[0], ps[1], zc]) cube([1.4, 1.4, H-2*rb], center=true);
+            translate([pe[0], pe[1], zc]) cube([1.4, 1.4, H-2*rb], center=true);
+        }
+        sphere(r=rb, $fn=18);
     }
 }
 module twin_arms() {
