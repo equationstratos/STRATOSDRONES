@@ -138,25 +138,47 @@ module strut(A, B, thick, h) {
             rotate([0,0,ang])           rbox([2*rg, thick + 2.6, z1-z0], rg);
     }
 }
-// motor pod — outer shell rounded at both rims (minkowski) so there is no sharp
-// lip where the blades wash into it; bores cut afterwards stay crisp inside.
-module nacelle(m, ang) {
+// motor pod — SOLID outer shell, rounded at both rims (minkowski) so there is no
+// sharp lip where the blades wash into it. The motor pocket + wire vent are NOT
+// cut here: they are subtracted at the very end (motor_bores), AFTER the blades
+// are unioned, so a blade rooting at the pod axis can never block the bore.
+module nacelle_outer(m) {
     rn = 0.6;
-    translate([m[0]*motor_off, m[1]*motor_off, motor_lift]) difference() {
+    translate([m[0]*motor_off, m[1]*motor_off, motor_lift])
         minkowski() {
             cylinder(d1=nacelle_d-2*rn, d2=nacelle_d-1-2*rn, h=nacelle_h-2*rn);
             sphere(r=rn, $fn=22);
         }
-        translate([0,0,floor_t]) cylinder(d=motor_d+0.15, h=nacelle_h);    // motor pocket
-        cylinder(d=motor_d-3, h=nacelle_h*3, center=true);                 // bottom wire/vent
-    }
+}
+// the motor bores (pocket the 8520 presses into + a bottom wire/cooling vent),
+// cut last so the pocket is guaranteed clear for the motor.
+module motor_bores() {
+    for (m = MOTORS)
+        translate([m[0]*motor_off, m[1]*motor_off, motor_lift]) {
+            translate([0,0,floor_t]) cylinder(d=motor_d+0.15, h=nacelle_h+1);  // motor pocket
+            cylinder(d=motor_d-3, h=nacelle_h*3, center=true);                 // bottom vent
+        }
 }
 blade_h = 4.5;    // blade height (vertical) — flat face, not a tube
+// corner shoulder: a moulded fill that bridges the two strut roots to the body
+// corner, so the arms emerge from a solid shoulder flush with the walls — no
+// recessed step and no open slot between the arm and the body near the corner.
+module corner_blend(m) {
+    z0 = floor_t + 1.0; z1 = arm_root_z + blade_h/2; zc = (z0+z1)/2;
+    c  = [m[0]*(pod_x/2 - 2.5), m[1]*(pod_y/2 - 2.5)];   // anchor on the body corner
+    ps = P_side(m); pe = P_end(m);
+    hull() {
+        translate([c[0],  c[1],  zc]) rbox([3, 3, z1-z0], arm_r);
+        translate([ps[0], ps[1], zc]) rbox([3, 3, z1-z0], arm_r);
+        translate([pe[0], pe[1], zc]) rbox([3, 3, z1-z0], arm_r);
+    }
+}
 module twin_arms() {
     for (m = MOTORS) {
+        corner_blend(m);                           // solid shoulder at the body corner
         strut(Mtop(m), P_side(m), 4.4, blade_h);   // wire strut (holds the channel)
         strut(Mtop(m), P_end(m),  2.8, blade_h);   // plain flat strut
-        nacelle(m);
+        nacelle_outer(m);
     }
 }
 // the hidden wire channels (subtracted from the body so they pierce the strut
@@ -201,9 +223,7 @@ module body_bottom_v2() {
         union() { pod_shell(); twin_arms(); }
         wire_channels();   // hidden motor-wire passages
         inner_cavity();    // keep the interior clean (trims struts inside)
-        // re-open the sensor/USB/rear-slot/camera cuts that inner_cavity might
-        // have back-filled is unnecessary — pod_shell already cut them and
-        // inner_cavity is the same volume.
+        motor_bores();     // pockets + vents LAST → bores always clear for the motors
     }
     pcb_bosses();
     snap_posts();
