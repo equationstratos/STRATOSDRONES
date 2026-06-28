@@ -98,12 +98,13 @@ MOTORS = [for (sx=[-1,1], sy=[-1,1]) [sx,sy]];
 arm_w     = 7.4;   // beam width at the body root
 arm_w_tip = 6.2;   // beam width at the motor
 arm_h     = 5.6;   // beam height (a flat slab, flat top/bottom like the Tello)
+arm_lattice = false;  // false = SOLID flat beams (per the reference image);
+                      // true  = open triangular truss/lattice
 
-// open-truss beam along +x, root at x=0, tip at x=L, centred in Z. Alternating
-// triangular windows are cut on the top/bottom faces (through Z) AND the side
-// faces (through Y), offset by half a bay, so it reads as a 3-D lattice girder
-// from above AND from the side — solid edge chords + solid root/tip for the
-// joints. This is the flat, latticed Tello arm (not a blade, not a tube).
+// flat tapered beam along +x, root at x=0, tip at x=L, centred in Z. When
+// arm_lattice is on, alternating triangular windows are cut on the top/bottom
+// AND the side faces (offset half a bay) for an open Tello-style truss; when off
+// it is a clean solid flat girder. Either way it is a flat beam (not a tube).
 module lattice_arm(L, w0, w1, h) {
     chord = 1.6;
     xs = 3.5; xe = L - 5; n = 4; seg = (xe - xs)/n;
@@ -113,14 +114,14 @@ module lattice_arm(L, w0, w1, h) {
             translate([L,0,0]) cylinder(d=w1, h=h, center=true, $fn=36);
         }
         yi = w1/2 - chord;                         // top/bottom windows (through Z)
-        if (yi > 0.6)
+        if (arm_lattice && yi > 0.6)
             for (i=[0:n-1]) {
                 x0 = xs + i*seg; x1 = x0 + seg; s = (i%2==0)?1:-1;
                 translate([0,0,-h]) linear_extrude(2*h)
                     polygon([[x0,s*yi],[x1,s*yi],[(x0+x1)/2,-s*yi]]);
             }
         zi = h/2 - chord;                          // side windows (through Y), half-bay offset
-        if (zi > 0.6)
+        if (arm_lattice && zi > 0.6)
             for (i=[0:n-1]) {
                 x0 = xs + seg/2 + i*seg; x1 = min(x0+seg, xe+seg/2); s = (i%2==0)?1:-1;
                 translate([0, w0, 0]) rotate([90,0,0]) linear_extrude(2*w0)

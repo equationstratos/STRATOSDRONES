@@ -25,7 +25,7 @@ the board, held by a **cradle moulded into the canopy**. The floor is a
 | File | Part |
 |---|---|
 | `body_bottom.scad` | lower shell — PCB bay + bosses, 4 Eiffel-truss arms + motor mounts, honeycomb floor vents + ToF/flow apertures, camera nose |
-| `body_bottom_v2.scad` | **alternative lower shell (Tello-look)** — flat **lattice/truss arms** (one tapered girder per motor, triangulated top + sides, descending dihedral to the motor pods) + a **rear** battery slot; pairs with `body_top_v2.scad` |
+| `body_bottom_v2.scad` | **alternative lower shell (Tello-look)** — flat **solid beam arms** (one tapered girder per motor, descending dihedral to the motor pods; set `arm_lattice=true` for an open triangular truss) + a **rear** battery slot; pairs with `body_top_v2.scad` |
 | `body_top_v2.scad` | **matching capot for v2** — smooth low canopy with a **rear** battery opening + side guide rails, a front stop and retention nubs (slide the 1S pack in from the back — no need to pull the capot), 4 corner snap clips; dome stays just under the prop plane |
 | `body_top.scad` | upper canopy — hex vents, LED light pipes, snap clips, battery cradle with snap retention |
 | `body_top_smooth.scad` | **alternative canopy** — smooth shell, no vents/pipes (same cradle + clips); print *instead of* `body_top` |
@@ -37,10 +37,10 @@ the board, held by a **cradle moulded into the canopy**. The floor is a
 ## Tello-look variant (v2): lattice arms + rear-loading battery
 
 `body_bottom_v2.scad` + `body_top_v2.scad` are an alternative pair styled after
-the reference Tello: **flat lattice/truss arms** — one tapered girder per motor,
-flat-topped, with alternating triangular windows cut on the top/bottom *and* the
-side faces (offset half a bay) so it reads as a 3-D lattice from above and from
-the side, with solid edge chords. Each arm **roots at the body corner** (clear of
+the reference Tello: **flat tapered beam arms** — one girder per motor,
+flat-topped, **solid by default** (set `arm_lattice=true` for an open triangular
+truss cut on the top/bottom *and* side faces). The beam tops are kept **under the
+body rim** (z ≤ 13). Each arm **roots at the body corner** (clear of
 the camera face, which stays a clean uniform panel) and **descends** to meet the
 motor pod, like a Tello. The motor pocket + wire vent + a wire slot toward the
 arm are cut **last**, so the bore is always clear for the 8520 to press in. The
@@ -54,8 +54,8 @@ props (lowered motors).
 
 Print `body_bottom_v2.stl` + `body_top_v2.stl` as a set (light tree supports under
 the down-swept blades / motor pods). Solid-volume estimate in PLA (1.24 g/cm³):
-**≈ 13.5 g** lower (the latticed arms shed weight) + **≈ 7.7 g** capot
-= **≈ 21 g** — same class as the v1 pair.
+**≈ 14.6 g** lower (solid arms; ≈ 13.5 g with `arm_lattice=true`) + **≈ 7.7 g**
+capot = **≈ 22 g** — same class as the v1 pair.
 
 ## Print-fit prototype (test before the real board)
 
