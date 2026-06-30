@@ -68,12 +68,13 @@ module capot() {
                 offset(pod_r) square([pod_x-2*pod_r, pod_y-2*pod_r], center=true);
         }
     }
-    // corner snap clips (match body_bottom_v2 posts)
+    // corner snap clips (match body_bottom_v2 posts) — pointing DOWN into the
+    // pod so they grip the posts from inside and DON'T show as bumps on the top.
     for (i = [0:snap_n-1]) {
         a = 45 + i*360/snap_n; rx = pod_x/2-2.2; ry = pod_y/2-2.2;
-        translate([rx*cos(a), ry*sin(a), 0]) difference() {
-            cylinder(d=4.2, h=3);
-            translate([0,0,-eps]) cylinder(d=2.35, h=3.2);
+        translate([rx*cos(a), ry*sin(a), -3]) difference() {
+            cylinder(d=4.2, h=3.05);
+            translate([0,0,-eps]) cylinder(d=2.35, h=3.3);
         }
     }
 }

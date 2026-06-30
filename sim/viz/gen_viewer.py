@@ -185,17 +185,21 @@ def build_importmap():
 
 def build_html(parts, meta):
     payload = json.dumps({"parts": parts, "meta": meta}, separators=(",", ":"))
-    # the actual printed tello_style frame (both shells), embedded so the
-    # viewer can show the real part — a low-poly STL kept next to this script.
-    frame_b64 = ""
-    fstl = os.path.join(HERE, "frame.stl")
-    if os.path.exists(fstl):
-        with open(fstl, "rb") as f:
-            frame_b64 = base64.b64encode(f.read()).decode("ascii")
+    # the printed V2 shells, embedded SEPARATELY (lower body + capot) so the
+    # viewer can show the real parts, explode them apart and spin props on top.
+    def _b64(path):
+        if not os.path.exists(path):
+            return ""
+        with open(path, "rb") as f:
+            return base64.b64encode(f.read()).decode("ascii")
+    stldir = os.path.join(REPO, "hardware", "frame", "tello_style", "stl")
+    body_b64  = _b64(os.path.join(stldir, "body_bottom_v2.stl"))
+    capot_b64 = _b64(os.path.join(stldir, "body_top_v2.stl"))
     return (TEMPLATE
             .replace("/*__DATA__*/", payload)
             .replace("__IMPORTMAP__", build_importmap())
-            .replace("__FRAME_STL_B64__", frame_b64))
+            .replace("__BODY_STL_B64__", body_b64)
+            .replace("__CAPOT_STL_B64__", capot_b64))
 
 
 TEMPLATE = r"""<!DOCTYPE html>
@@ -406,7 +410,7 @@ const ROOTS = {styled:new THREE.Group(), sdf:new THREE.Group()};
 scene.add(ROOTS.styled, ROOTS.sdf);
 function makeGroups(root){const g={};for(const k of GROUPKEYS){g[k]=new THREE.Group();root.add(g[k]);}return g;}
 const G = {styled:makeGroups(ROOTS.styled), sdf:makeGroups(ROOTS.sdf)};
-const propMeshes = {styled:[], sdf:[]};
+const propMeshes = {styled:[], sdf:[], frame:[]};
 let mode = 'frame';
 // the embedded printed-frame STL is parsed further down into this group
 const frameRoot = new THREE.Group(); scene.add(frameRoot); frameRoot.visible = false;
@@ -580,14 +584,23 @@ function buildStyled(){
     foot.position.set(sx*0.026, sy*0.022, -0.0105); reg(Gs.shell, foot);
   }
 
-  // ---- per-motor: slim swept arm, nacelle, motor, prop, prop-plane guard ----
+  // ---- per-motor: DOUBLE twin-strut arm (like the v2 frame), nacelle, motor,
+  //      prop, prop-plane guard ----
   for (const mo of MOTORS){
     const ang = Math.atan2(mo.y, mo.x);
     const md = Math.hypot(mo.x, mo.y);
-    const rRoot = 0.014;
-    const arm = taperedArm(md - rRoot + 0.006, 0.015, 0.009, 0.006, M.bodyDark);
-    arm.position.set(Math.cos(ang)*rRoot, Math.sin(ang)*rRoot, 0.001);
-    arm.rotation.z = ang; reg(Gs.arms, arm);
+    const rRoot = 0.016;
+    const bx = Math.cos(ang)*rRoot, by = Math.sin(ang)*rRoot;   // root near the body corner
+    const px = -Math.sin(ang),      py = Math.cos(ang);          // perpendicular
+    const off = 0.010;                                          // strut splay at the body
+    for (const s of [-1, 1]){
+      const rx = bx + s*off*px, ry = by + s*off*py;
+      const a2 = Math.atan2(mo.y - ry, mo.x - rx);
+      const len = Math.hypot(mo.x - rx, mo.y - ry);
+      const strut = taperedArm(len + 0.004, 0.0072, 0.0052, 0.0052, M.bodyDark);
+      strut.position.set(rx, ry, 0.001); strut.rotation.z = a2;
+      reg(Gs.arms, strut);
+    }
 
     const nac = zcyl(0.0078,0.0088,0.013, M.bodyDark);
     nac.position.set(mo.x, mo.y, 0.0055); reg(Gs.motors, nac);
@@ -621,7 +634,11 @@ if (META.hull){
 const groupVis = {shell:true,arms:true,motors:true,props:true,guards:true};
 function applyMode(){ ROOTS.styled.visible = mode==='styled'; ROOTS.sdf.visible = mode==='sdf';
   frameRoot.visible = mode==='frame'; }
-function applyGroupVis(){ for (const r of ['styled','sdf']) for (const k of GROUPKEYS) G[r][k].visible = groupVis[k]; }
+function applyGroupVis(){
+  for (const r of ['styled','sdf']) for (const k of GROUPKEYS) G[r][k].visible = groupVis[k];
+  if (frameRoot.userData.shell)  frameRoot.userData.shell.visible  = groupVis.shell;
+  if (frameRoot.userData.propsG) frameRoot.userData.propsG.visible = groupVis.props;
+}
 applyMode(); applyGroupVis();
 
 // ---- explode ---------------------------------------------------------------
@@ -638,23 +655,46 @@ function applyExplode(t){
       m.position.set(h.x*(1 + t*kr/rad*8), h.y*(1 + t*kr/rad*8), h.z + t*kz);
     }
   }
+  // printed frame: body sinks a touch, capot lifts off, props lift + spread out
+  frameRoot.traverse(o=>{
+    const h=o.userData.home, e=o.userData.exp; if(!h||!e) return;
+    const rad = Math.hypot(h.x,h.y) || 1;
+    o.position.set(h.x*(1 + t*e[0]/rad*8), h.y*(1 + t*e[0]/rad*8), h.z + t*e[1]);
+  });
 }
 
 // ---- STL drag & drop (printed-frame overlay) ------------------------------
 const stlGroup = new THREE.Group(); scene.add(stlGroup);
 const stlLoader = new STLLoader(); let stlOpacity = 1;
 
-// ---- embedded printed frame (the real tello_style shells, both halves) ----
+// ---- embedded printed frame: lower body + capot (SEPARATE) + spinning props,
+//      so the frame mode explodes apart and the "Hélices" toggle/spin work too.
+const frameShell = new THREE.Group(), frameProps = new THREE.Group();
+frameRoot.add(frameShell, frameProps);
+frameRoot.userData.shell = frameShell; frameRoot.userData.propsG = frameProps;
 (function(){
-  const b64 = "__FRAME_STL_B64__";
-  if (!b64) return;
-  const bin = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
-  const geo = stlLoader.parse(bin.buffer); geo.computeVertexNormals();
-  const m = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({
-    color:0x9298a3, metalness:.4, roughness:.5}));
-  m.scale.setScalar(0.001);          // OpenSCAD mm -> m
-  m.rotation.z = Math.PI/2;          // frame -Y nose -> viewer +X (FLU forward)
-  frameRoot.add(m);
+  function meshFromB64(b64, color, metal, rough){
+    if (!b64) return null;
+    const bin = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
+    const geo = stlLoader.parse(bin.buffer); geo.computeVertexNormals();
+    const m = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({
+      color, metalness:metal, roughness:rough}));
+    m.scale.setScalar(0.001);        // OpenSCAD mm -> m
+    m.rotation.z = Math.PI/2;        // frame -Y nose -> viewer +X (FLU forward)
+    return m;
+  }
+  const body  = meshFromB64("__BODY_STL_B64__",  0x9298a3, .4,  .5);
+  const capot = meshFromB64("__CAPOT_STL_B64__", 0xe6730d, .35, .45);
+  if (body){  body.userData.home={x:0,y:0,z:0};      body.userData.exp=[0,-0.006]; frameShell.add(body); }
+  if (capot){ capot.position.z=0.013;                                    // rim joint (13 mm)
+              capot.userData.home={x:0,y:0,z:0.013};  capot.userData.exp=[0, 0.030]; frameShell.add(capot); }
+  for (const mo of MOTORS){
+    const orange = mo.name.endsWith('fr') || mo.name.endsWith('fl');
+    const prop = buildProp(mo.x, mo.y, 0.0205, orange);                  // ~prop plane
+    prop.userData.home={x:mo.x, y:mo.y, z:0.0205}; prop.userData.exp=[0.18, 0.024];
+    prop.userData.dir = ((mo.x>0)===(mo.y<0)) ? 1 : -1;
+    frameProps.add(prop); propMeshes.frame.push(prop);
+  }
 })();
 function addSTL(name, buf){
   const geo = stlLoader.parse(buf); geo.computeVertexNormals();
