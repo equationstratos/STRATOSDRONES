@@ -313,25 +313,6 @@ TEMPLATE = r"""<!DOCTYPE html>
     </div>
 
     <div class="sec">
-      <h2>Garde-hélices (ajuster)</h2>
-      <div class="row"><span style="flex:1">Hauteur (clip)</span>
-        <span class="val" id="gZV">0.3 mm</span></div>
-      <input type="range" id="gZ" min="-5" max="15" step="0.1" value="0.3"/>
-      <div class="row" style="margin-top:8px"><span style="flex:1">Décalage radial</span>
-        <span class="val" id="gRV">0.0 mm</span></div>
-      <input type="range" id="gR" min="-15" max="15" step="0.5" value="0"/>
-      <div class="row" style="margin-top:8px"><span style="flex:1">Échelle</span>
-        <span class="val" id="gSV">1.20×</span></div>
-      <input type="range" id="gS" min="0.6" max="2.0" step="0.01" value="1.2"/>
-      <div class="row" style="margin-top:8px"><span style="flex:1">Rotation</span>
-        <span class="val" id="gRotV">0°</span></div>
-      <input type="range" id="gRot" min="-180" max="180" step="1" value="0"/>
-      <input id="gReadout" class="mini" readonly
-        style="width:100%;margin-top:8px;box-sizing:border-box;background:#0d1117;color:#9da7b3;border:1px solid #2a3038;border-radius:4px;padding:4px"/>
-      <div class="mini" style="margin-top:4px;opacity:.7">Ajuste en direct, puis renvoie la ligne ci-dessus.</div>
-    </div>
-
-    <div class="sec">
       <h2>Dimensions (mesurées)</h2>
       <table id="dims"></table>
     </div>
@@ -729,7 +710,6 @@ frameRoot.userData.shell = frameShell; frameRoot.userData.propsG = frameProps;
 frameRoot.userData.motorsG = frameMotors; frameRoot.userData.elecG = frameElec;
 frameRoot.userData.guardsG = frameGuards;
 let GUARD_GEO = null;
-const GUARD_RIGS = [];   // {g, grp, baseAngle, mx, my} per motor, filled below; driven live by the "Garde-hélices" panel
 (function(){
   function geoFromB64(b64){
     if (!b64) return null;
@@ -759,13 +739,19 @@ const GUARD_RIGS = [];   // {g, grp, baseAngle, mx, my} per motor, filled below;
     // --- prop guard (Tello-style): guard.stl is RIGID here (recentred on the C-clip's
     //     true bore — a circle fit on the clip's bottom rim, its cleanest circular
     //     section — no shear/distortion, so the ring stays a true undistorted circle).
-    //     Live-adjustable from the "Garde-hélices" panel (GUARD_RIGS + applyGuardParams);
-    //     the numbers below are just the panel's starting position. ---
+    //     Placement dialled in by hand (live-slider panel, since removed): clip raised
+    //     4 mm off the nacelle's foot and nudged 9 mm out along the motor radius, clear
+    //     of both the arm beam and the motor can; +20% scale so the bore wraps the
+    //     nacelle + arm-root junction snugly. ---
     if (GUARD_GEO){
+      const a = Math.atan2(mo.y, mo.x);
       const g = new THREE.Mesh(GUARD_GEO, new THREE.MeshStandardMaterial({color:0x2b2e33, metalness:.25, roughness:.7}));
+      g.scale.set(0.0012, 0.0012, 0.00069);
+      g.rotation.z = a;
       const grp = new THREE.Group(); grp.add(g);
+      grp.position.set(mo.x + 0.009*Math.cos(a), mo.y + 0.009*Math.sin(a), 0.004);
+      grp.userData.home={x:grp.position.x, y:grp.position.y, z:0.004}; grp.userData.exp=[0.05, 0.026];
       frameGuards.add(grp);
-      GUARD_RIGS.push({g, grp, baseAngle: Math.atan2(mo.y, mo.x), mx: mo.x, my: mo.y});
     }
     // --- 8520 motor pressed into the pod (visible can + bell where prop clips) ---
     const can = zcyl(0.00425,0.00425,0.020, M.motor);    // 8.5 mm Ø, 20 mm
@@ -784,27 +770,6 @@ const GUARD_RIGS = [];   // {g, grp, baseAngle, mx, my} per motor, filled below;
     frameProps.add(prop); propMeshes.frame.push(prop);
   }
 })();
-// ---- live prop-guard placement (driven by the "Garde-hélices" panel sliders) ----
-// guard.stl is recentred on the C-clip's true bore (circle-fit on its bottom rim),
-// so local z=0 is the clip's bottom rim and local +X (before rotation) points along
-// the dense/outboard side of the arc. zMm/radialMm/scaleX/rotDeg below place that
-// bore on each motor axis, then nudge it — this fully replaces hand-picked constants.
-const GUARD_DEFAULTS = {zMm:0.3, radialMm:0, scaleX:1.20, rotDeg:0};
-function applyGuardParams(p){
-  const z = p.zMm/1000, r = p.radialMm/1000, sxy = 0.001*p.scaleX, sz = 0.00069/0.0012*sxy;
-  const rot = p.rotDeg*Math.PI/180;
-  for (const rig of GUARD_RIGS){
-    const a = rig.baseAngle;
-    const x = rig.mx + r*Math.cos(a), y = rig.my + r*Math.sin(a);
-    rig.grp.position.set(x, y, z);
-    rig.grp.userData.home = {x, y, z};
-    rig.grp.userData.exp = [0.05, 0.026];
-    rig.g.scale.set(sxy, sxy, sz);
-    rig.g.rotation.z = a + rot;
-  }
-  applyExplode(explodeT);   // re-apply so the exploded view (if open) reflects the new placement
-}
-applyGuardParams(GUARD_DEFAULTS);
 function addSTL(name, buf){
   const geo = stlLoader.parse(buf); geo.computeVertexNormals();
   const mesh = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({color:0x58a6ff,
@@ -856,27 +821,6 @@ document.getElementById('explode').addEventListener('input', e=>{ applyExplode(e
   document.getElementById('explodeV').textContent=e.target.value+'%';});
 document.getElementById('spin').addEventListener('input', e=>{ spinRate=e.target.value/100*48;
   document.getElementById('spinV').textContent=e.target.value==0?'arrêt':e.target.value+'%';});
-
-// ---- UI: prop-guard live placement -----------------------------------------
-const guardP = {...GUARD_DEFAULTS};
-function updateGuardReadout(){
-  document.getElementById('gReadout').value =
-    `zMm:${guardP.zMm}, radialMm:${guardP.radialMm}, scaleX:${guardP.scaleX}, rotDeg:${guardP.rotDeg}`;
-}
-function wireGuardSlider(id, vid, key, fmt){
-  const el = document.getElementById(id), vel = document.getElementById(vid);
-  el.addEventListener('input', () => {
-    guardP[key] = parseFloat(el.value);
-    vel.textContent = fmt(guardP[key]);
-    applyGuardParams(guardP);
-    updateGuardReadout();
-  });
-}
-wireGuardSlider('gZ',   'gZV',   'zMm',      v=>v.toFixed(1)+' mm');
-wireGuardSlider('gR',   'gRV',   'radialMm', v=>v.toFixed(1)+' mm');
-wireGuardSlider('gS',   'gSV',   'scaleX',   v=>v.toFixed(2)+'×');
-wireGuardSlider('gRot', 'gRotV', 'rotDeg',   v=>v.toFixed(0)+'°');
-updateGuardReadout();
 
 // ---- dimensions table + HUD -----------------------------------------------
 const d = META.dims;
