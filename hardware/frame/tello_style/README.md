@@ -57,10 +57,9 @@ can't slide underneath and cover the downward ToF / optical-flow sensors. The
 capot guide rails likewise stop just above the board so they clear it. The capot
 is a smooth low dome that stays just under the spinning props (lowered motors).
 
-Each motor pod carries a **clip collar** (Ø ≈ 18.6 mm with a retention ridge,
-`clip_r`) at its base so the **real DJI-Tello prop guards snap on** (their C-clip
-inner Ø ≈ 19 mm); the collar doubles as a small **landing foot** that keeps the
-belly sensors off the ground.
+The **real DJI-Tello prop guards** clip straight onto the round motor nacelles
+(their C-clip wraps the Ø ≈ 12.7 mm pod), so each guard ring ends up concentric
+with its prop, sitting at the nacelle rim — no extra collar on the pod feet.
 
 Renders of the current V2 frame (printed shells: lower = grey, capot = orange):
 

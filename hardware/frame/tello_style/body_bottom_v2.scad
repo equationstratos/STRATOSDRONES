@@ -170,25 +170,8 @@ module motor_bores() {
     // the motor wire drops through the bottom vent and runs under the struts —
     // no slot cut across the strut roots (that was breaking the arm up).
 }
-// clip collar: a Ø18.6 mm flange + retention ridge on each nacelle so the real
-// Tello prop guard (its C-clip has an inner radius ≈ 9.5 mm) snaps on snugly and
-// is held axially. The collar sits low (a stub below the pod, doubling as a foot).
-clip_r = 9.3;
-module clip_collar(m) {
-    translate([m[0]*motor_off, m[1]*motor_off, 0])
-    difference() {
-        union() {
-            translate([0,0,-3.5]) cylinder(r=clip_r, h=5.5, $fn=44);                  // collar body (z -3.5..2)
-            translate([0,0,1.1]) cylinder(r1=clip_r, r2=clip_r+0.55, h=1.0, $fn=44);  // top retention ridge
-            translate([0,0,-4.1]) cylinder(r1=clip_r-1.4, r2=clip_r, h=0.7, $fn=44);  // bottom lead-in
-        }
-        // hollow it (the clip only grips the outer wall) — keep a ~1.6 mm wall and
-        // a solid top that ties into the nacelle; saves weight.
-        translate([0,0,-3.5-eps]) cylinder(r=clip_r-1.6, h=4.6, $fn=40);              // remove core (z -3.5..1)
-    }
-}
 module arms() {
-    for (m = MOTORS) { truss_arm(m); nacelle_outer(m); clip_collar(m); }
+    for (m = MOTORS) { truss_arm(m); nacelle_outer(m); }
 }
 
 /* ===== PCB bosses + snap posts (carried over) ===== */

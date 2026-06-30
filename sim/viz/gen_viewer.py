@@ -736,17 +736,19 @@ let GUARD_GEO = null;
   GUARD_GEO = geoFromB64("__GUARD_STL_B64__");
   for (const mo of MOTORS){
     const cw = (mo.x>0)===(mo.y<0);
-    // --- prop guard (Tello-style): the C-clip grabs the motor pod low, three
-    //     spokes rise and the ~165° arc curves around the prop's OUTBOARD sweep at
-    //     prop height. guard.stl is recentred on the clip -> clip sits on the motor;
-    //     the arc (STL +x) is rotated to point radially outboard. ---
+    // --- prop guard (Tello-style): a ring CONCENTRIC with the motor, sitting at the
+    //     nacelle rim (z=0.0122, the lip of the motor mount). guard.stl is recentred
+    //     on its ring -> ring lands on the motor axis; the arc (STL +x) is rotated
+    //     outboard and the clip+spokes drop in to the pod base. The STL's clip-to-ring
+    //     rise is taller than this drone, so z is gently compressed to flatten the
+    //     spokes and keep the clip at the pod base (like the reference photo). ---
     if (GUARD_GEO){
       const g = new THREE.Mesh(GUARD_GEO, new THREE.MeshStandardMaterial({color:0x2b2e33, metalness:.25, roughness:.7}));
-      g.scale.setScalar(0.001);
+      g.scale.set(0.001, 0.001, 0.00052);               // compress Z (~0.52) so the clip lands at the pod base
       g.rotation.z = Math.atan2(mo.y, mo.x);            // arc sweeps radially outboard
       const grp = new THREE.Group(); grp.add(g);
-      grp.position.set(mo.x, mo.y, 0.002);              // clip on the pod, arc reaches prop plane
-      grp.userData.home={x:mo.x, y:mo.y, z:0.002}; grp.userData.exp=[0.06, 0.02];
+      grp.position.set(mo.x, mo.y, 0.0122);             // ring at the nacelle rim, centred on the motor
+      grp.userData.home={x:mo.x, y:mo.y, z:0.0122}; grp.userData.exp=[0.06, 0.02];
       frameGuards.add(grp);
     }
     // --- 8520 motor pressed into the pod (visible can + bell where prop clips) ---
