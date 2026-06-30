@@ -501,7 +501,7 @@ let PROP_GEO = null;
   const bin = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
   PROP_GEO = new STLLoader().parse(bin.buffer); PROP_GEO.computeVertexNormals();
 })();
-const PROP_S = 0.001 * (PROP_R / 0.03894);    // STL mm -> m, scaled to the prop radius
+const PROP_S = 0.001 * (PROP_R / 0.038);     // STL mm -> m, scaled to the prop radius
 function buildProp(cx,cy,cz, orange, cw){
   const grp = new THREE.Group(); grp.position.set(cx,cy,cz);
   if (PROP_GEO){
