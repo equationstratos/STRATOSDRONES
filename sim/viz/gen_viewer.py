@@ -195,11 +195,13 @@ def build_html(parts, meta):
     stldir = os.path.join(REPO, "hardware", "frame", "tello_style", "stl")
     body_b64  = _b64(os.path.join(stldir, "body_bottom_v2.stl"))
     capot_b64 = _b64(os.path.join(stldir, "body_top_v2.stl"))
+    prop_b64  = _b64(os.path.join(HERE, "prop.stl"))   # real DJI-Tello propeller
     return (TEMPLATE
             .replace("/*__DATA__*/", payload)
             .replace("__IMPORTMAP__", build_importmap())
             .replace("__BODY_STL_B64__", body_b64)
-            .replace("__CAPOT_STL_B64__", capot_b64))
+            .replace("__CAPOT_STL_B64__", capot_b64)
+            .replace("__PROP_STL_B64__", prop_b64))
 
 
 TEMPLATE = r"""<!DOCTYPE html>
@@ -491,11 +493,27 @@ function bladeMesh(r, mat, cw){
   const m = new THREE.Mesh(g, mat); m.rotation.x = f*0.30;   // blade pitch (matches spin sense)
   return m;
 }
+// real DJI-Tello propeller mesh (embedded STL: Ø77.9 mm, axis Z, hub centred).
+let PROP_GEO = null;
+(function(){
+  const b64 = "__PROP_STL_B64__";
+  if (!b64) return;
+  const bin = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
+  PROP_GEO = new STLLoader().parse(bin.buffer); PROP_GEO.computeVertexNormals();
+})();
+const PROP_S = 0.001 * (PROP_R / 0.03894);    // STL mm -> m, scaled to the prop radius
 function buildProp(cx,cy,cz, orange, cw){
   const grp = new THREE.Group(); grp.position.set(cx,cy,cz);
-  grp.add(zcyl(0.0034,0.0050,0.0072, M.hub));               // Tello quick-release hub
-  const mat = orange ? M.propO : M.propD;
-  for (let i=0;i<2;i++){ const b = bladeMesh(PROP_R, mat, cw); b.rotation.z = i*Math.PI; grp.add(b); }
+  if (PROP_GEO){
+    const mat = (orange ? M.propO : M.propD).clone(); mat.side = THREE.DoubleSide;
+    const m = new THREE.Mesh(PROP_GEO, mat);
+    m.scale.set(PROP_S, cw ? PROP_S : -PROP_S, PROP_S);    // mirror Y for CCW props
+    grp.add(m);
+  } else {                                                 // procedural fallback
+    grp.add(zcyl(0.0034,0.0050,0.0072, M.hub));
+    const mat = orange ? M.propO : M.propD;
+    for (let i=0;i<2;i++){ const b = bladeMesh(PROP_R, mat, cw); b.rotation.z = i*Math.PI; grp.add(b); }
+  }
   return grp;
 }
 // a thin cylindrical strut between two 3-D points (for the guard posts)
@@ -708,9 +726,10 @@ frameRoot.userData.motorsG = frameMotors;
     mgrp.position.set(mo.x, mo.y, 0);
     mgrp.userData.home={x:mo.x, y:mo.y, z:0}; mgrp.userData.exp=[0.04, 0.006];
     frameMotors.add(mgrp);
-    // --- black Tello-style prop on top ---
-    const prop = buildProp(mo.x, mo.y, 0.0215, false, cw);               // dark, on the bell
-    prop.userData.home={x:mo.x, y:mo.y, z:0.0215}; prop.userData.exp=[0.04, 0.030];
+    // --- real Tello prop on top (orange front, dark rear for orientation) ---
+    const orange = mo.name.endsWith('fr') || mo.name.endsWith('fl');
+    const prop = buildProp(mo.x, mo.y, 0.0205, orange, cw);
+    prop.userData.home={x:mo.x, y:mo.y, z:0.0205}; prop.userData.exp=[0.04, 0.030];
     prop.userData.dir = cw ? 1 : -1;
     frameProps.add(prop); propMeshes.frame.push(prop);
   }
