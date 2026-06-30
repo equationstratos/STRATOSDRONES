@@ -736,12 +736,17 @@ let GUARD_GEO = null;
   GUARD_GEO = geoFromB64("__GUARD_STL_B64__");
   for (const mo of MOTORS){
     const cw = (mo.x>0)===(mo.y<0);
-    // --- prop guard: clips on the nacelle, arc protects the outer prop sweep ---
+    // --- prop guard (Tello-style): the C-clip grabs the motor pod low, three
+    //     spokes rise and the ~165° arc curves around the prop's OUTBOARD sweep at
+    //     prop height. guard.stl is recentred on the clip -> clip sits on the motor;
+    //     the arc (STL +x) is rotated to point radially outboard. ---
     if (GUARD_GEO){
-      const g = new THREE.Mesh(GUARD_GEO, new THREE.MeshStandardMaterial({color:0x44484f, metalness:.3, roughness:.6}));
-      g.scale.setScalar(0.001); g.rotation.z = Math.atan2(mo.y, mo.x);   // arc points outward
-      const grp = new THREE.Group(); grp.add(g); grp.position.set(mo.x, mo.y, 0.0);
-      grp.userData.home={x:mo.x, y:mo.y, z:0.0}; grp.userData.exp=[0.04, 0.014];
+      const g = new THREE.Mesh(GUARD_GEO, new THREE.MeshStandardMaterial({color:0x2b2e33, metalness:.25, roughness:.7}));
+      g.scale.setScalar(0.001);
+      g.rotation.z = Math.atan2(mo.y, mo.x);            // arc sweeps radially outboard
+      const grp = new THREE.Group(); grp.add(g);
+      grp.position.set(mo.x, mo.y, 0.002);              // clip on the pod, arc reaches prop plane
+      grp.userData.home={x:mo.x, y:mo.y, z:0.002}; grp.userData.exp=[0.06, 0.02];
       frameGuards.add(grp);
     }
     // --- 8520 motor pressed into the pod (visible can + bell where prop clips) ---
