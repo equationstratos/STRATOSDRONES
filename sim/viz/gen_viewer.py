@@ -736,19 +736,21 @@ let GUARD_GEO = null;
   GUARD_GEO = geoFromB64("__GUARD_STL_B64__");
   for (const mo of MOTORS){
     const cw = (mo.x>0)===(mo.y<0);
-    // --- prop guard (Tello-style): a ring CONCENTRIC with the motor, sitting at the
-    //     nacelle rim (z=0.0122, the lip of the motor mount). guard.stl is recentred
-    //     on its ring -> ring lands on the motor axis; the arc (STL +x) is rotated
-    //     outboard and the clip+spokes drop in to the pod base. The STL's clip-to-ring
-    //     rise is taller than this drone, so z is gently compressed to flatten the
-    //     spokes and keep the clip at the pod base (like the reference photo). ---
+    // --- prop guard (Tello-style): ring UP at the prop level so the prop spins inside
+    //     it; the C-clip grabs the printed NACELLE (the arm's outer extremity), not the
+    //     motor. guard.stl is recentred on its ring; the group is shifted inboard so the
+    //     clip lands on the nacelle (radius 59 mm) while the ring stays around the prop,
+    //     and the ring is bumped up 6% so the outboard arc clears the prop tips. Z is
+    //     compressed so the clip sits flush at the nacelle rim. ---
     if (GUARD_GEO){
+      const inb = 0.851;                                // pull the guard in so the clip reaches the nacelle
+      const cx = mo.x*inb, cy = mo.y*inb;
       const g = new THREE.Mesh(GUARD_GEO, new THREE.MeshStandardMaterial({color:0x2b2e33, metalness:.25, roughness:.7}));
-      g.scale.set(0.001, 0.001, 0.00052);               // compress Z (~0.52) so the clip lands at the pod base
-      g.rotation.z = Math.atan2(mo.y, mo.x);            // arc sweeps radially outboard
+      g.scale.set(0.00106, 0.00106, 0.00033);           // +6% radius (arc clears the prop) · compress Z (ring->clip)
+      g.rotation.z = Math.atan2(mo.y, mo.x);            // arc + clip sweep radially outboard
       const grp = new THREE.Group(); grp.add(g);
-      grp.position.set(mo.x, mo.y, 0.0122);             // ring at the nacelle rim, centred on the motor
-      grp.userData.home={x:mo.x, y:mo.y, z:0.0122}; grp.userData.exp=[0.06, 0.02];
+      grp.position.set(cx, cy, 0.020);                  // ring at the prop level; clip drops onto the nacelle rim
+      grp.userData.home={x:cx, y:cy, z:0.020}; grp.userData.exp=[0.07, 0.024];
       frameGuards.add(grp);
     }
     // --- 8520 motor pressed into the pod (visible can + bell where prop clips) ---
