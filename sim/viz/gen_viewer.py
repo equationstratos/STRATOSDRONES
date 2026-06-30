@@ -736,18 +736,18 @@ let GUARD_GEO = null;
   GUARD_GEO = geoFromB64("__GUARD_STL_B64__");
   for (const mo of MOTORS){
     const cw = (mo.x>0)===(mo.y<0);
-    // --- prop guard (Tello-style): guard.stl is straightened so the C-clip bore and the
-    //     ring sit on the SAME axis (no lateral offset) — both coaxial with the motor.
-    //     The clip is fixed LOW, at the base of the nacelle (under the motor can, not
-    //     overlapping it), and the ring rises straight up to the prop level, concentric
-    //     with the prop. ---
+    // --- prop guard (Tello-style): guard.stl is RIGID here (recentred on the C-clip's
+    //     bore only — no shear/distortion, so the ring stays a true undistorted circle).
+    //     The clip is placed on the motor axis, on the NACELLE body, clearly below the
+    //     motor can (which starts at z=0.010) so it reads as clipped to the printed pod,
+    //     not wrapped around the motor itself — matching the reference photos. ---
     if (GUARD_GEO){
       const g = new THREE.Mesh(GUARD_GEO, new THREE.MeshStandardMaterial({color:0x2b2e33, metalness:.25, roughness:.7}));
-      g.scale.set(0.001, 0.001, 0.00076);               // ring R45 concentric · Z so the ring tops out at the prop plane
-      g.rotation.z = Math.atan2(mo.y, mo.x);            // orient the arc's open mouth consistently per corner
+      g.scale.set(0.001, 0.001, 0.0007);                // natural ring size; gentle Z compression to reach the prop
+      g.rotation.z = Math.atan2(mo.y, mo.x);             // dense side of the arc outboard, open mouth toward the body
       const grp = new THREE.Group(); grp.add(g);
-      grp.position.set(mo.x, mo.y, 0.001);              // clip at the nacelle base, coaxial with the motor (no offset)
-      grp.userData.home={x:mo.x, y:mo.y, z:0.001}; grp.userData.exp=[0.05, 0.026];
+      grp.position.set(mo.x, mo.y, 0.007);               // clip on the nacelle body, below the motor can
+      grp.userData.home={x:mo.x, y:mo.y, z:0.007}; grp.userData.exp=[0.05, 0.026];
       frameGuards.add(grp);
     }
     // --- 8520 motor pressed into the pod (visible can + bell where prop clips) ---
