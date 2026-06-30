@@ -474,22 +474,28 @@ function rbox(w,d,h,r,mat){ return new THREE.Mesh(new RoundedBoxGeometry(w,d,h,4
 function zcyl(rt,rb,h,mat,seg=36){ const g=new THREE.CylinderGeometry(rt,rb,h,seg); g.rotateX(Math.PI/2); return new THREE.Mesh(g,mat); }
 function at(mesh,x,y,z,rz){ mesh.position.set(x,y,z); if(rz)mesh.rotation.z=rz; return mesh; }
 
-function bladeMesh(r, mat){
+// DJI-Tello-style blade: slim swept root, wide belly, rounded slightly-swept
+// tip, concave trailing edge — a scimitar. `cw` mirrors it for CCW props.
+function bladeMesh(r, mat, cw){
+  const f = cw ? 1 : -1;
   const s = new THREE.Shape();
-  s.moveTo(0.004,-0.0035);
-  s.quadraticCurveTo(r*0.55,-0.0095, r,-0.0016);
-  s.quadraticCurveTo(r*1.03,0, r,0.0016);
-  s.quadraticCurveTo(r*0.55,0.0095, 0.004,0.0035);
+  s.moveTo(0.006, f*-0.0024);                                                  // root, leading edge
+  s.bezierCurveTo(r*0.34, f*-0.0050, r*0.58, f*-0.0098, r*0.78, f*-0.0092);     // sweep out to wide belly
+  s.bezierCurveTo(r*0.92, f*-0.0084, r*1.005, f*-0.0034, r*0.995, f*0.0012);    // rounded tip
+  s.bezierCurveTo(r*0.965, f*0.0052, r*0.84, f*0.0068, r*0.64, f*0.0052);       // back of the tip
+  s.bezierCurveTo(r*0.42, f*0.0034, r*0.22, f*0.0026, 0.006, f*0.0022);         // concave trailing edge -> root
   s.closePath();
-  const g = new THREE.ExtrudeGeometry(s,{depth:0.0011, bevelEnabled:false});
+  const g = new THREE.ExtrudeGeometry(s,{depth:0.0011, bevelEnabled:true,
+    bevelThickness:0.00038, bevelSize:0.00038, bevelSegments:1, curveSegments:20});
   g.translate(0,0,-0.00055);
-  const m = new THREE.Mesh(g, mat); m.rotation.x = 0.24; return m;   // blade pitch
+  const m = new THREE.Mesh(g, mat); m.rotation.x = f*0.30;   // blade pitch (matches spin sense)
+  return m;
 }
-function buildProp(cx,cy,cz, orange){
+function buildProp(cx,cy,cz, orange, cw){
   const grp = new THREE.Group(); grp.position.set(cx,cy,cz);
-  grp.add(zcyl(0.0042,0.0042,0.006, M.hub));
+  grp.add(zcyl(0.0034,0.0050,0.0072, M.hub));               // Tello quick-release hub
   const mat = orange ? M.propO : M.propD;
-  for (let i=0;i<2;i++){ const b = bladeMesh(PROP_R, mat); b.rotation.z = i*Math.PI; grp.add(b); }
+  for (let i=0;i<2;i++){ const b = bladeMesh(PROP_R, mat, cw); b.rotation.z = i*Math.PI; grp.add(b); }
   return grp;
 }
 // a thin cylindrical strut between two 3-D points (for the guard posts)
@@ -610,7 +616,7 @@ function buildStyled(){
     shaft.position.set(mo.x, mo.y, 0.019); reg(Gs.motors, shaft);
 
     const orange = mo.name.endsWith('fr') || mo.name.endsWith('fl');
-    const prop = buildProp(mo.x, mo.y, PROPZ, orange);
+    const prop = buildProp(mo.x, mo.y, PROPZ, orange, (mo.x>0)===(mo.y<0));
     reg(Gs.props, prop); propMeshes.styled.push(prop);
 
     const guard = buildGuard(mo.x, mo.y, PROPZ);
@@ -636,8 +642,9 @@ function applyMode(){ ROOTS.styled.visible = mode==='styled'; ROOTS.sdf.visible 
   frameRoot.visible = mode==='frame'; }
 function applyGroupVis(){
   for (const r of ['styled','sdf']) for (const k of GROUPKEYS) G[r][k].visible = groupVis[k];
-  if (frameRoot.userData.shell)  frameRoot.userData.shell.visible  = groupVis.shell;
-  if (frameRoot.userData.propsG) frameRoot.userData.propsG.visible = groupVis.props;
+  if (frameRoot.userData.shell)   frameRoot.userData.shell.visible   = groupVis.shell;
+  if (frameRoot.userData.propsG)  frameRoot.userData.propsG.visible  = groupVis.props;
+  if (frameRoot.userData.motorsG) frameRoot.userData.motorsG.visible = groupVis.motors;
 }
 applyMode(); applyGroupVis();
 
@@ -655,11 +662,11 @@ function applyExplode(t){
       m.position.set(h.x*(1 + t*kr/rad*8), h.y*(1 + t*kr/rad*8), h.z + t*kz);
     }
   }
-  // printed frame: body sinks a touch, capot lifts off, props lift + spread out
+  // printed frame: body sinks a touch, capot lifts off, motors pull out, props
+  // lift highest (e[0] = gentle fractional radial spread, e[1] = z lift in m).
   frameRoot.traverse(o=>{
     const h=o.userData.home, e=o.userData.exp; if(!h||!e) return;
-    const rad = Math.hypot(h.x,h.y) || 1;
-    o.position.set(h.x*(1 + t*e[0]/rad*8), h.y*(1 + t*e[0]/rad*8), h.z + t*e[1]);
+    o.position.set(h.x*(1 + t*e[0]), h.y*(1 + t*e[0]), h.z + t*e[1]);
   });
 }
 
@@ -671,7 +678,9 @@ const stlLoader = new STLLoader(); let stlOpacity = 1;
 //      so the frame mode explodes apart and the "Hélices" toggle/spin work too.
 const frameShell = new THREE.Group(), frameProps = new THREE.Group();
 frameRoot.add(frameShell, frameProps);
+const frameMotors = new THREE.Group(); frameRoot.add(frameMotors);
 frameRoot.userData.shell = frameShell; frameRoot.userData.propsG = frameProps;
+frameRoot.userData.motorsG = frameMotors;
 (function(){
   function meshFromB64(b64, color, metal, rough){
     if (!b64) return null;
@@ -685,14 +694,24 @@ frameRoot.userData.shell = frameShell; frameRoot.userData.propsG = frameProps;
   }
   const body  = meshFromB64("__BODY_STL_B64__",  0x9298a3, .4,  .5);
   const capot = meshFromB64("__CAPOT_STL_B64__", 0xe6730d, .35, .45);
-  if (body){  body.userData.home={x:0,y:0,z:0};      body.userData.exp=[0,-0.006]; frameShell.add(body); }
+  if (body){  body.userData.home={x:0,y:0,z:0};      body.userData.exp=[0,-0.004]; frameShell.add(body); }
   if (capot){ capot.position.z=0.013;                                    // rim joint (13 mm)
-              capot.userData.home={x:0,y:0,z:0.013};  capot.userData.exp=[0, 0.030]; frameShell.add(capot); }
+              capot.userData.home={x:0,y:0,z:0.013};  capot.userData.exp=[0, 0.020]; frameShell.add(capot); }
   for (const mo of MOTORS){
-    const orange = mo.name.endsWith('fr') || mo.name.endsWith('fl');
-    const prop = buildProp(mo.x, mo.y, 0.0205, orange);                  // ~prop plane
-    prop.userData.home={x:mo.x, y:mo.y, z:0.0205}; prop.userData.exp=[0.18, 0.024];
-    prop.userData.dir = ((mo.x>0)===(mo.y<0)) ? 1 : -1;
+    const cw = (mo.x>0)===(mo.y<0);
+    // --- 8520 motor pressed into the pod (visible can + bell where prop clips) ---
+    const can = zcyl(0.00425,0.00425,0.020, M.motor);    // 8.5 mm Ø, 20 mm
+    can.position.set(0, 0, 0.010);                        // local to the motor group
+    const bell = zcyl(0.0044,0.0040,0.005, M.bodyDark);   // top bell
+    bell.position.set(0, 0, 0.0195);
+    const mgrp = new THREE.Group(); mgrp.add(can, bell);
+    mgrp.position.set(mo.x, mo.y, 0);
+    mgrp.userData.home={x:mo.x, y:mo.y, z:0}; mgrp.userData.exp=[0.04, 0.006];
+    frameMotors.add(mgrp);
+    // --- black Tello-style prop on top ---
+    const prop = buildProp(mo.x, mo.y, 0.0215, false, cw);               // dark, on the bell
+    prop.userData.home={x:mo.x, y:mo.y, z:0.0215}; prop.userData.exp=[0.04, 0.030];
+    prop.userData.dir = cw ? 1 : -1;
     frameProps.add(prop); propMeshes.frame.push(prop);
   }
 })();
