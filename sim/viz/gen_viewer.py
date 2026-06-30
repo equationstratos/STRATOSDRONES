@@ -737,17 +737,19 @@ let GUARD_GEO = null;
   for (const mo of MOTORS){
     const cw = (mo.x>0)===(mo.y<0);
     // --- prop guard (Tello-style): guard.stl is RIGID here (recentred on the C-clip's
-    //     bore only — no shear/distortion, so the ring stays a true undistorted circle).
-    //     The clip sits on the motor axis, right at the BASE of the nacelle pod
-    //     (z≈0, the pod's foot/root, where it would actually land on a surface) —
-    //     clear of the arm beam (z=0.007..0.0126) and the motor can (starts z=0.010). ---
+    //     true bore — a circle fit on the clip's bottom rim, its cleanest circular
+    //     section — no shear/distortion, so the ring stays a true undistorted circle).
+    //     Scaled up ~20% so the bore (was Ø17 mm) comfortably wraps this frame's
+    //     nacelle + arm-root junction (Ø~13-18 mm) instead of looking undersized.
+    //     Clip sits on the motor axis, on the nacelle body, clear of the arm beam
+    //     (z=0.007..0.0126) and the motor can (starts z=0.010). ---
     if (GUARD_GEO){
       const g = new THREE.Mesh(GUARD_GEO, new THREE.MeshStandardMaterial({color:0x2b2e33, metalness:.25, roughness:.7}));
-      g.scale.set(0.001, 0.001, 0.00078);               // natural ring size; gentle Z compression to reach the prop
+      g.scale.set(0.0012, 0.0012, 0.0006);              // +20% bore · Z compressed so the ring reaches the prop
       g.rotation.z = Math.atan2(mo.y, mo.x);             // dense side of the arc outboard, open mouth toward the body
       const grp = new THREE.Group(); grp.add(g);
-      grp.position.set(mo.x, mo.y, 0.0005);              // clip at the nacelle's base/foot, well clear of the arm
-      grp.userData.home={x:mo.x, y:mo.y, z:0.0005}; grp.userData.exp=[0.05, 0.026];
+      grp.position.set(mo.x, mo.y, 0.0035);              // clip low on the nacelle body, clear of the arm beam
+      grp.userData.home={x:mo.x, y:mo.y, z:0.0035}; grp.userData.exp=[0.05, 0.026];
       frameGuards.add(grp);
     }
     // --- 8520 motor pressed into the pod (visible can + bell where prop clips) ---
