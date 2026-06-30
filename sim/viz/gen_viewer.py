@@ -195,13 +195,19 @@ def build_html(parts, meta):
     stldir = os.path.join(REPO, "hardware", "frame", "tello_style", "stl")
     body_b64  = _b64(os.path.join(stldir, "body_bottom_v2.stl"))
     capot_b64 = _b64(os.path.join(stldir, "body_top_v2.stl"))
-    prop_b64  = _b64(os.path.join(HERE, "prop.stl"))   # real DJI-Tello propeller
+    prop_b64  = _b64(os.path.join(HERE, "prop.stl"))     # real DJI-Tello propeller
+    pcb_b64   = _b64(os.path.join(HERE, "pcb.stl"))       # mainboard dummy
+    batt_b64  = _b64(os.path.join(HERE, "battery.stl"))   # 1S pack dummy
+    guard_b64 = _b64(os.path.join(HERE, "guard.stl"))     # real Tello prop guard
     return (TEMPLATE
             .replace("/*__DATA__*/", payload)
             .replace("__IMPORTMAP__", build_importmap())
             .replace("__BODY_STL_B64__", body_b64)
             .replace("__CAPOT_STL_B64__", capot_b64)
-            .replace("__PROP_STL_B64__", prop_b64))
+            .replace("__PROP_STL_B64__", prop_b64)
+            .replace("__PCB_STL_B64__", pcb_b64)
+            .replace("__BATT_STL_B64__", batt_b64)
+            .replace("__GUARD_STL_B64__", guard_b64))
 
 
 TEMPLATE = r"""<!DOCTYPE html>
@@ -357,9 +363,10 @@ import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 const DATA = /*__DATA__*/;
 const PARTS = DATA.parts, META = DATA.meta;
 
-const GROUPKEYS = ['shell','arms','motors','props','guards'];
+const GROUPKEYS = ['shell','elec','arms','motors','props','guards'];
 const GROUPS = {
   shell:  {label:'Corps / canopy / caméra', color:'#cfd3d9'},
+  elec:   {label:'PCB / batterie',          color:'#2f8f4f'},
   arms:   {label:'Bras',                    color:'#3a3f47'},
   motors: {label:'Moteurs',                 color:'#8b929c'},
   props:  {label:'Hélices',                 color:'#e6730d'},
@@ -655,7 +662,7 @@ if (META.hull){
 }
 
 // ---- mode + group visibility ----------------------------------------------
-const groupVis = {shell:true,arms:true,motors:true,props:true,guards:true};
+const groupVis = {shell:true,elec:true,arms:true,motors:true,props:true,guards:true};
 function applyMode(){ ROOTS.styled.visible = mode==='styled'; ROOTS.sdf.visible = mode==='sdf';
   frameRoot.visible = mode==='frame'; }
 function applyGroupVis(){
@@ -663,11 +670,13 @@ function applyGroupVis(){
   if (frameRoot.userData.shell)   frameRoot.userData.shell.visible   = groupVis.shell;
   if (frameRoot.userData.propsG)  frameRoot.userData.propsG.visible  = groupVis.props;
   if (frameRoot.userData.motorsG) frameRoot.userData.motorsG.visible = groupVis.motors;
+  if (frameRoot.userData.elecG)   frameRoot.userData.elecG.visible   = groupVis.elec;
+  if (frameRoot.userData.guardsG) frameRoot.userData.guardsG.visible = groupVis.guards;
 }
 applyMode(); applyGroupVis();
 
 // ---- explode ---------------------------------------------------------------
-const EXPLODE = {shell:[0,0], arms:[0.022,0], motors:[0.045,0.006],
+const EXPLODE = {shell:[0,0], elec:[0,0], arms:[0.022,0], motors:[0.045,0.006],
                  props:[0.045,0.06], guards:[0.045,0.03]};
 let explodeT = 0;
 function applyExplode(t){
@@ -695,17 +704,21 @@ const stlLoader = new STLLoader(); let stlOpacity = 1;
 // ---- embedded printed frame: lower body + capot (SEPARATE) + spinning props,
 //      so the frame mode explodes apart and the "Hélices" toggle/spin work too.
 const frameShell = new THREE.Group(), frameProps = new THREE.Group();
-frameRoot.add(frameShell, frameProps);
-const frameMotors = new THREE.Group(); frameRoot.add(frameMotors);
+const frameMotors = new THREE.Group(), frameElec = new THREE.Group(), frameGuards = new THREE.Group();
+frameRoot.add(frameShell, frameProps, frameMotors, frameElec, frameGuards);
 frameRoot.userData.shell = frameShell; frameRoot.userData.propsG = frameProps;
-frameRoot.userData.motorsG = frameMotors;
+frameRoot.userData.motorsG = frameMotors; frameRoot.userData.elecG = frameElec;
+frameRoot.userData.guardsG = frameGuards;
+let GUARD_GEO = null;
 (function(){
-  function meshFromB64(b64, color, metal, rough){
+  function geoFromB64(b64){
     if (!b64) return null;
     const bin = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
-    const geo = stlLoader.parse(bin.buffer); geo.computeVertexNormals();
-    const m = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({
-      color, metalness:metal, roughness:rough}));
+    const g = stlLoader.parse(bin.buffer); g.computeVertexNormals(); return g;
+  }
+  function meshFromB64(b64, color, metal, rough){
+    const g = geoFromB64(b64); if (!g) return null;
+    const m = new THREE.Mesh(g, new THREE.MeshStandardMaterial({color, metalness:metal, roughness:rough}));
     m.scale.setScalar(0.001);        // OpenSCAD mm -> m
     m.rotation.z = Math.PI/2;        // frame -Y nose -> viewer +X (FLU forward)
     return m;
@@ -715,8 +728,22 @@ frameRoot.userData.motorsG = frameMotors;
   if (body){  body.userData.home={x:0,y:0,z:0};      body.userData.exp=[0,-0.004]; frameShell.add(body); }
   if (capot){ capot.position.z=0.013;                                    // rim joint (13 mm)
               capot.userData.home={x:0,y:0,z:0.013};  capot.userData.exp=[0, 0.020]; frameShell.add(capot); }
+  // --- mainboard (on the bosses, z=4.2 mm) + 1S pack (on the board, z=5.8 mm) ---
+  const pcb = meshFromB64("__PCB_STL_B64__", 0x1f7a3d, .1, .7);
+  if (pcb){ pcb.position.z=0.0042; pcb.userData.home={x:0,y:0,z:0.0042}; pcb.userData.exp=[0,-0.018]; frameElec.add(pcb); }
+  const batt = meshFromB64("__BATT_STL_B64__", 0x2247c4, .2, .5);
+  if (batt){ batt.position.z=0.0058+0.00475; batt.userData.home={x:0,y:0,z:0.0058+0.00475}; batt.userData.exp=[0,0.010]; frameElec.add(batt); }
+  GUARD_GEO = geoFromB64("__GUARD_STL_B64__");
   for (const mo of MOTORS){
     const cw = (mo.x>0)===(mo.y<0);
+    // --- prop guard: clips on the nacelle, arc protects the outer prop sweep ---
+    if (GUARD_GEO){
+      const g = new THREE.Mesh(GUARD_GEO, new THREE.MeshStandardMaterial({color:0x44484f, metalness:.3, roughness:.6}));
+      g.scale.setScalar(0.001); g.rotation.z = Math.atan2(mo.y, mo.x);   // arc points outward
+      const grp = new THREE.Group(); grp.add(g); grp.position.set(mo.x, mo.y, 0.0);
+      grp.userData.home={x:mo.x, y:mo.y, z:0.0}; grp.userData.exp=[0.04, 0.014];
+      frameGuards.add(grp);
+    }
     // --- 8520 motor pressed into the pod (visible can + bell where prop clips) ---
     const can = zcyl(0.00425,0.00425,0.020, M.motor);    // 8.5 mm Ø, 20 mm
     can.position.set(0, 0, 0.010);                        // local to the motor group
