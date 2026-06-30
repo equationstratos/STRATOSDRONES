@@ -2,8 +2,11 @@
 
 A second airframe for the same electronics — a **closed clamshell body** in
 the DJI Tello size class, as an alternative to the open `../frame.scad` X-frame.
+The current iteration is the **V2 Tello-look pair** (`body_bottom_v2` + `capot`):
+double twin-strut arms, rear-loading battery that rides **on top of the board**,
+clean camera. See the [V2 section](#tello-look-variant-v2-lattice-arms--rear-loading-battery) below.
 
-![assembly](preview/assembly.png)
+![v2 frame](preview/v2_iso.png)
 
 Same flight envelope as a Tello (≈ 98 × 92.5 mm footprint, **118 mm
 wheelbase**, 3" / 76 mm props, 8520 motors): smooth rounded clamshell, round
@@ -54,8 +57,16 @@ can't slide underneath and cover the downward ToF / optical-flow sensors. The
 capot guide rails likewise stop just above the board so they clear it. The capot
 is a smooth low dome that stays just under the spinning props (lowered motors).
 
+Renders of the current V2 frame (printed shells: lower = grey, capot = orange):
+
 ![v2 assembly](preview/v2_assembly.png)
 ![v2 exploded — rear battery](preview/v2_exploded.png)
+![v2 iso](preview/v2_iso.png)
+![v2 top](preview/v2_top.png)
+![v2 front](preview/v2_front.png)
+![v2 side](preview/v2_side.png)
+![v2 underside](preview/v2_underside.png)
+![v2 battery section](preview/v2_battery_section.png)
 
 Print `body_bottom_v2.stl` + `body_top_v2.stl` as a set (light tree supports under
 the down-swept blades / motor pods). Solid-volume estimate in PLA (1.24 g/cm³):
