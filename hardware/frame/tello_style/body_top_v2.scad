@@ -35,17 +35,22 @@ module rear_slot() {
     translate([0, pod_y/2, batt_h/2 - 4]) cube([batt_w+1.6, 36, batt_h+1], center=true);
 }
 
-/* side guide rails (descend into the pod) + a front stop — channel the pack */
+/* side guide rails (descend into the pod) + a front stop — channel the pack.
+   The capot joins the pod at abs z=13 (= capot-local 0). The rails grip the pack
+   only DOWN TO the board top (abs ≈ 6.5, capot-local ≈ -6.5) so they clear the
+   board — they no longer reach to abs 4 and drag the pack under the board. */
+rail_bot = -6.5;   // capot-local; abs 6.5 — just above the board top
+rail_top =  2.5;   // capot-local; abs 15.5 — grips up near the pack top
 module battery_guides() {
-    iw = batt_w/2 + batt_clear;
+    iw = batt_w/2 + batt_clear; rh = rail_top - rail_bot; rz = (rail_top+rail_bot)/2;
     for (s = [-1,1])
-        translate([s*(iw + rail_t/2), 0, -3.5])
-            cube([rail_t, batt_l+4, 11], center=true);
+        translate([s*(iw + rail_t/2), 0, rz])
+            cube([rail_t, batt_l+4, rh], center=true);
     // front stop (nose side); rear stays open for sliding in + the lead
-    translate([0, -batt_l/2 - rail_t/2, -3.5]) cube([2*iw + 2*rail_t, rail_t, 11], center=true);
+    translate([0, -batt_l/2 - rail_t/2, rz]) cube([2*iw + 2*rail_t, rail_t, rh], center=true);
     // a small retention nub each side near the rear, so the pack clicks in
     for (s = [-1,1])
-        translate([s*iw, batt_l/2 - 5, -2]) sphere(r=0.9, $fn=18);
+        translate([s*iw, batt_l/2 - 5, rail_bot + 1.5]) sphere(r=0.9, $fn=18);
 }
 
 module capot() {

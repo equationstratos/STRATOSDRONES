@@ -37,6 +37,9 @@ tof_d = 7; flow_d = 7; tof_pos = [0,-3.9]; flow_pos = [0,8.3]; cam_w = 9; snap_n
 
 /* 1S pack (rear-insertable) — keep in sync with battery_dummy.scad */
 batt_w = 22; batt_h = 9.5;
+// the pack must sit ON TOP of the board so the downward sensors (under the board)
+// stay clear. Board bottom rests on the bosses (floor_t+boss_h), board is 1.6 mm.
+board_top = floor_t + boss_h + 1.6;   // ≈ 5.8 — the battery floor
 
 module rrect(x, y, r, h) { linear_extrude(h) offset(r) square([x-2*r, y-2*r], center=true); }
 
@@ -80,9 +83,12 @@ module pod_shell() {
         floor_vents();
         translate([0,-pod_y/2-eps,half_h*0.5]) rotate([-90,0,0]) cylinder(d=cam_w+0.6, h=wall+2);
         translate([-pod_x/2-eps,-15,2.5]) cube([wall+2,12,5.5]);            // USB-C
-        // REAR battery slot — the pack slides in from the back, on the board
-        translate([0, pod_y/2-wall/2, floor_t+boss_h+batt_h/2+0.3])
-            cube([batt_w+1.5, wall+3, batt_h+1.2], center=true);
+        // REAR battery slot — opens the rear wall ONLY from the board top upward,
+        // so the pack slides in ON TOP of the board. The wall stays SOLID below
+        // board_top, blocking the pack from sliding underneath (which would cover
+        // the downward sensors). Top portion of the pack passes under the capot.
+        translate([0, pod_y/2-wall/2, board_top + 4.6])
+            cube([batt_w+1.5, wall+3, 9.2], center=true);
     }
     // (camera nose bump removed — it left a little tab hanging below the body;
     //  the front camera is just a clean through-hole now)

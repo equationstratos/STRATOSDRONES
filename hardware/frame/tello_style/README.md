@@ -48,8 +48,11 @@ collar (no slot cut across the roots). The motor pocket + bottom wire/vent are
 cut **last**, so the bore is always clear for the 8520 to press in. The
 1S pack loads from the **rear** through a slot in the lower shell and a matching
 opening + guide rails in the capot, so you never have to pull the canopy to swap
-a battery. The capot is a smooth low dome that stays just under the spinning
-props (lowered motors).
+a battery. **The rear slot opens only ABOVE the board top (z ≈ 5.8 mm) and the
+rear wall stays solid below it**, so the pack rides **on top of the board** — it
+can't slide underneath and cover the downward ToF / optical-flow sensors. The
+capot guide rails likewise stop just above the board so they clear it. The capot
+is a smooth low dome that stays just under the spinning props (lowered motors).
 
 ![v2 assembly](preview/v2_assembly.png)
 ![v2 exploded — rear battery](preview/v2_exploded.png)
