@@ -8,25 +8,51 @@ JLCPCB. Items are ordered roughly by risk.
 
 ## Blocking — must resolve before ordering
 
-1. **Signal routing — partial AI autoroute applied; finish in KiCad.**
-   Re-routed on the **corrected placement** (Freerouting 1.9, 6 passes +
-   optimization, driven headless by `scripts/route_board.py`): **530 track
-   segments + 22 router vias on F.Cu/B.Cu**, plus **43 layer-aware, clearance-checked
-   power stitch vias** (`connect_power()`), zones filled. Committed as
-   `stratosdrone.ses` and applied to `stratosdrone.kicad_pcb`; gerbers re-exported.
-   **137 ratsnest connections remain** (vs 104 before DRC-violation removal; the
-   extra unconnected items are power pads whose cross-layer thermal link zone-fill
-   will resolve authoritatively in KiCad's GUI, plus harder signal nets the dense
-   2-signal-layer board couldn't squeeze headless). **Still to do in KiCad before
-   ordering**: (a) open the board and re-fill the four zones — hotkey **B** — to
-   seat the thermal connections; (b) route the remaining ratsnest signals (or
-   re-run Freerouting with more passes); (c) re-export gerbers. The `jlcpcb/`
-   gerbers are usable for a first article but are not yet 100% connected. NOTE:
-   `make board` regenerates the *unrouted* board — re-apply the route with
-   `python3 scripts/route_board.py --skip-route`. For a fuller autoroute, route
-   the committed `stratosdrone.dsn` (which matches the current placement) on
-   DeepPCB.ai or Windows Freerouting (more compute than this sandbox) and
-   re-import the `.ses`.
+1. **Signal routing — substantially done; ~106 pad-pairs still ratsnest.**
+   Current board: **1384 track segments + 172 vias** (121 router vias +
+   51 clearance-checked power stitch vias from `connect_power()`), all four
+   zones filled. Verified with KiCad's own connectivity engine
+   (`conn.GetUnconnectedCount(False)`, not just eyeballing the render):
+   **106 pad-pairs remain unconnected**, spread over **73 nets** — almost all
+   of them need just **one** more short trace or via (net groups: 1 extra
+   connection each for the vast majority; GND/3V3 are the big ones with 24
+   and 44 separate islands respectively, from 145/61 pads).
+   **Signal nets still needing a hand-routed trace** (each is 1 connection
+   away): `VDD_CORE, VDD_FLASHIO, I2C_SDA, I2C_SCL, VDD_PSRAM, FB_DCDC,
+   VBAT_SENSE, SPI_SCLK/MOSI/MISO, VDD_MIPI, CHIP_PU, M1-M4_GATE/_D/_G,
+   SDIO_D0-D3/CLK/CMD, XTAL_P/N, CS_FLOW, FLASH_CS/IO0-3/CK, BOOT, USB_DP/DM
+   (both C and MCU side), FB3V3, C6_BOOT, M1_G, LED_DIN, CC1/CC2, CS_IMU,
+   IMU_INT, EXP_IO, VL53_XSHUT, DSI_REXT, CSI_D0±/D1±/CK±/REXT, CAM_PWDN,
+   U0TXD/U0RXD, EN_DCDC, C6_EN, SW_CORE, C6_U0TXD, 3V3_EN`. Open the board in
+   KiCad, press **F8** (ratsnest) — each shows as a short yellow line between
+   two nearby pads; this is a tractable single sitting, not a from-scratch
+   route.
+   **Tried and confirmed NOT viable in this sandbox: headless Freerouting
+   2.1.0's session export.** Freerouting completes its routing math fine
+   (converges to ~106-136 unrouted over 15-30 passes in 5-7 minutes,
+   reproducibly), but the `-do stratosdrone.ses` file is **never written** —
+   confirmed across 5 attempts varying `-mt 1`, `gui.enabled=false`,
+   `dialog_confirmation_timeout` (3/5/20s), a persistent (non-`xvfb-run`)
+   Xvfb with a 15 s save grace period, and a bare `xvfb-run` invocation.  One
+   run showed `X connection ... broken (explicit kill or server shutdown)`
+   right after "after autoroute: N traces not 45 degree"; another hung
+   indefinitely past that same point even with a stable, independently-run
+   Xvfb. This reads as a real bug/incompatibility in Freerouting 2.1.0's
+   post-route session-save path under a headless X server, not a timeout or
+   config issue — don't re-attempt the same headless flow without a
+   different Freerouting version. `connect_power()` (pure `pcbnew`, no
+   Freerouting) is safe to re-run any time and needs no display.
+   **Fastest path to finish, pick one:**
+   (a) **KiCad directly** (recommended — the gap is small): open
+   `stratosdrone.kicad_pcb`, route the ~106 ratsnest lines by hand or with
+   KiCad's interactive router, fill zones (**B**), re-export gerbers.
+   (b) **DeepPCB.ai** (online, no install): upload the committed
+   `stratosdrone.dsn` (matches the current placement), autoroute, download
+   the `.ses`, then `python3 scripts/route_board.py --skip-route && python3
+   scripts/fill_zones_export.py`.
+   (c) **Freerouting with a real display** (Windows/desktop KiCad machine,
+   not headless): the GUI save dialog works normally there — see
+   `ROUTING.md` Fallback B.
 
 2. **Placement is done — clean, courtyard-aware, double-sided, 38×74 mm.**
    `gen_pcb.py` places on each footprint's real **courtyard** (body + IPC

@@ -7,7 +7,19 @@ with an online AI service.
 
 ## TL;DR — what was done
 
-`scripts/route_board.py` runs a fully-automated route in this repo:
+**Current state: 1384 track segments + 172 vias, ~106 pad-pairs (73 nets)
+still ratsnest — see `KNOWN_GAPS.md` item 1 for the exact net list and the
+fastest way to close it.** Headless Freerouting 2.1.0 in *this* sandbox
+converges on the routing (5-7 min) but its session-export step (`-do`)
+never actually writes the `.ses` file — reproduced 5 ways (see KNOWN_GAPS),
+looks like a real bug in that version's post-route save path under a
+headless X server. `connect_power()` (pure `pcbnew`, no Freerouting, no
+display needed) is still safe to re-run for extra power-stitch vias.
+Don't burn more time re-attempting the exact headless flow below without a
+different Freerouting version or a real display (Fallback B).
+
+`scripts/route_board.py` runs a fully-automated route in this repo (this is
+how the *existing* 1384/172 got there, across earlier sessions):
 
 1. **Export Specctra DSN** (`stratosdrone.dsn`) from the placed board via the
    `pcbnew` Python API, with the two **outer-layer pours temporarily removed**
