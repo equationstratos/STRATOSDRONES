@@ -23,8 +23,10 @@
       <a href="#pcb">PCB</a>
       <a href="#build">How it's built</a>
       <a href="#gallery">Gallery</a>
+      <a href="#configurator">Configure</a>
       <a href="#order">Build one</a>
     </nav>
+    <button class="cart-btn" id="cartBtn" type="button">🛒 Cart <span class="cart-count" id="cartCount">0</span></button>
     <a class="btn p" href="https://github.com/equationstratos/STRATOSDRONE" target="_blank" rel="noopener">GitHub</a>
   </div>
 </header>
@@ -298,6 +300,42 @@
   </div>
 </section>
 
+<!-- ───────────────────────── configurator ───────────────────────── -->
+<section id="configurator">
+  <div class="wrap">
+    <h2>Prefer it built? Configure yours</h2>
+    <p class="sub">Same frame, same electronics — pick a capot colour and add it to
+      your cart. <em>Prototype checkout — no payment is processed yet.</em></p>
+    <div class="configurator">
+      <div class="cfg-preview">
+        <img id="cfgImg" src="assets/configurator/blue.jpg" alt="STRATOSDRONE, selected colour">
+      </div>
+      <div class="cfg-panel">
+        <div class="cfg-name" id="cfgName">STRATOSDRONE — Signature Blue</div>
+        <div class="cfg-price" id="cfgPrice">$149</div>
+        <div class="cfg-row-label">Capot colour</div>
+        <div class="swatches" id="swatches">
+          <button class="sw-btn on" data-color="blue"   data-label="Signature Blue"  data-hex="#2f6fed" title="Signature Blue"></button>
+          <button class="sw-btn"    data-color="white"  data-label="Arctic White"    data-hex="#e9edf3" title="Arctic White"></button>
+          <button class="sw-btn"    data-color="black"  data-label="Stealth Black"   data-hex="#1b1e24" title="Stealth Black"></button>
+          <button class="sw-btn"    data-color="red"    data-label="Racing Red"      data-hex="#d6293b" title="Racing Red"></button>
+          <button class="sw-btn"    data-color="orange" data-label="Heritage Orange" data-hex="#e6730d" title="Heritage Orange"></button>
+        </div>
+        <div class="cfg-row-label" style="margin-top:18px">Quantity</div>
+        <div class="qty">
+          <button id="qtyMinus" type="button">−</button>
+          <span id="qtyVal">1</span>
+          <button id="qtyPlus" type="button">+</button>
+        </div>
+        <button class="btn p" id="addToCart" style="margin-top:22px;width:100%">Add to cart</button>
+        <p class="mini" style="color:var(--mut);margin-top:10px">Assembled board + printed
+          frame in the colour above, guards and battery included. Ships once routing is
+          finished — see <code>KNOWN_GAPS.md</code>.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
 <!-- ───────────────────────── order / build ───────────────────────── -->
 <section id="order">
   <div class="wrap">
@@ -355,6 +393,136 @@
   });
   lb.addEventListener('click', function(){ lb.classList.remove('on'); img.src=''; });
   document.addEventListener('keydown', function(e){ if(e.key==='Escape'){ lb.classList.remove('on'); img.src=''; } });
+})();
+</script>
+
+<!-- cart drawer -->
+<div id="cartScrim"></div>
+<div id="cartDrawer">
+  <div class="cart-head"><b>Your cart</b><button class="cart-close" id="cartClose" aria-label="Close cart">&times;</button></div>
+  <div class="cart-items" id="cartItems"></div>
+  <div class="cart-foot">
+    <div class="cart-total"><span>Total</span><span id="cartTotal">$0</span></div>
+    <button class="btn p" id="cartCheckout" style="width:100%">Checkout</button>
+    <p class="mini" style="color:var(--mut);margin:8px 0 0">Prototype — no payment is
+      processed. Wire <code>#cartCheckout</code> up to a real payment flow.</p>
+  </div>
+</div>
+
+<!-- configurator + cart -->
+<script>
+(function(){
+  var COLORS = {
+    blue:   {label:'Signature Blue',  img:'assets/configurator/blue.jpg'},
+    white:  {label:'Arctic White',    img:'assets/configurator/white.jpg'},
+    black:  {label:'Stealth Black',   img:'assets/configurator/black.jpg'},
+    red:    {label:'Racing Red',      img:'assets/configurator/red.jpg'},
+    orange: {label:'Heritage Orange', img:'assets/configurator/orange.jpg'}
+  };
+  var PRICE = 149;                 // placeholder — wire up real pricing later
+  var CART_KEY = 'stratosdrone_cart';
+  var selected = 'blue', qty = 1;
+
+  var cfgImg = document.getElementById('cfgImg');
+  var cfgName = document.getElementById('cfgName');
+  var swatchesEl = document.getElementById('swatches');
+  var qtyVal = document.getElementById('qtyVal');
+
+  Array.prototype.forEach.call(swatchesEl.querySelectorAll('.sw-btn'), function(btn){
+    btn.style.setProperty('--sw', btn.dataset.hex);
+  });
+
+  function selectColor(key){
+    selected = key;
+    var c = COLORS[key];
+    cfgImg.src = c.img;
+    cfgName.textContent = 'STRATOSDRONE — ' + c.label;
+    Array.prototype.forEach.call(swatchesEl.querySelectorAll('.sw-btn'), function(btn){
+      btn.classList.toggle('on', btn.dataset.color === key);
+    });
+  }
+  swatchesEl.addEventListener('click', function(e){
+    var btn = e.target.closest('.sw-btn'); if(!btn) return;
+    selectColor(btn.dataset.color);
+  });
+  document.getElementById('cfgPrice').textContent = '$' + PRICE;
+
+  document.getElementById('qtyMinus').addEventListener('click', function(){
+    qty = Math.max(1, qty - 1); qtyVal.textContent = qty;
+  });
+  document.getElementById('qtyPlus').addEventListener('click', function(){
+    qty = Math.min(9, qty + 1); qtyVal.textContent = qty;
+  });
+
+  // ---- cart, persisted in localStorage ----
+  function loadCart(){
+    try { return JSON.parse(localStorage.getItem(CART_KEY)) || []; }
+    catch(e){ return []; }
+  }
+  function saveCart(items){ localStorage.setItem(CART_KEY, JSON.stringify(items)); }
+
+  var cartBtn = document.getElementById('cartBtn');
+  var cartCount = document.getElementById('cartCount');
+  var cartDrawer = document.getElementById('cartDrawer');
+  var cartScrim = document.getElementById('cartScrim');
+  var cartItemsEl = document.getElementById('cartItems');
+  var cartTotalEl = document.getElementById('cartTotal');
+
+  function renderCart(){
+    var items = loadCart();
+    var n = 0; for (var i=0;i<items.length;i++) n += items[i].qty;
+    cartCount.textContent = n;
+    cartItemsEl.innerHTML = '';
+    if (!items.length){
+      cartItemsEl.innerHTML = '<div class="cart-empty">Your cart is empty.</div>';
+    } else {
+      items.forEach(function(item, idx){
+        var c = COLORS[item.color] || {label:item.color, img:''};
+        var row = document.createElement('div');
+        row.className = 'cart-item';
+        row.innerHTML =
+          '<img src="' + c.img + '" alt="">' +
+          '<div class="ci-info"><b>STRATOSDRONE — ' + c.label + '</b>Qty ' + item.qty +
+          ' · $' + (item.price * item.qty) + '</div>' +
+          '<button class="ci-remove" data-idx="' + idx + '" title="Remove" aria-label="Remove">×</button>';
+        cartItemsEl.appendChild(row);
+      });
+    }
+    var total = 0; for (var j=0;j<items.length;j++) total += items[j].price * items[j].qty;
+    cartTotalEl.textContent = '$' + total;
+  }
+
+  function openCart(){ cartDrawer.classList.add('on'); cartScrim.classList.add('on'); }
+  function closeCart(){ cartDrawer.classList.remove('on'); cartScrim.classList.remove('on'); }
+
+  cartBtn.addEventListener('click', function(){ renderCart(); openCart(); });
+  document.getElementById('cartClose').addEventListener('click', closeCart);
+  cartScrim.addEventListener('click', closeCart);
+  document.addEventListener('keydown', function(e){ if (e.key === 'Escape') closeCart(); });
+
+  cartItemsEl.addEventListener('click', function(e){
+    var btn = e.target.closest('.ci-remove'); if (!btn) return;
+    var items = loadCart();
+    items.splice(parseInt(btn.dataset.idx, 10), 1);
+    saveCart(items); renderCart();
+  });
+
+  document.getElementById('addToCart').addEventListener('click', function(){
+    var items = loadCart();
+    var existing = null;
+    for (var i=0;i<items.length;i++) if (items[i].color === selected) existing = items[i];
+    if (existing) existing.qty += qty;
+    else items.push({color: selected, price: PRICE, qty: qty});
+    saveCart(items);
+    renderCart(); openCart();
+  });
+
+  // Prototype only — the user wires this up to a real payment processor later.
+  document.getElementById('cartCheckout').addEventListener('click', function(){
+    alert('Checkout is a placeholder — no payment is processed yet.');
+  });
+
+  renderCart();
 })();
 </script>
 </body>

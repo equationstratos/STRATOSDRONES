@@ -40,6 +40,7 @@ the board, held by a **cradle moulded into the canopy**. The floor is a
 | `assembly_site_plain.scad` | preview only (both shells, no guards) — the iso/top/front/side/underside renders for `site/` + this README, do not print |
 | `assembly_site_exploded.scad` | preview only (capot lifted off, 1S pack floating over the honeycomb floor) — the exploded/assembly renders, do not print |
 | `assembly_site_section.scad` | preview only (translucent shells, battery + board stand-in visible inside) — the battery-section render, do not print |
+| `render_site_images.py` | renders `assembly_site.scad`/`assembly_site_plain.scad` as two clean composited layers (see script docstring) for site/README product shots; `--configurator` renders the colour-swatch variants |
 
 ## Tello-look variant (v2): lattice arms + rear-loading battery
 
