@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>STRATOSDRONE — open-source Tello EDU class drone</title>
-<meta name="description" content="A fully open-source DJI Tello EDU class drone: orderable KiCad PCB, 3D-printable whoop airframe, ESP32-P4 firmware, Tello SDK 2.0 wire-compatible, swarming, and a full Gazebo simulation running the same flight code.">
+<meta name="description" content="A fully open-source DJI Tello EDU class drone: orderable KiCad PCB, 3D-printable Tello-look airframe with real clip-on prop guards, ESP32-P4 firmware, Tello SDK 2.0 wire-compatible, swarming, and a full Gazebo simulation running the same flight code.">
 <meta property="og:title" content="STRATOSDRONE">
 <meta property="og:description" content="Open-source Tello EDU class drone — PCB, firmware, CAD, simulation. 100% buildable.">
 <meta property="og:image" content="assets/cad/hero.jpg">
@@ -49,7 +49,7 @@
       </div>
     </div>
     <figure>
-      <img src="assets/cad/hero.jpg" alt="STRATOSDRONE cinewhoop airframe render" width="800" height="520">
+      <img src="assets/cad/hero.jpg" alt="STRATOSDRONE Tello-look airframe render with clip-on prop guards" width="800" height="520">
     </figure>
   </div>
 </section>
@@ -109,27 +109,30 @@
 <!-- ───────────────────────── design ───────────────────────── -->
 <section id="design">
   <div class="wrap">
-    <h2>Designed for the air</h2>
-    <p class="sub">A clean swept "whoop" body — minimal, aggressive, airflow-optimised.
-      The arms taper into the motor nacelles, the canopy crown is biased forward, and a
-      removable shell clips on and off without screws so you can customise it like a Tello.</p>
+    <h2>Designed to look and load like the original</h2>
+    <p class="sub">A close, printable read of the real Tello: double struts splay from
+      each body corner to the motor pods instead of a single arm, the canopy is a smooth
+      clip-on shell with a clean camera nose, and the 1S pack loads from the rear —
+      just like the drone it's modelled on.</p>
     <div class="grid g2">
       <div class="card">
-        <div class="ph"><img src="assets/cad/canopy.jpg" alt="Removable canopy with camera nose and snap posts"></div>
+        <div class="ph"><img src="assets/cad/arms.jpg" alt="Double-strut Tello-look arms, top view"></div>
         <div class="bd">
-          <h3>Removable canopy</h3>
-          <p>Smooth Tello-style shell with a chamfered camera nose, swept side air
-            intakes and LED light pipes. Snap posts mate with the deck — no screws, lift
-            it off to swap or print a new one.</p>
+          <h3>Double-strut arms</h3>
+          <p>Two solid struts per motor, splayed from the body to each pod — the same
+            twin-arm silhouette as the reference Tello, seen from every angle. A
+            <code>arm_lattice</code> switch opens them into a triangulated truss if you'd
+            rather print it lighter.</p>
         </div>
       </div>
       <div class="card">
-        <div class="ph"><img src="assets/cad/frame.jpg" alt="Whoop airframe with ducts, three-quarter view"></div>
+        <div class="ph"><img src="assets/cad/battery.jpg" alt="1S battery pack lifted out of the rear slot, exploded view"></div>
         <div class="bd">
-          <h3>Swept airframe</h3>
-          <p>Arms taper into the motor nacelles for clean airflow. The 1S pack slides in
-            from the rear like a Tello, and the compact 36×70 mainboard sits on M2 bosses
-            above the under-body flow + ToF sensor window.</p>
+          <h3>Rear-loading battery, on top of the board</h3>
+          <p>The pack slides in from the back over a honeycomb-vented floor and rides
+            <em>on top of</em> the mainboard — it can't slide under and block the
+            downward ToF / optical-flow sensors. No need to pull the canopy to swap a
+            battery.</p>
         </div>
       </div>
     </div>
@@ -139,33 +142,35 @@
 <!-- ───────────────────────── variants ───────────────────────── -->
 <section id="variants">
   <div class="wrap">
-    <h2>One frame, three protection levels</h2>
-    <p class="sub">The airframe is parametric. Flip a single <code>guard</code> setting in
-      <code>params.scad</code> and re-slice — the electronics, wheelbase and motor mounts
-      stay identical across all three.</p>
+    <h2>Real Tello prop guards clip straight on</h2>
+    <p class="sub">Each motor pod carries a clip collar sized to the actual DJI Tello
+      guard's C-clip — the same guards from a real Tello (or a spare set) snap on
+      directly, ring concentric with the prop, clip on the nacelle. No adapter part to
+      print or design.</p>
     <div class="grid g3">
       <div class="card">
-        <div class="ph"><img src="assets/cad/none.jpg" alt="Naked variant, no prop guards"></div>
+        <div class="ph"><img src="assets/cad/guards.jpg" alt="Top-down view, four prop guards clipped on, rings concentric with each prop"></div>
         <div class="bd">
-          <h3>Naked <code>none</code></h3>
-          <p>Bare swept arms, no guards. The lightest, most minimal build — for open
-            flying and maximum efficiency.</p>
+          <h3>Drop-in fit</h3>
+          <p>Sized straight from the real guard's geometry — no redesign, no
+            printed adapter. Clip them on, clip them off.</p>
         </div>
       </div>
       <div class="card">
-        <div class="ph"><img src="assets/cad/ring.jpg" alt="Open ring prop guards, Tello style"></div>
+        <div class="ph"><img src="assets/cad/iso.jpg" alt="Assembled airframe, three-quarter view, capot and struts"></div>
         <div class="bd">
-          <h3>Ring guards <code>ring</code></h3>
-          <p>Thin open prop-guard rings on struts, Tello-style. Light protection for
-            learning to fly and indoor knocks.</p>
+          <h3>One printed pair</h3>
+          <p>Just <code>body_bottom_v2.stl</code> + <code>body_top_v2.stl</code> —
+            two parts, no supports beyond the motor pods, ≈23 g in PLA.</p>
         </div>
       </div>
       <div class="card">
-        <div class="ph"><img src="assets/cad/duct.jpg" alt="Cinewhoop ducts, reinforced"></div>
+        <div class="ph"><img src="assets/cad/underside.jpg" alt="Underside view showing the honeycomb vent floor and sensor apertures"></div>
         <div class="bd">
-          <h3>Cinewhoop <code>duct</code></h3>
-          <p>Full ducts with rounded intake lips and skids. Reinforced for indoor and
-            contact flying, with a thrust bump from the shrouds.</p>
+          <h3>Sensors stay clear</h3>
+          <p>A honeycomb-vented floor with two dedicated apertures keeps the downward
+            ToF and optical-flow sensors looking straight through — nothing printed
+            in their field of view.</p>
         </div>
       </div>
     </div>
@@ -187,15 +192,15 @@
       </div>
       <div class="feat">
         <h3><span class="d">◆</span>Hardware — KiCad PCB</h3>
-        <p>A compact 36×70 mm mainboard generated from a single design database
-          (<code>design.py</code> → board, BOM, CPL, pinmap). ESP32-P4 + C6, MOSFET
-          motor drivers, full IMU/baro/ToF/flow sensor suite. Order it assembled from
-          JLCPCB.</p>
+        <p>A compact 38×74 mm, double-sided mainboard generated from a single design
+          database (<code>design.py</code> → board, BOM, CPL, pinmap). ESP32-P4 + C6,
+          MOSFET motor drivers, full IMU/baro/ToF/flow sensor suite.</p>
       </div>
       <div class="feat">
-        <h3><span class="d">◆</span>CAD — parametric airframe</h3>
-        <p>OpenSCAD whoop frame and canopy → STL. Three guard variants, rear battery bay,
-          press-fit 8520 pockets and a removable shell — all from shared parameters.</p>
+        <h3><span class="d">◆</span>CAD — Tello-look airframe</h3>
+        <p>OpenSCAD double-strut frame and clip-on capot → STL. Rear battery bay riding
+          on top of the board, press-fit 8520 pockets and clip collars for real Tello
+          prop guards — all from shared parameters.</p>
       </div>
       <div class="feat">
         <h3><span class="d">◆</span>Sim + SDK</h3>
@@ -212,10 +217,11 @@
             can place and inspect it with confidence before ordering.</p></div>
       </div>
       <div class="card">
-        <div class="ph"><img src="assets/pcb/top.jpg" alt="PCB top render"></div>
-        <div class="bd"><h3>Routable by design</h3>
-          <p>Passives are anchored around the ESP32-P4 with collision-aware placement —
-            decoupling caps ring the MCU, zero copper overlaps.</p></div>
+        <div class="ph"><img src="assets/pcb/top.jpg" alt="PCB top render, routed"></div>
+        <div class="bd"><h3>Routed, in progress</h3>
+          <p>Placement is clean and courtyard-checked; the bulk of the signal routing is
+            done (AI-assisted, then hand-finished) with four copper planes poured. See
+            <code>KNOWN_GAPS.md</code> for exactly what's left before you order.</p></div>
       </div>
     </div>
   </div>
@@ -227,22 +233,23 @@
     <h2>Gallery</h2>
     <p class="sub">Concept brief, CAD renders and the board. Click any image to enlarge.</p>
     <div class="gal" id="gal">
-      <a href="assets/cad/hero.jpg"><img src="assets/cad/hero.jpg" alt="Cinewhoop hero render" loading="lazy"></a>
-      <a href="assets/cad/duct.jpg"><img src="assets/cad/duct.jpg" alt="Duct variant" loading="lazy"></a>
+      <a href="assets/cad/hero.jpg"><img src="assets/cad/hero.jpg" alt="Tello-look hero render with prop guards" loading="lazy"></a>
+      <a href="assets/cad/guards.jpg"><img src="assets/cad/guards.jpg" alt="Top-down, four prop guards" loading="lazy"></a>
       <a href="assets/concept/1.jpg"><img src="assets/concept/1.jpg" alt="Concept — isometric view and dimensions" loading="lazy"></a>
-      <a href="assets/cad/ring.jpg"><img src="assets/cad/ring.jpg" alt="Ring variant" loading="lazy"></a>
+      <a href="assets/cad/battery.jpg"><img src="assets/cad/battery.jpg" alt="Rear battery, exploded view" loading="lazy"></a>
       <a href="assets/concept/2.jpg"><img src="assets/concept/2.jpg" alt="Concept — propulsion configuration" loading="lazy"></a>
-      <a href="assets/cad/none.jpg"><img src="assets/cad/none.jpg" alt="Naked variant" loading="lazy"></a>
+      <a href="assets/cad/arms.jpg"><img src="assets/cad/arms.jpg" alt="Double-strut arms, top view" loading="lazy"></a>
       <a href="assets/concept/3.jpg"><img src="assets/concept/3.jpg" alt="Concept render" loading="lazy"></a>
-      <a href="assets/cad/top.jpg"><img src="assets/cad/top.jpg" alt="Top view" loading="lazy"></a>
+      <a href="assets/cad/front.jpg"><img src="assets/cad/front.jpg" alt="Front view, camera lens" loading="lazy"></a>
       <a href="assets/concept/4.jpg"><img src="assets/concept/4.jpg" alt="Concept render" loading="lazy"></a>
       <a href="assets/pcb/component_map.jpg"><img src="assets/pcb/component_map.jpg" alt="Component map" loading="lazy"></a>
       <a href="assets/concept/5.jpg"><img src="assets/concept/5.jpg" alt="Concept render" loading="lazy"></a>
-      <a href="assets/cad/frame.jpg"><img src="assets/cad/frame.jpg" alt="Frame three-quarter" loading="lazy"></a>
-      <a href="assets/cad/canopy.jpg"><img src="assets/cad/canopy.jpg" alt="Removable canopy" loading="lazy"></a>
+      <a href="assets/cad/side.jpg"><img src="assets/cad/side.jpg" alt="Side view, low profile capot" loading="lazy"></a>
+      <a href="assets/cad/underside.jpg"><img src="assets/cad/underside.jpg" alt="Underside, honeycomb vent floor" loading="lazy"></a>
       <a href="assets/concept/6.jpg"><img src="assets/concept/6.jpg" alt="Concept render" loading="lazy"></a>
       <a href="assets/concept/7.jpg"><img src="assets/concept/7.jpg" alt="Concept render" loading="lazy"></a>
-      <a href="assets/pcb/top.jpg"><img src="assets/pcb/top.jpg" alt="PCB top" loading="lazy"></a>
+      <a href="assets/pcb/top.jpg"><img src="assets/pcb/top.jpg" alt="PCB top, routed" loading="lazy"></a>
+      <a href="assets/cad/section.jpg"><img src="assets/cad/section.jpg" alt="Battery-over-board cross-section" loading="lazy"></a>
       <a href="assets/concept/8.jpg"><img src="assets/concept/8.jpg" alt="Concept render" loading="lazy"></a>
       <a href="assets/concept/9.jpg"><img src="assets/concept/9.jpg" alt="Concept render" loading="lazy"></a>
       <a href="assets/concept/10.jpg"><img src="assets/concept/10.jpg" alt="Concept render" loading="lazy"></a>
@@ -259,14 +266,16 @@
       <li><b>Simulate it first.</b> Build the Gazebo plugin, spawn a drone, and run
         <code>python sdk/python/examples/01_hover.py</code> — takeoff, hover, land, over
         the Tello protocol. No hardware required.</li>
-      <li><b>Order the board.</b> Review the KiCad project, then send the JLCPCB
-        gerbers/BOM/CPL package off for assembly. Cross-check against the component map and
-        <code>KNOWN_GAPS.md</code> before you commit.</li>
-      <li><b>Print the airframe.</b> Pick a guard variant, slice
-        <code>frame_&lt;variant&gt;.stl</code> + <code>canopy.stl</code> in PETG or tough
-        PLA — no supports, each part prints flat.</li>
+      <li><b>Finish routing, then order.</b> Open the KiCad project, close out the
+        remaining ratsnest (<code>KNOWN_GAPS.md</code> lists exactly what's left), fill
+        zones, and send the JLCPCB gerbers/BOM/CPL package off for assembly. Cross-check
+        against the component map first.</li>
+      <li><b>Print the airframe.</b> Slice <code>body_bottom_v2.stl</code> +
+        <code>body_top_v2.stl</code> in PETG or tough PLA — light supports only under
+        the motor pods.</li>
       <li><b>Assemble.</b> Press in the 8520 motors, mount the board on the M2 bosses,
-        route the motor wires along the arms, slide in the 1S pack, clip on the canopy.</li>
+        route the motor wires along the arms, slide the 1S pack in from the rear, clip
+        on the capot, clip on the prop guards.</li>
       <li><b>Flash &amp; fly.</b> Build the ESP-IDF firmware for the ESP32-P4, flash, and
         connect — your simulated mission scripts now run on the real drone, unchanged.</li>
     </ol>

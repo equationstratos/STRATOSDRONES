@@ -1,8 +1,9 @@
 # STRATOSDRONE — presentation site
 
 A single-page, dependency-free presentation of the project: hero, specs vs the
-DJI Tello EDU, the swept "whoop" design, the three protection variants, how the
-project is built, and a gallery of the concept brief + CAD/PCB renders.
+DJI Tello EDU, the Tello-look double-strut design, the real clip-on prop
+guards, how the project is built, and a gallery of the concept brief + CAD/PCB
+renders.
 
 Plain HTML/CSS/JS — **no build step**, no frameworks, no tracking.
 
@@ -13,8 +14,8 @@ Plain HTML/CSS/JS — **no build step**, no frameworks, no tracking.
 | `index.html` | the page |
 | `style.css` | dark, minimal theme |
 | `assets/concept/*.jpg` | the original concept brief (resized from `/g`) |
-| `assets/cad/*.jpg` | OpenSCAD renders of the whoop airframe (the three variants, hero, top, frame) |
-| `assets/pcb/*.jpg` | the PCB component map and a board render |
+| `assets/cad/*.jpg` | OpenSCAD renders of the `tello_style` v2 airframe (hero, arms, battery, guards, iso/front/side/underside/section) |
+| `assets/pcb/*.jpg` | the PCB component map and a routed board render |
 
 ## View locally
 
@@ -33,34 +34,58 @@ asset exists). Enable Pages once in **Settings → Pages → Source: GitHub Acti
 
 ## Refreshing the images
 
-The CAD renders come from `hardware/frame/whoop/preview/*.png` and the PCB map
-from `hardware/pcb/preview/`. The studio previews use the `Tomorrow` colorscheme
-(light #f8f8f8 background) on `assembly.scad`:
+The frame-only renders (`arms.jpg`, `battery.jpg`, `iso.jpg`, `front.jpg`,
+`side.jpg`, `underside.jpg`, `section.jpg`) come straight from
+`hardware/frame/tello_style/preview/v2_*.png` — see that directory's own
+render commands. Studio previews use the `Cornfield` colorscheme (light
+background) for consistency with the dark page's white `.ph` card boxes.
+
+`hero.jpg` and `guards.jpg` need the real Tello prop guards attached, which
+aren't part of the printable frame (they're a separate STL placed only in the
+3-D viewer), so they're rendered from a dedicated scene,
+`hardware/frame/tello_style/assembly_site.scad` — imports the guard STL at
+each motor with the same transform `sim/viz/gen_viewer.py` uses, wrapped in
+explicit `color()` (OpenSCAD's `--render` mode drops per-object colours for
+this multi-part scene; use plain preview instead — no `--render` flag):
 
 ```bash
-cd hardware/frame/whoop
-CAM=0,0,4,62,0,22,0
-# airframe (no canopy) and canopy alone
-xvfb-run -a openscad -D guard='"duct"' -D show='"frame"'  --camera=$CAM --viewall \
-  --autocenter --projection=p --colorscheme=Tomorrow --imgsize=1200,820 -o preview/frame.png  assembly.scad
-xvfb-run -a openscad -D show='"canopy"' --camera=$CAM --viewall \
-  --autocenter --projection=p --colorscheme=Tomorrow --imgsize=1200,820 -o preview/canopy.png assembly.scad
+cd hardware/frame/tello_style
+# three-quarter hero — full drone with guards
+xvfb-run -a openscad -o /tmp/hero.png --imgsize=1600,1040 --colorscheme=Cornfield \
+  --camera=0,0,5,58,0,35,420 --projection=ortho assembly_site.scad
+# top-down — all four guards, symmetric
+xvfb-run -a openscad -o /tmp/top.png --imgsize=1400,1400 --colorscheme=Cornfield \
+  --camera=0,0,0,0,0,0,480 --projection=ortho assembly_site.scad
 ```
 
-After re-rendering, regenerate the resized JPEGs:
+The PCB renders are regenerated straight from the current board:
+
+```bash
+cd hardware/pcb
+python3 scripts/gen_component_map.py          # -> preview/component_map.png
+kicad-cli pcb export svg --layers "F.Cu,F.Silkscreen,Edge.Cuts,F.Mask" \
+  --page-size-mode 2 -o /tmp/pcb_top.svg stratosdrone.kicad_pcb
+python3 -c "import cairosvg; cairosvg.svg2png(url='/tmp/pcb_top.svg', \
+  write_to='/tmp/pcb_top.png', output_width=1000, background_color='white')"
+```
+
+After re-rendering, resize into `site/assets/`:
 
 ```bash
 python3 - <<'PY'
 from PIL import Image; import pathlib
 jobs = {
-  "hardware/frame/whoop/preview/hero.png":          "site/assets/cad/hero.jpg",
-  "hardware/frame/whoop/preview/assembly_duct.png": "site/assets/cad/duct.jpg",
-  "hardware/frame/whoop/preview/assembly_ring.png": "site/assets/cad/ring.jpg",
-  "hardware/frame/whoop/preview/assembly_none.png": "site/assets/cad/none.jpg",
-  "hardware/frame/whoop/preview/top.png":           "site/assets/cad/top.jpg",
-  "hardware/frame/whoop/preview/frame.png":         "site/assets/cad/frame.jpg",
-  "hardware/frame/whoop/preview/canopy.png":        "site/assets/cad/canopy.jpg",
-  "hardware/pcb/preview/component_map.png":         "site/assets/pcb/component_map.jpg",
+  "/tmp/hero.png":                                              "site/assets/cad/hero.jpg",
+  "/tmp/top.png":                                                "site/assets/cad/guards.jpg",
+  "hardware/frame/tello_style/preview/v2_top.png":              "site/assets/cad/arms.jpg",
+  "hardware/frame/tello_style/preview/v2_exploded.png":         "site/assets/cad/battery.jpg",
+  "hardware/frame/tello_style/preview/v2_iso.png":              "site/assets/cad/iso.jpg",
+  "hardware/frame/tello_style/preview/v2_front.png":            "site/assets/cad/front.jpg",
+  "hardware/frame/tello_style/preview/v2_side.png":             "site/assets/cad/side.jpg",
+  "hardware/frame/tello_style/preview/v2_underside.png":        "site/assets/cad/underside.jpg",
+  "hardware/frame/tello_style/preview/v2_battery_section.png":  "site/assets/cad/section.jpg",
+  "hardware/pcb/preview/component_map.png":                     "site/assets/pcb/component_map.jpg",
+  "/tmp/pcb_top.png":                                            "site/assets/pcb/top.jpg",
 }
 for src, dst in jobs.items():
     p = pathlib.Path(src)
