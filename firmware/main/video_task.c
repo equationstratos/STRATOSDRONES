@@ -6,6 +6,18 @@
  * encoder input format are validated on hardware; see docs/bringup.md
  * "camera pipeline" — this file is written against esp_video 1.x and
  * esp_h264 1.1.x APIs and may need small adjustments with other versions.
+ *
+ * NOTE CI: firmware/main/idf_component.yml currently pins
+ * espressif/esp_cam_sensor below 1.0.0 (the 1.0.0 release's published
+ * sdkconfig.rename breaks kconfgen — a registry-side bug, not this repo's).
+ * That in turn forces an old espressif/esp_video (0.8.0), which resolves
+ * an esp_h264 too old to declare ESP_H264_ENC_HW_CFG_DEFAULT() below —
+ * so `idf.py build` fails here in CI until the version constraints are
+ * reconciled (either esp_cam_sensor 1.0.0 gets fixed upstream so the
+ * newer esp_video/esp_h264/esp_cam_sensor trio this file wants can be
+ * pinned instead, or this file is rewritten against the older esp_h264
+ * API actually resolvable today). Not yet hit on real hardware — the PCB
+ * itself is still unpopulated (hardware/pcb/KNOWN_GAPS.md).
  * SPDX-License-Identifier: MIT */
 #include <fcntl.h>
 #include <string.h>
