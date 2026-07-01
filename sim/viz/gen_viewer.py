@@ -218,7 +218,7 @@ TEMPLATE = r"""<!DOCTYPE html>
 <title>STRATOSDRONE — visualisateur 3D</title>
 <style>
   :root{--bg:#0b0e14;--panel:#12161d;--line:#262d38;--ink:#e6edf3;--mut:#8b949e;
-        --acc:#e6730d;--acc2:#2f81f7;}
+        --acc:#2f6fed;--acc2:#63a4ff;}
   *{box-sizing:border-box}
   html,body{margin:0;height:100%;font:13px/1.5 -apple-system,Segoe UI,Roboto,sans-serif;
             background:var(--bg);color:var(--ink);overflow:hidden}
@@ -369,7 +369,7 @@ const GROUPS = {
   elec:   {label:'PCB / batterie',          color:'#2f8f4f'},
   arms:   {label:'Bras',                    color:'#3a3f47'},
   motors: {label:'Moteurs',                 color:'#8b929c'},
-  props:  {label:'Hélices',                 color:'#e6730d'},
+  props:  {label:'Hélices',                 color:'#2f6fed'},
   guards: {label:'Protège-hélices',         color:'#6b7280'},
 };
 
@@ -468,14 +468,14 @@ const M = {
   bodyDark:  new THREE.MeshStandardMaterial({color:0x2b303a, metalness:.45, roughness:.42}),
   bodyLight: new THREE.MeshStandardMaterial({color:0xcdd2da, metalness:.25, roughness:.5}),
   canopy:    new THREE.MeshStandardMaterial({color:0x12151c, metalness:.5, roughness:.18}),
-  accent:    new THREE.MeshStandardMaterial({color:0xe6730d, metalness:.3, roughness:.35}),
+  accent:    new THREE.MeshStandardMaterial({color:0x2f6fed, metalness:.3, roughness:.35}),
   guard:     new THREE.MeshStandardMaterial({color:0x5b626d, metalness:.5, roughness:.4}),
   motor:     new THREE.MeshStandardMaterial({color:0x474d57, metalness:.85, roughness:.3}),
   hub:       new THREE.MeshStandardMaterial({color:0x383d45, metalness:.8, roughness:.32}),
   lens:      new THREE.MeshStandardMaterial({color:0x05070b, metalness:.2, roughness:.08}),
-  led:       new THREE.MeshStandardMaterial({color:0xe6730d, emissive:0xe6730d, emissiveIntensity:1.4,
+  led:       new THREE.MeshStandardMaterial({color:0x2f6fed, emissive:0x2f6fed, emissiveIntensity:1.4,
                metalness:0, roughness:.5}),
-  propO:     new THREE.MeshStandardMaterial({color:0xe6730d, metalness:.2, roughness:.4, side:THREE.DoubleSide}),
+  propO:     new THREE.MeshStandardMaterial({color:0x2f6fed, metalness:.2, roughness:.4, side:THREE.DoubleSide}),
   propD:     new THREE.MeshStandardMaterial({color:0x20242c, metalness:.3, roughness:.45, side:THREE.DoubleSide}),
 };
 
@@ -724,7 +724,7 @@ let GUARD_GEO = null;
     return m;
   }
   const body  = meshFromB64("__BODY_STL_B64__",  0x9298a3, .4,  .5);
-  const capot = meshFromB64("__CAPOT_STL_B64__", 0xe6730d, .35, .45);
+  const capot = meshFromB64("__CAPOT_STL_B64__", 0x2f6fed, .35, .45);
   if (body){  body.userData.home={x:0,y:0,z:0};      body.userData.exp=[0,-0.004]; frameShell.add(body); }
   if (capot){ capot.position.z=0.013;                                    // rim joint (13 mm)
               capot.userData.home={x:0,y:0,z:0.013};  capot.userData.exp=[0, 0.020]; frameShell.add(capot); }

@@ -11,7 +11,7 @@ motor_off = wheelbase/2/sqrt(2);
 MOTORS = [for (sx=[-1,1], sy=[-1,1]) [sx,sy]];
 
 color("#9298a3") body_bottom_v2();
-color("#e6730d") translate([0,0,13]) capot();
+color("#2f6fed") translate([0,0,13]) capot();
 
 for (m = MOTORS) {
     mx = m[0]*motor_off; my = m[1]*motor_off;

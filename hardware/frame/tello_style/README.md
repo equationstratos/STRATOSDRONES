@@ -36,7 +36,10 @@ the board, held by a **cradle moulded into the canopy**. The floor is a
 | `battery_dummy.scad` | **print-fit gauge** — solid 1S pack at real size (22×53×9.5), adjust to your pack |
 | `pcb_dummy.scad` | **print-fit gauge** — board outline + holes + key components, to check fit/alignment |
 | `assembly.scad` | preview only (both shells + motors + prop disks) — do not print |
-| `assembly_site.scad` | preview only (both shells + the real Tello prop guard STL at each motor) — renders for `site/`, do not print |
+| `assembly_site.scad` | preview only (both shells + the real Tello prop guard STL at each motor) — the hero/guards renders for `site/`, do not print |
+| `assembly_site_plain.scad` | preview only (both shells, no guards) — the iso/top/front/side/underside renders for `site/` + this README, do not print |
+| `assembly_site_exploded.scad` | preview only (capot lifted off, 1S pack floating over the honeycomb floor) — the exploded/assembly renders, do not print |
+| `assembly_site_section.scad` | preview only (translucent shells, battery + board stand-in visible inside) — the battery-section render, do not print |
 
 ## Tello-look variant (v2): lattice arms + rear-loading battery
 
