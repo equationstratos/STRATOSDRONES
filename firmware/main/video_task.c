@@ -7,17 +7,14 @@
  * "camera pipeline" — this file is written against esp_video 1.x and
  * esp_h264 1.1.x APIs and may need small adjustments with other versions.
  *
- * NOTE CI: firmware/main/idf_component.yml currently pins
+ * NOTE versions: firmware/main/idf_component.yml pins
  * espressif/esp_cam_sensor below 1.0.0 (the 1.0.0 release's published
- * sdkconfig.rename breaks kconfgen — a registry-side bug, not this repo's).
- * That in turn forces an old espressif/esp_video (0.8.0), which resolves
- * an esp_h264 too old to declare ESP_H264_ENC_HW_CFG_DEFAULT() below —
- * so `idf.py build` fails here in CI until the version constraints are
- * reconciled (either esp_cam_sensor 1.0.0 gets fixed upstream so the
- * newer esp_video/esp_h264/esp_cam_sensor trio this file wants can be
- * pinned instead, or this file is rewritten against the older esp_h264
- * API actually resolvable today). Not yet hit on real hardware — the PCB
- * itself is still unpopulated (hardware/pcb/KNOWN_GAPS.md).
+ * sdkconfig.rename breaks kconfgen — a registry-side bug, not this repo's),
+ * which resolves esp_video 0.8.x + esp_h264 1.1.x. This file therefore
+ * avoids newer-only conveniences (e.g. ESP_H264_ENC_HW_CFG_DEFAULT, added
+ * after 1.1.x) and sticks to the API surface common to 1.1.x and current.
+ * Once esp_cam_sensor 1.0.0 is fixed upstream, the pins can move forward
+ * without touching this file.
  * SPDX-License-Identifier: MIT */
 #include <fcntl.h>
 #include <string.h>
@@ -102,12 +99,17 @@ static void video_task(void *arg)
                 vTaskDelay(pdMS_TO_TICKS(500));
                 continue;
             }
-            esp_h264_enc_cfg_hw_t cfg = ESP_H264_ENC_HW_CFG_DEFAULT();
+            /* No ESP_H264_ENC_HW_CFG_DEFAULT(): the esp_h264 1.1.x that the
+             * esp_cam_sensor <1.0.0 pin resolves (see idf_component.yml)
+             * predates that macro — explicit init works there and on newer. */
+            esp_h264_enc_cfg_hw_t cfg = {0};
             cfg.gop = 30;
             cfg.fps = 30;
             cfg.res.width = w;
             cfg.res.height = h;
             cfg.rc.bitrate = (h == 1080) ? 4 * 1000 * 1000 : 2 * 1000 * 1000;
+            cfg.rc.qp_min = 10; /* bitrate-driven RC over the full QP range */
+            cfg.rc.qp_max = 51;
             cfg.pic_type = ESP_H264_RAW_FMT_I420;
             if (esp_h264_enc_hw_new(&cfg, &enc) != ESP_H264_ERR_OK ||
                 esp_h264_enc_open(enc) != ESP_H264_ERR_OK) {
