@@ -19,6 +19,7 @@
       <a href="#specs">Specs</a>
       <a href="#design">Design</a>
       <a href="#variants">Variants</a>
+      <a href="#pcb">PCB</a>
       <a href="#build">How it's built</a>
       <a href="#gallery">Gallery</a>
       <a href="#order">Build one</a>
@@ -209,7 +210,18 @@
           for the STRATOS extensions.</p>
       </div>
     </div>
-    <div class="grid g2" style="margin-top:20px">
+  </div>
+</section>
+
+<!-- ───────────────────────── PCB ───────────────────────── -->
+<section id="pcb">
+  <div class="wrap">
+    <h2>One board, everything on it</h2>
+    <p class="sub">A compact 38×74 mm, double-sided mainboard generated straight from
+      <code>design.py</code> — ESP32-P4 flight MCU with a hardware H.264 pipeline,
+      an ESP32-C6 for Wi-Fi 6, and the full IMU / barometer / ToF / optical-flow sensor
+      suite, all courtyard-checked so nothing overlaps.</p>
+    <div class="grid g3">
       <div class="card">
         <div class="ph"><img src="assets/pcb/component_map.jpg" alt="PCB component map, top and bottom"></div>
         <div class="bd"><h3>Every reference, mapped</h3>
@@ -218,12 +230,21 @@
       </div>
       <div class="card">
         <div class="ph"><img src="assets/pcb/top.jpg" alt="PCB top render, routed"></div>
-        <div class="bd"><h3>Routed, in progress</h3>
-          <p>Placement is clean and courtyard-checked; the bulk of the signal routing is
-            done (AI-assisted, then hand-finished) with four copper planes poured. See
-            <code>KNOWN_GAPS.md</code> for exactly what's left before you order.</p></div>
+        <div class="bd"><h3>Top — MCU, RF, motor drivers</h3>
+          <p>ESP32-P4 + C6 down the spine, motor FETs in the corners, USB-C on the
+            edge. Four copper planes poured (GND ×2, 3V3, VBAT).</p></div>
+      </div>
+      <div class="card">
+        <div class="ph"><img src="assets/pcb/bottom.jpg" alt="PCB bottom render, sensor side"></div>
+        <div class="bd"><h3>Bottom — the sensor side</h3>
+          <p>ToF + optical-flow looking straight down through a dedicated aperture in
+            the VBAT pour, clear of copper.</p></div>
       </div>
     </div>
+    <p class="sub" style="margin-top:22px">Placement is done and clean; the bulk of the
+      signal routing is done too (AI-assisted, then hand-finished), with ~106
+      connections left — see <code>hardware/pcb/KNOWN_GAPS.md</code> for the exact list
+      before you order.</p>
   </div>
 </section>
 
@@ -249,6 +270,7 @@
       <a href="assets/concept/6.jpg"><img src="assets/concept/6.jpg" alt="Concept render" loading="lazy"></a>
       <a href="assets/concept/7.jpg"><img src="assets/concept/7.jpg" alt="Concept render" loading="lazy"></a>
       <a href="assets/pcb/top.jpg"><img src="assets/pcb/top.jpg" alt="PCB top, routed" loading="lazy"></a>
+      <a href="assets/pcb/bottom.jpg"><img src="assets/pcb/bottom.jpg" alt="PCB bottom, sensor side" loading="lazy"></a>
       <a href="assets/cad/section.jpg"><img src="assets/cad/section.jpg" alt="Battery-over-board cross-section" loading="lazy"></a>
       <a href="assets/concept/8.jpg"><img src="assets/concept/8.jpg" alt="Concept render" loading="lazy"></a>
       <a href="assets/concept/9.jpg"><img src="assets/concept/9.jpg" alt="Concept render" loading="lazy"></a>
