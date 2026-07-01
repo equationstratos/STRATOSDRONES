@@ -2,8 +2,8 @@
 
 A single-page, dependency-free presentation of the project: hero, specs vs the
 DJI Tello EDU, the Tello-look double-strut design, the real clip-on prop
-guards, how the project is built, and a gallery of the concept brief + CAD/PCB
-renders.
+guards, a live embedded 3-D viewer, the PCB, how the project is built, and a
+gallery of the concept brief + CAD/PCB renders.
 
 Plain HTML/CSS/JS — **no build step**, no frameworks, no tracking.
 
@@ -13,9 +13,19 @@ Plain HTML/CSS/JS — **no build step**, no frameworks, no tracking.
 |---|---|
 | `index.html` | the page |
 | `style.css` | dark, minimal theme |
+| `viewer.html` | the interactive 3-D viewer, embedded live via `<iframe>` in the "Spin it around yourself" section — a straight copy of `sim/viz/drone_viewer.html` (self-contained, ~5 MB, no external requests) |
 | `assets/concept/*.jpg` | the original concept brief (resized from `/g`) |
 | `assets/cad/*.jpg` | OpenSCAD renders of the `tello_style` v2 airframe (hero, arms, battery, guards, iso/front/side/underside/section) |
-| `assets/pcb/*.jpg` | the PCB component map and a routed board render |
+| `assets/pcb/*.jpg` | the PCB component map and routed top/bottom renders |
+
+## Refreshing the embedded viewer
+
+`viewer.html` is a plain copy — after regenerating the real one, just copy it over:
+
+```bash
+python3 sim/viz/gen_viewer.py
+cp sim/viz/drone_viewer.html site/viewer.html
+```
 
 ## View locally
 

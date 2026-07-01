@@ -15,6 +15,12 @@ MOTORS = [for (sx=[-1,1], sy=[-1,1]) [sx,sy]];
 color("#9298a3") body_bottom_v2();
 color("#2f6fed") translate([0,0,13]) capot();
 
+// camera lens detail (semi-final look) — a dark barrel just inside the nose hole.
+translate([0,-38,6.5]) rotate([90,0,0]) {
+    color("#101216") cylinder(d=8, h=3, $fn=32);
+    color("#3a4a63") translate([0,0,2.4]) cylinder(d=4.6, h=0.6, $fn=32);
+}
+
 for (m = MOTORS) {
     mx = m[0]*motor_off; my = m[1]*motor_off;
     a = atan2(my, mx);
@@ -23,4 +29,18 @@ for (m = MOTORS) {
             rotate([0,0,a])
                 scale([1.2,1.2,0.69])
                     import("../../../sim/viz/guard.stl");
+
+    // 8520 motor pressed into the pod — can + top bell, matching gen_viewer.py's
+    // frame-mode motor (zcyl 8.5mm dia x 20mm can, 8.8/8.0mm x 5mm bell on top).
+    color("#474d57") translate([mx,my,10]) cylinder(d=8.5, h=20, center=true, $fn=32);
+    color("#2b303a") translate([mx,my,19.5]) cylinder(d1=8.8, d2=8.0, h=5, center=true, $fn=32);
+
+    // real Tello prop (38.1mm radius, hub at origin) — front pair blue like the
+    // capot/UI accent, rear pair dark, matching sim/viz/gen_viewer.py's buildProp().
+    front = (m[1] < 0);                 // nose is -Y (camera hole side)
+    cw    = (m[0] > 0) == (m[1] < 0);   // same rule as gen_viewer.py
+    color(front ? "#2f6fed" : "#20242c")
+        translate([mx, my, 20.5])
+            scale([1, cw ? 1 : -1, 1])   // mirror Y for CCW props
+                import("../../../sim/viz/prop.stl");
 }
