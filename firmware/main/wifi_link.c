@@ -58,7 +58,18 @@ void wifi_link_start(void)
         esp_wifi_connect();
         ESP_LOGI(TAG, "STA mode, joining '%s' (swarm)", ssid);
     } else {
-        esp_netif_create_default_wifi_ap();
+        esp_netif_t *ap_netif = esp_netif_create_default_wifi_ap();
+        /* Pin the AP to the real Tello's address (192.168.10.1), not the
+         * ESP-IDF default (192.168.4.1) — every Tello SDK client, incl.
+         * djitellopy and this repo's own docs, hardcodes the Tello IP. */
+        ESP_ERROR_CHECK(esp_netif_dhcps_stop(ap_netif));
+        esp_netif_ip_info_t ip_info = {
+            .ip      = { .addr = ESP_IP4TOADDR(192, 168, 10, 1) },
+            .gw      = { .addr = ESP_IP4TOADDR(192, 168, 10, 1) },
+            .netmask = { .addr = ESP_IP4TOADDR(255, 255, 255, 0) },
+        };
+        ESP_ERROR_CHECK(esp_netif_set_ip_info(ap_netif, &ip_info));
+        ESP_ERROR_CHECK(esp_netif_dhcps_start(ap_netif));
         uint8_t mac[6];
         esp_read_mac(mac, ESP_MAC_WIFI_SOFTAP);
         wifi_config_t wc = {0};
