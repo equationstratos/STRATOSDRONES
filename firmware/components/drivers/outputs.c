@@ -72,6 +72,7 @@ esp_err_t vbat_init(void)
     };
     ESP_RETURN_ON_ERROR(adc_oneshot_config_channel(s_adc, VBAT_ADC_CHANNEL, &ccfg),
                         TAG, "adc chan");
+#if ADC_CALI_SCHEME_CURVE_FITTING_SUPPORTED
     const adc_cali_curve_fitting_config_t cal = {
         .unit_id = VBAT_ADC_UNIT,
         .chan = VBAT_ADC_CHANNEL,
@@ -79,6 +80,9 @@ esp_err_t vbat_init(void)
         .bitwidth = ADC_BITWIDTH_DEFAULT,
     };
     s_cali_ok = adc_cali_create_scheme_curve_fitting(&cal, &s_cali) == ESP_OK;
+#else
+    s_cali_ok = false; /* fall back to the raw-read estimate in vbat_read() */
+#endif
     return ESP_OK;
 }
 
