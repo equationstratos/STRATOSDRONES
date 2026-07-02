@@ -18,6 +18,21 @@ display needed) is still safe to re-run for extra power-stitch vias.
 Don't burn more time re-attempting the exact headless flow below without a
 different Freerouting version or a real display (Fallback B).
 
+**A custom in-repo grid router was written and run** to try to close the 106
+without Freerouting (`scripts/finish_routing.py` — clearance-correct A* on a
+0.1 mm grid, F.Cu/B.Cu, tiers 0.15→0.127 mm, exact SHAPE::Collide checks,
+differential MIPI/USB/crystal excluded; plus `scripts/stitch_planes.py` for
+plane ties). **It closes essentially nothing new on this board, and that is
+the expected result, not a bug** — verified with `GetUnconnectedCount`:
+(1) the plane pads are already thermal-tied by the fill (19 stitch vias →
+count unchanged `106→106`), so the 106 are all signal/local-power links; and
+(2) every stuck signal net has an endpoint pad **boxed in** by neighbouring
+pins' already-routed escape tracks (0 free grid neighbours), so closing them
+needs **push-and-shove** rip-up routing that a greedy one-net-at-a-time A*
+can't do. Net: use KiCad's **interactive router** (it shoves) or a desktop
+autorouter — the scripts stay as the clearance-checker / island analyser and
+the DSN/SES import path, not as a finisher for this layout.
+
 `scripts/route_board.py` runs a fully-automated route in this repo (this is
 how the *existing* 1384/172 got there, across earlier sessions):
 

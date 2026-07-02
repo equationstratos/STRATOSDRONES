@@ -42,6 +42,28 @@ JLCPCB. Items are ordered roughly by risk.
    config issue — don't re-attempt the same headless flow without a
    different Freerouting version. `connect_power()` (pure `pcbnew`, no
    Freerouting) is safe to re-run any time and needs no display.
+   **Also tried and confirmed insufficient: a custom `pcbnew` grid router**
+   (`scripts/finish_routing.py`, a clearance-correct A* on a 0.1 mm grid over
+   F.Cu/B.Cu with two rule tiers 0.15→0.127 mm, exact SHAPE::Collide
+   re-verification, antenna-keepout + board-edge blocking, differential
+   MIPI/USB/crystal excluded) **and a plane-tie helper**
+   (`scripts/stitch_planes.py`). Two hard facts came out of it, both measured
+   with `GetUnconnectedCount(False)`:
+   - **The plane pads are already connected.** Adding 19 clearance-checked
+     GND/3V3/VBAT stitch vias moved the count `106 → 106`: those pads are
+     already tied to their pour by the zone fill's thermal spokes (the
+     earlier `HitTestFilledArea`-at-pad-centre reading that suggested "islands"
+     is a false negative — the centre is the drill hole, not copper). So the
+     106 are **entirely signal / local-power links**, not missing plane ties.
+   - **The remaining signal pads are boxed in.** For each stuck net at least
+     one endpoint pad has **zero free grid neighbours** — the neighbouring
+     pins' already-routed escape tracks wall it off (e.g. `M1_G`: both
+     endpoints have 0 free exits; `I2C_SDA`/`SPI_MOSI`: the U1 destination pad
+     has 0). Connecting them means ripping up and re-routing those neighbours
+     — **push-and-shove routing**, which a one-net-at-a-time greedy A* cannot
+     do. This is a property of the dense layout around the 100-pin P4 QFN, not
+     a solver bug. Only a shove-capable router (KiCad's interactive router, or
+     a desktop autorouter) closes them.
    **Fastest path to finish, pick one:**
    (a) **KiCad directly** (recommended — the gap is small): open
    `stratosdrone.kicad_pcb`, route the ~106 ratsnest lines by hand or with
