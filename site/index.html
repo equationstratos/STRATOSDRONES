@@ -21,6 +21,7 @@
       <a href="#variants">Variants</a>
       <a href="#viewer3d">3-D Viewer</a>
       <a href="#playground">Playground</a>
+      <a href="#swarm">Swarm</a>
       <a href="#build">How it's built</a>
       <a href="#pcb">PCB</a>
       <a href="#gallery">Gallery</a>
@@ -103,7 +104,7 @@
         <tr><td>Sensors</td><td>IMU, baro, ToF, optical flow</td><td>ICM-42688-P · SPL06-001 · VL53L1X · PMW3901</td></tr>
         <tr><td>Camera</td><td>5 MP, 720p30 H.264</td><td>OV5647 5 MP MIPI-CSI · <b>HW H.264 720p30 + 1080p30</b></td></tr>
         <tr><td>SDK</td><td>Tello SDK 2.0</td><td><b>wire-compatible</b> incl. video + extensions</td></tr>
-        <tr><td>Swarm</td><td>STA mode on shared AP</td><td>identical, <b>plus simulated swarms</b></td></tr>
+        <tr><td>Swarm</td><td>STA mode on shared AP</td><td>identical — <b><a href="#swarm">fly a swarm in your browser ↓</a></b></td></tr>
         <tr><td>Simulation</td><td>none</td><td><b>full Gazebo Harmonic twin</b></td></tr>
         <tr><td>License</td><td>closed</td><td><b>MIT · CERN-OHL-P · CC-BY</b></td></tr>
       </tbody>
@@ -193,7 +194,7 @@
       <a class="btn p" href="viewer.html" target="_blank" rel="noopener">⛶ Open full-screen</a>
     </div>
     <div style="border:1px solid var(--line);border-radius:var(--r);overflow:hidden">
-      <iframe id="mainViewer" src="viewer.html" title="Stratos Drones Fr4n7-001 interactive 3-D viewer"
+      <iframe id="mainViewer" data-cfg src="viewer.html" title="Stratos Drones Fr4n7-001 interactive 3-D viewer"
         style="width:100%;height:720px;border:0;display:block;background:#0d1117"
         loading="lazy"></iframe>
     </div>
@@ -214,13 +215,62 @@
       <a class="btn p" href="viewer.html?playground=1" target="_blank" rel="noopener">⛶ Open playground full-screen</a>
     </div>
     <div style="border:1px solid var(--line);border-radius:var(--r);overflow:hidden">
-      <iframe id="playViewer" src="viewer.html?playground=1" title="Stratos Drones Fr4n7-001 flight playground"
+      <iframe id="playViewer" data-cfg src="viewer.html?playground=1" title="Stratos Drones Fr4n7-001 flight playground"
         style="width:100%;height:640px;border:0;display:block;background:#0d1117"
         loading="lazy"></iframe>
     </div>
     <p class="mini" style="margin-top:12px;color:var(--mut)">Kinematics imitate the real
       flight constants (1 m/s cruise, ~96°/s yaw, 0.8 m takeoff) — enough to feel like the
-      sim, without the PID internals.</p>
+      sim, without the PID internals. The repo's control scripts
+      (<code>sdk/python/examples</code>) are loaded as one-click presets in the panel.</p>
+  </div>
+</section>
+
+<!-- ───────────────────────── swarm ───────────────────────── -->
+<section id="swarm">
+  <div class="wrap">
+    <h2>Fly a whole swarm</h2>
+    <p class="sub">Swarming is a first-class feature, not a footnote. Like the Tello EDU,
+      every drone joins your Wi-Fi in STA mode (<code>ap ssid pass</code>) over the
+      ESP32-C6's <strong>Wi-Fi 6</strong> link — then djitellopy's stock
+      <code>TelloSwarm</code> flies them all, <strong>unmodified</strong>, in simulation
+      and on hardware alike. Below: three Fr4n7-001s running the repo's real swarm
+      script, live in your browser. Buying for a classroom or a fleet? That's what the
+      <a href="#configurator">$99–$79 volume tiers</a> are for.</p>
+    <div class="viewer-bar">
+      <a class="btn p" href="viewer.html?playground=1&amp;drones=3&amp;preset=swarm" target="_blank" rel="noopener">⛶ Open swarm demo full-screen</a>
+    </div>
+    <div style="border:1px solid var(--line);border-radius:var(--r);overflow:hidden">
+      <iframe id="swarmViewer" data-cfg src="viewer.html?playground=1&amp;drones=3&amp;preset=swarm"
+        title="Stratos Drones Fr4n7-001 swarm demo — three drones"
+        style="width:100%;height:640px;border:0;display:block;background:#0d1117"
+        loading="lazy"></iframe>
+    </div>
+    <div class="grid g2" style="margin-top:26px">
+      <div class="feat">
+        <h3><span class="d">◆</span>The exact script, in Python</h3>
+        <p style="margin-bottom:10px"><code>sdk/python/examples/03_swarm.py</code> — spawn three simulated
+          drones, fly staggered legs in parallel, land together:</p>
+<pre class="code"><code>sitls = [spawn_sitl(index=i) for i in (2, 3, 4)]
+swarm = TelloSwarm.fromIps([s.ip for s in sitls])
+swarm.connect()
+swarm.takeoff()
+swarm.parallel(lambda i, t: t.go_xyz_speed(60 + 40*i, (i-1)*80, 0, 60))
+swarm.parallel(lambda i, t: t.rotate_clockwise(120 * (i + 1)))
+swarm.land()</code></pre>
+        <p class="mini" style="margin-top:10px">
+          <a class="acc" href="https://github.com/equationstratos/STRATOSDRONE/blob/claude/cool-ride-w1bpia/sdk/python/examples/03_swarm.py" target="_blank" rel="noopener">03_swarm.py on GitHub →</a></p>
+      </div>
+      <div class="feat">
+        <h3><span class="d">◆</span>From browser to Gazebo to the sky</h3>
+        <p>The demo above mirrors that script command-for-command (press <em>Run</em> in
+          the panel, or edit it — arguments accept expressions in the drone index
+          <code>i</code>). The next step up is the real simulator:
+          <code>sim/spawn_swarm.sh 3</code> launches three Gazebo drones on loopback IPs,
+          and the <em>same</em> Python flies them. On hardware, the same Python again —
+          each drone just joins your AP first. One script, three worlds.</p>
+      </div>
+    </div>
   </div>
 </section>
 
@@ -251,8 +301,9 @@
       </div>
       <div class="feat">
         <h3><span class="d">◆</span>Sim + SDK</h3>
-        <p>Gazebo Harmonic twin with a Tello-protocol UDP endpoint and multi-drone
-          swarms, plus <code>stratospy</code> — a thin add-on over <code>djitellopy</code>
+        <p>Gazebo Harmonic twin with a Tello-protocol UDP endpoint and
+          <a href="#swarm">multi-drone swarms</a> (<code>spawn_swarm.sh 3</code>), plus
+          <code>stratospy</code> — a thin add-on over <code>djitellopy</code>
           for the STRATOS extensions.</p>
       </div>
     </div>
@@ -330,57 +381,48 @@
   <div class="wrap">
     <h2>Prefer it built? Configure yours</h2>
     <p class="sub">Colour every part — capot, body, front &amp; rear props — and watch the
-      live 3-D preview update as you go. Volume pricing: <strong>690 € down to 500 €</strong>
-      per drone at 10. <em>Prototype checkout — no payment is processed yet.</em></p>
+      live 3-D preview update as you go. Volume pricing: <strong>$149 → $79 / drone</strong>
+      — $149 (1–2), $129 (3–5), $99 (6–11), $79 (12). <em>Prototype checkout — no payment
+      is processed yet.</em></p>
     <div class="configurator">
       <div class="cfg-preview">
-        <iframe id="cfgViewer" title="Stratos Drones Fr4n7-001 configured preview"
+        <iframe id="cfgViewer" data-cfg title="Stratos Drones Fr4n7-001 configured preview"
           src="viewer.html?embed=1&amp;body=%239298a3&amp;capot=%232f6fed&amp;pf=%232f6fed&amp;pr=%231b1e24"
           loading="lazy"></iframe>
       </div>
       <div class="cfg-panel">
         <div class="cfg-name" id="cfgName">Stratos Drones Fr4n7-001 — Signature Blue</div>
-        <div class="cfg-price" id="cfgPrice">690 €</div>
+        <div class="cfg-price" id="cfgPrice">$149</div>
         <div class="cfg-price-note" id="cfgPriceNote">per drone · 1 unit</div>
 
-        <div class="cfg-row-label">Capot</div>
-        <div class="swatches" data-part="capot">
-          <button class="sw-btn on" data-hex="#2f6fed" data-label="Signature Blue"  title="Signature Blue"></button>
-          <button class="sw-btn"    data-hex="#e9edf3" data-label="Arctic White"    title="Arctic White"></button>
-          <button class="sw-btn"    data-hex="#1b1e24" data-label="Stealth Black"   title="Stealth Black"></button>
-          <button class="sw-btn"    data-hex="#9298a3" data-label="Graphite Grey"   title="Graphite Grey"></button>
-          <button class="sw-btn"    data-hex="#d6293b" data-label="Racing Red"      title="Racing Red"></button>
-          <button class="sw-btn"    data-hex="#e6730d" data-label="Heritage Orange" title="Heritage Orange"></button>
-        </div>
-
-        <div class="cfg-row-label" style="margin-top:16px">Body</div>
-        <div class="swatches" data-part="body">
-          <button class="sw-btn"    data-hex="#2f6fed" data-label="Signature Blue"  title="Signature Blue"></button>
-          <button class="sw-btn"    data-hex="#e9edf3" data-label="Arctic White"    title="Arctic White"></button>
-          <button class="sw-btn"    data-hex="#1b1e24" data-label="Stealth Black"   title="Stealth Black"></button>
-          <button class="sw-btn on" data-hex="#9298a3" data-label="Graphite Grey"   title="Graphite Grey"></button>
-          <button class="sw-btn"    data-hex="#d6293b" data-label="Racing Red"      title="Racing Red"></button>
-          <button class="sw-btn"    data-hex="#e6730d" data-label="Heritage Orange" title="Heritage Orange"></button>
-        </div>
-
-        <div class="cfg-row-label" style="margin-top:16px">Front props</div>
-        <div class="swatches" data-part="pf">
-          <button class="sw-btn on" data-hex="#2f6fed" data-label="Signature Blue"  title="Signature Blue"></button>
-          <button class="sw-btn"    data-hex="#e9edf3" data-label="Arctic White"    title="Arctic White"></button>
-          <button class="sw-btn"    data-hex="#1b1e24" data-label="Stealth Black"   title="Stealth Black"></button>
-          <button class="sw-btn"    data-hex="#9298a3" data-label="Graphite Grey"   title="Graphite Grey"></button>
-          <button class="sw-btn"    data-hex="#d6293b" data-label="Racing Red"      title="Racing Red"></button>
-          <button class="sw-btn"    data-hex="#e6730d" data-label="Heritage Orange" title="Heritage Orange"></button>
-        </div>
-
-        <div class="cfg-row-label" style="margin-top:16px">Rear props</div>
-        <div class="swatches" data-part="pr">
-          <button class="sw-btn"    data-hex="#2f6fed" data-label="Signature Blue"  title="Signature Blue"></button>
-          <button class="sw-btn"    data-hex="#e9edf3" data-label="Arctic White"    title="Arctic White"></button>
-          <button class="sw-btn on" data-hex="#1b1e24" data-label="Stealth Black"   title="Stealth Black"></button>
-          <button class="sw-btn"    data-hex="#9298a3" data-label="Graphite Grey"   title="Graphite Grey"></button>
-          <button class="sw-btn"    data-hex="#d6293b" data-label="Racing Red"      title="Racing Red"></button>
-          <button class="sw-btn"    data-hex="#e6730d" data-label="Heritage Orange" title="Heritage Orange"></button>
+        <div class="cfg-row-label">Colours <span class="cfg-hint">— click a dot to pick
+          from 18 shades or any custom colour</span></div>
+        <div class="cfg-colors">
+          <div class="cfg-color" data-part="capot">
+            <span class="cc-label">Capot</span>
+            <button class="sw-btn cc-chip" type="button" aria-label="Choose the capot colour"></button>
+            <span class="cc-name"></span>
+          </div>
+          <div class="cfg-color" data-part="body">
+            <span class="cc-label">Body</span>
+            <button class="sw-btn cc-chip" type="button" aria-label="Choose the body colour"></button>
+            <span class="cc-name"></span>
+          </div>
+          <div class="cfg-color" data-part="pf">
+            <span class="cc-label">Front props</span>
+            <button class="sw-btn cc-chip" type="button" aria-label="Choose the front props colour"></button>
+            <span class="cc-name"></span>
+          </div>
+          <div class="cfg-color" data-part="pr">
+            <span class="cc-label">Rear props</span>
+            <button class="sw-btn cc-chip" type="button" aria-label="Choose the rear props colour"></button>
+            <span class="cc-name"></span>
+          </div>
+          <div id="ccPop" class="cc-pop" hidden>
+            <div class="cc-grid" id="ccGrid"></div>
+            <label class="cc-custom">Custom
+              <input type="color" id="ccCustom" value="#2f6fed"></label>
+          </div>
         </div>
 
         <div class="cfg-row-label" style="margin-top:18px">Quantity</div>
@@ -390,8 +432,10 @@
           <button id="qtyPlus" type="button">+</button>
         </div>
         <button class="btn p" id="addToCart" style="margin-top:22px;width:100%">Add to cart</button>
+        <button class="btn" id="cfgReset" type="button" style="margin-top:10px;width:100%">↺ Reset configurator</button>
         <p class="mini" style="color:var(--mut);margin-top:10px">Assembled board + printed
-          frame in the colours above, guards and battery included. Ships once routing is
+          frame in the colours above, guards and battery included. Your colours follow you —
+          the 3-D viewer, playground and swarm demos all wear them. Ships once routing is
           finished — see <code>KNOWN_GAPS.md</code>.</p>
       </div>
     </div>
@@ -485,7 +529,7 @@
   <div class="cart-head"><b>Your cart</b><button class="cart-close" id="cartClose" aria-label="Close cart">&times;</button></div>
   <div class="cart-items" id="cartItems"></div>
   <div class="cart-foot">
-    <div class="cart-total"><span>Total</span><span id="cartTotal">0 €</span></div>
+    <div class="cart-total"><span>Total</span><span id="cartTotal">$0</span></div>
     <button class="btn p" id="cartCheckout" style="width:100%">Checkout</button>
     <p class="mini" style="color:var(--mut);margin:8px 0 0">Prototype — no payment is
       processed. Wire <code>#cartCheckout</code> up to a real payment flow.</p>
@@ -495,64 +539,147 @@
 <!-- configurator + cart -->
 <script>
 (function(){
-  // ---- pricing: degressive €, floor 500 €/unit at qty >= 10 ----------------
-  var P1 = 690, P10 = 500, CUR = '€';
-  function unitPrice(q){ q = Math.max(1, Math.min(10, q));
-    return q >= 10 ? P10 : Math.round(P1 + (P10 - P1) * (q - 1) / 9); }
-  function eur(n){ return n.toLocaleString('fr-FR') + ' ' + CUR; }
+  // ---- tiered USD volume pricing (per unit): $149 (1-2) / $129 (3-5) /
+  //      $99 (6-11) / $79 (12). Lower tier applies to every unit at threshold.
+  function unitPrice(q){ q = Math.max(1, Math.min(12, q));
+    if (q >= 12) return 79;
+    if (q >= 6)  return 99;
+    if (q >= 3)  return 129;
+    return 149; }
+  function usd(n){ return '$' + n.toLocaleString('en-US'); }   // $149, $1,548
+  // hint the next price break while below the top tier
+  function tierHint(q){ if (q < 3) return ' · $129/ea at 3+';
+    if (q < 6) return ' · $99/ea at 6+'; if (q < 12) return ' · $79/ea at 12'; return ''; }
 
   var CART_KEY = 'stratosdrones_cart_v2';
-  // default configuration = the iframe's initial ?…colours
-  var parts  = {capot:'#2f6fed', body:'#9298a3', pf:'#2f6fed', pr:'#1b1e24'};
-  var labels = {capot:'Signature Blue', body:'Graphite Grey', pf:'Signature Blue', pr:'Stealth Black'};
+  var CFG_KEY  = 'stratosdrones_cfg_v1';
+  // 18 curated shades; "Custom" (native colour input) covers everything else
+  var PALETTE = [
+    ['#2f6fed','Signature Blue'], ['#63a4ff','Sky Blue'],    ['#1e3a8a','Navy'],
+    ['#14b8a6','Teal'],           ['#2e9e44','Green'],       ['#84cc16','Lime'],
+    ['#eab308','Yellow'],         ['#e6730d','Heritage Orange'], ['#d6293b','Racing Red'],
+    ['#b91c5c','Magenta'],        ['#ec4899','Pink'],        ['#8b5cf6','Purple'],
+    ['#e9edf3','Arctic White'],   ['#c7ccd4','Silver'],      ['#9298a3','Graphite Grey'],
+    ['#4b5563','Slate'],          ['#2b303a','Gunmetal'],    ['#1b1e24','Stealth Black']
+  ];
+  var DEFAULTS = {
+    parts:  {capot:'#2f6fed', body:'#9298a3', pf:'#2f6fed', pr:'#1b1e24'},
+    labels: {capot:'Signature Blue', body:'Graphite Grey', pf:'Signature Blue', pr:'Stealth Black'}
+  };
+  var parts  = {capot:DEFAULTS.parts.capot, body:DEFAULTS.parts.body, pf:DEFAULTS.parts.pf, pr:DEFAULTS.parts.pr};
+  var labels = {capot:DEFAULTS.labels.capot, body:DEFAULTS.labels.body, pf:DEFAULTS.labels.pf, pr:DEFAULTS.labels.pr};
+  try { var saved = JSON.parse(localStorage.getItem(CFG_KEY));
+    if (saved && saved.parts && saved.labels){
+      ['capot','body','pf','pr'].forEach(function(k){
+        if (/^#[0-9a-fA-F]{6}$/.test(saved.parts[k] || '')){ parts[k]=saved.parts[k]; labels[k]=String(saved.labels[k]||saved.parts[k]); }
+      });
+    } } catch(e){}
   var qty = 1;
 
-  var cfgViewer    = document.getElementById('cfgViewer');
   var cfgName      = document.getElementById('cfgName');
   var cfgPrice     = document.getElementById('cfgPrice');
   var cfgPriceNote = document.getElementById('cfgPriceNote');
   var qtyVal       = document.getElementById('qtyVal');
-  var groups       = document.querySelectorAll('.configurator .swatches[data-part]');
 
-  document.querySelectorAll('.configurator .sw-btn').forEach(function(btn){
-    btn.style.setProperty('--sw', btn.dataset.hex);
-  });
-
-  function sendColors(){
-    if (!cfgViewer || !cfgViewer.contentWindow) return;
-    cfgViewer.contentWindow.postMessage({type:'colors',
-      body:parts.body, capot:parts.capot, propFront:parts.pf, propRear:parts.pr}, '*');
+  function saveCfg(){ try { localStorage.setItem(CFG_KEY, JSON.stringify({parts:parts, labels:labels})); } catch(e){} }
+  // your colours follow you: broadcast to EVERY embedded viewer (configurator
+  // preview, main 3-D viewer, playground, swarm demo)
+  function colorMsg(){ return {type:'colors', body:parts.body, capot:parts.capot,
+                               propFront:parts.pf, propRear:parts.pr}; }
+  function sendColors(target){
+    if (target){ try { target.postMessage(colorMsg(), '*'); } catch(e){} return; }
+    document.querySelectorAll('iframe[data-cfg]').forEach(function(f){
+      if (f.contentWindow){ try { f.contentWindow.postMessage(colorMsg(), '*'); } catch(e){} }
+    });
   }
   function refreshName(){ cfgName.textContent = 'Stratos Drones Fr4n7-001 — ' + labels.capot; }
   function refreshPrice(){
     var u = unitPrice(qty);
-    cfgPrice.textContent = eur(u);
+    cfgPrice.textContent = usd(u);
     cfgPriceNote.textContent = (qty === 1)
-      ? 'per drone · 1 unit'
-      : 'per drone · ' + qty + ' units · ' + eur(u * qty) + ' total';
+      ? 'per drone · 1 unit' + tierHint(qty)
+      : 'per drone · ' + qty + ' units · ' + usd(u * qty) + ' total' + tierHint(qty);
   }
 
-  groups.forEach(function(group){
-    var part = group.dataset.part;
-    group.addEventListener('click', function(e){
-      var btn = e.target.closest('.sw-btn'); if (!btn) return;
-      parts[part] = btn.dataset.hex; labels[part] = btn.dataset.label;
-      group.querySelectorAll('.sw-btn').forEach(function(b){ b.classList.toggle('on', b === btn); });
-      sendColors(); refreshName();
+  // ---- colour rows + shared popover picker ---------------------------------
+  var rows = document.querySelectorAll('.cfg-color[data-part]');
+  var pop = document.getElementById('ccPop');
+  var grid = document.getElementById('ccGrid');
+  var custom = document.getElementById('ccCustom');
+  var popPart = null;
+  PALETTE.forEach(function(c){
+    var b = document.createElement('button');
+    b.type = 'button'; b.className = 'sw-btn';
+    b.dataset.hex = c[0]; b.dataset.label = c[1]; b.title = c[1];
+    b.style.setProperty('--sw', c[0]);
+    grid.appendChild(b);
+  });
+  function refreshChips(){
+    rows.forEach(function(row){
+      var k = row.dataset.part;
+      row.querySelector('.cc-chip').style.setProperty('--sw', parts[k]);
+      row.querySelector('.cc-name').textContent = labels[k];
+    });
+  }
+  function applyPick(hex, label){
+    if (!popPart) return;
+    parts[popPart] = hex; labels[popPart] = label;
+    refreshChips(); refreshName(); saveCfg(); sendColors(); closePop();
+  }
+  function openPop(row){
+    popPart = row.dataset.part;
+    grid.querySelectorAll('.sw-btn').forEach(function(b){
+      b.classList.toggle('on', b.dataset.hex.toLowerCase() === parts[popPart].toLowerCase());
+    });
+    custom.value = parts[popPart];
+    pop.hidden = false;
+    pop.style.top = (row.offsetTop + row.offsetHeight + 6) + 'px';
+  }
+  function closePop(){ pop.hidden = true; popPart = null; }
+  rows.forEach(function(row){
+    row.querySelector('.cc-chip').addEventListener('click', function(e){
+      e.stopPropagation();
+      if (!pop.hidden && popPart === row.dataset.part) closePop(); else openPop(row);
     });
   });
-
-  // (re)send colours when the embedded viewer signals ready, and on load
-  window.addEventListener('message', function(e){
-    if (e.data && e.data.type === 'ready') sendColors();
+  grid.addEventListener('click', function(e){
+    var b = e.target.closest('.sw-btn'); if (!b) return;
+    applyPick(b.dataset.hex, b.dataset.label);
   });
-  if (cfgViewer) cfgViewer.addEventListener('load', sendColors);
+  custom.addEventListener('input', function(){
+    if (!popPart) return;
+    parts[popPart] = custom.value; labels[popPart] = 'Custom ' + custom.value;
+    refreshChips(); refreshName(); saveCfg(); sendColors();
+  });
+  custom.addEventListener('change', closePop);
+  document.addEventListener('click', function(e){
+    if (!pop.hidden && !pop.contains(e.target)) closePop();
+  });
+  document.addEventListener('keydown', function(e){ if (e.key === 'Escape') closePop(); });
+
+  // reset: back to factory colours + qty 1
+  document.getElementById('cfgReset').addEventListener('click', function(){
+    ['capot','body','pf','pr'].forEach(function(k){
+      parts[k] = DEFAULTS.parts[k]; labels[k] = DEFAULTS.labels[k];
+    });
+    qty = 1; qtyVal.textContent = qty;
+    try { localStorage.removeItem(CFG_KEY); } catch(e){}
+    refreshChips(); refreshName(); refreshPrice(); sendColors(); closePop();
+  });
+
+  // (re)send colours whenever any embedded viewer signals ready, and on load
+  window.addEventListener('message', function(e){
+    if (e.data && e.data.type === 'ready') sendColors(e.source);
+  });
+  document.querySelectorAll('iframe[data-cfg]').forEach(function(f){
+    f.addEventListener('load', function(){ sendColors(f.contentWindow); });
+  });
 
   document.getElementById('qtyMinus').addEventListener('click', function(){
     qty = Math.max(1, qty - 1); qtyVal.textContent = qty; refreshPrice();
   });
   document.getElementById('qtyPlus').addEventListener('click', function(){
-    qty = Math.min(10, qty + 1); qtyVal.textContent = qty; refreshPrice();
+    qty = Math.min(12, qty + 1); qtyVal.textContent = qty; refreshPrice();
   });
 
   // ---- cart, persisted in localStorage -------------------------------------
@@ -590,13 +717,13 @@
         row.innerHTML =
           '<div class="ci-swatches">' + sw + '</div>' +
           '<div class="ci-info"><b>Stratos Drones Fr4n7-001</b>' + desc +
-          '<br>Qty ' + item.qty + ' · ' + eur(u * item.qty) + '</div>' +
+          '<br>Qty ' + item.qty + ' · ' + usd(u * item.qty) + '</div>' +
           '<button class="ci-remove" data-idx="' + idx + '" title="Remove" aria-label="Remove">×</button>';
         cartItemsEl.appendChild(row);
       });
     }
     var total = 0; items.forEach(function(it){ total += unitPrice(it.qty) * it.qty; });
-    cartTotalEl.textContent = eur(total);
+    cartTotalEl.textContent = usd(total);
   }
 
   function openCart(){ cartDrawer.classList.add('on'); cartScrim.classList.add('on'); }
@@ -618,7 +745,7 @@
     var items = loadCart();
     var k = keyOf(parts), existing = null;
     for (var i=0;i<items.length;i++) if (keyOf(items[i].parts||{}) === k) existing = items[i];
-    if (existing) existing.qty = Math.min(10, existing.qty + qty);
+    if (existing) existing.qty = Math.min(12, existing.qty + qty);
     else items.push({parts:{capot:parts.capot,body:parts.body,pf:parts.pf,pr:parts.pr},
                      labels:{capot:labels.capot,body:labels.body,pf:labels.pf,pr:labels.pr}, qty:qty});
     saveCart(items);
@@ -630,7 +757,7 @@
     alert('Checkout is a placeholder — no payment is processed yet.');
   });
 
-  refreshName(); refreshPrice(); renderCart(); sendColors();
+  refreshChips(); refreshName(); refreshPrice(); renderCart(); sendColors();
 })();
 </script>
 </body>

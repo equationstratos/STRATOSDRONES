@@ -378,11 +378,23 @@ land</textarea>
       </div>
     </div>
     <div class="sec">
+      <h2>Scripts du dépôt</h2>
+      <div class="btns" style="grid-template-columns:repeat(3,1fr)">
+        <button id="pgP1">01 · Hover</button>
+        <button id="pgP2">02 · Carré</button>
+        <button id="pgP3">03 · Swarm ×3</button>
+      </div>
+      <div class="mini">Miroirs fidèles de <code>sdk/python/examples/*.py</code> —
+        <a href="https://github.com/equationstratos/STRATOSDRONE/tree/claude/cool-ride-w1bpia/sdk/python/examples"
+           target="_blank" rel="noopener" style="color:var(--acc2)">voir les originaux Python</a>.</div>
+    </div>
+    <div class="sec">
       <h2>État du vol</h2>
       <table>
-        <tr><td>Batterie</td><td class="v" id="pgBat">100 %</td></tr>
-        <tr><td>Altitude</td><td class="v" id="pgAlt">0 cm</td></tr>
-        <tr><td>Cap (lacet)</td><td class="v" id="pgYaw">0°</td></tr>
+        <tr><td>Drones</td><td class="v" id="pgN">1</td></tr>
+        <tr><td>Batterie (min)</td><td class="v" id="pgBat">100 %</td></tr>
+        <tr><td>Altitude (max)</td><td class="v" id="pgAlt">0 cm</td></tr>
+        <tr><td>Cap drone 1</td><td class="v" id="pgYaw">0°</td></tr>
         <tr><td>Commande</td><td class="v" id="pgCmd">—</td></tr>
       </table>
     </div>
@@ -392,8 +404,13 @@ land</textarea>
     </div>
     <div class="sec">
       <h2>Commandes</h2>
-      <div class="mini">command · takeoff · land · forward/back/left/right/up/down &lt;20-500&gt; ·
-        cw/ccw &lt;1-360&gt; · go x y z speed · flip l/r/f/b · speed &lt;10-100&gt;.<br/>
+      <div class="mini">command · <b>drones &lt;1-6&gt;</b> · takeoff · land ·
+        forward/back/left/right/up/down &lt;20-500&gt; · cw/ccw &lt;1-360&gt; ·
+        go x y z speed · flip l/r/f/b · speed &lt;10-100&gt; · <b>sleep &lt;s&gt;</b>.<br/>
+        En essaim, les arguments acceptent des expressions de l'index
+        <code>i</code> (0,1,2…, sans espaces)&nbsp;:
+        <code>go 60+40*i (i-1)*80 0 60</code> — comme
+        <code>swarm.parallel(lambda i, t: …)</code>.<br/>
         Style Python accepté&nbsp;: <code>move_forward(100); rotate_clockwise(90); flip('f');</code></div>
     </div>
   </div>
@@ -917,9 +934,26 @@ const PARAMS = new URLSearchParams(location.search);
 const EMBED  = PARAMS.has('embed');
 const PLAY   = PARAMS.has('playground');
 
-// bounded zoom: tight for inspection/embed, wide for the flight playground
-if (PLAY){ controls.minDistance = 0.3;  controls.maxDistance = 14; }
-else     { controls.minDistance = 0.05; controls.maxDistance = 0.6; }
+// bounded zoom: tight for inspection, wide for the flight playground
+if (PLAY)       { controls.minDistance = 0.3;  controls.maxDistance = 14;  }
+else if (EMBED) { controls.minDistance = 0.12; controls.maxDistance = 0.9; }
+else            { controls.minDistance = 0.05; controls.maxDistance = 0.6; }
+
+// embed: frame the WHOLE drone whatever the iframe's aspect ratio — fit the
+// bounding sphere against the smaller of the vertical/horizontal FOV.
+function fitEmbed(){
+  if (!EMBED) return;
+  const sph = new THREE.Box3().setFromObject(frameRoot)
+                .getBoundingSphere(new THREE.Sphere());
+  const vFov = camera.fov * Math.PI / 180;
+  const hFov = 2 * Math.atan(Math.tan(vFov / 2) * camera.aspect);
+  const dist = sph.radius / Math.sin(Math.min(vFov, hFov) / 2) * 1.18;
+  const dir = new THREE.Vector3(0.85, -0.85, 0.55).normalize();
+  camera.position.copy(sph.center).addScaledVector(dir, dist);
+  controls.target.copy(sph.center);
+  controls.update();
+}
+addEventListener('resize', fitEmbed);   // runs after the base resize handler
 
 // ---- live per-part recolour of the printed-frame model --------------------
 function setPartColor(part, hex){
@@ -947,12 +981,14 @@ applyColors({ body:PARAMS.get('body'), capot:PARAMS.get('capot'),
               pf:PARAMS.get('pf'), pr:PARAMS.get('pr') });
 addEventListener('message', e => {
   const m = e.data;
-  if (m && m.type === 'colors') applyColors(m);
+  if (m && m.type === 'colors'){ applyColors(m); window.__lastColors = m; }
 });
 
 if (EMBED || PLAY){
   document.body.classList.add(EMBED ? 'embed' : 'playground');
   mode = 'frame'; applyMode();
+  resize();          // the side panel just changed -> recompute canvas + aspect
+  fitEmbed();
 }
 // tell the host we're ready so the configurator can (re)send its colours
 try { if (parent && parent !== window) parent.postMessage({type:'ready'}, '*'); } catch(_){}
@@ -967,136 +1003,249 @@ const PG = (function(){
   if (!PLAY) return null;
   const DEG = Math.PI/180, SPEED0 = 1.0, YAW_RATE = 96*DEG;
   const CLIMB = 0.42, DESC = 0.45, TAKEOFF_Z = 0.8;
-  const st = { armed:false, flying:false, bat:100, speed:SPEED0,
-               yaw:0, queue:[], cur:null, running:false, flip:null };
+  const SPACING = 0.8, MAXD = 6;      // formation pitch (spawn_swarm.sh: 0.8 m in Y)
   const $ = id => document.getElementById(id);
   const logEl = $('pgLog');
   function log(msg, cls){ const d=document.createElement('div');
     if(cls) d.className=cls; d.textContent=msg; logEl.appendChild(d);
     logEl.scrollTop = logEl.scrollHeight; }
+
+  // ---- the fleet: drones[0] wraps frameRoot; extras are deep clones -------
+  // (clone children individually: frameRoot.userData holds mesh refs that
+  //  Object3D.clone() would try to JSON-copy). Materials are shared by
+  //  reference, so the configurator recolour applies to every drone.
+  const st = { armed:false, running:false, queue:[], cur:null, timer:0 };
+  const drones = [];
+  function collectProps(root){ const out=[];
+    root.traverse(o=>{ if (o.userData && o.userData.dir!==undefined && o.userData.front!==undefined) out.push(o); });
+    return out; }
+  function mkClone(){
+    const g = new THREE.Group();
+    for (const ch of frameRoot.children) g.add(ch.clone(true));
+    scene.add(g); return g; }
+  function homeY(k, n){ return (k - (n-1)/2) * SPACING; }
+  function spawn(n){
+    n = Math.max(1, Math.min(MAXD, Math.round(n)));
+    while (drones.length > n){ const d = drones.pop(); if (d.root !== frameRoot) scene.remove(d.root); }
+    if (!drones.length) drones.push({root:frameRoot, props:collectProps(frameRoot)});
+    while (drones.length < n){ const r = mkClone(); drones.push({root:r, props:collectProps(r)}); }
+    drones.forEach((d, k) => {
+      d.yaw=0; d.flying=false; d.bat=100; d.speed=SPEED0; d.job=null; d.flip=null;
+      d.root.position.set(0, homeY(k, n), 0); d.root.rotation.set(0, 0, 0);
+    });
+    readout();
+  }
   function readout(){
-    $('pgBat').textContent = Math.max(0,Math.round(st.bat)) + ' %';
-    $('pgAlt').textContent = Math.round(frameRoot.position.z*100) + ' cm';
-    let deg = Math.round(st.yaw/DEG) % 360; if (deg<0) deg+=360;
+    const n = drones.length, flying = drones.filter(d=>d.flying).length;
+    $('pgN').textContent = n + (flying ? ' · ' + flying + ' en vol' : ' au sol');
+    $('pgBat').textContent = Math.max(0,Math.round(Math.min.apply(null, drones.map(d=>d.bat)))) + ' %';
+    $('pgAlt').textContent = Math.round(Math.max.apply(null, drones.map(d=>d.root.position.z))*100) + ' cm';
+    let deg = Math.round((drones[0]?drones[0].yaw:0)/DEG) % 360; if (deg<0) deg+=360;
     $('pgYaw').textContent = deg + '°';
     $('pgCmd').textContent = st.cur ? st.cur.raw : (st.running ? '—' : 'prêt');
   }
+
+  // ---- tiny safe arithmetic in the drone index i (numbers + - * / parens) --
+  // mirrors swarm.parallel(lambda i, t: ...) staggering, e.g. go 60+40*i (i-1)*80 0 60
+  function evalExpr(src, i){
+    const s = String(src); let p = 0;
+    function fail(){ throw new Error('expr'); }
+    function prim(){
+      if (s[p]==='('){ p++; const v=sum(); if (s[p]!==')') fail(); p++; return v; }
+      if (s[p]==='-'){ p++; return -prim(); }
+      if (s[p]==='+'){ p++; return prim(); }
+      if (s[p]==='i'){ p++; return i; }
+      const m = /^\d+(\.\d+)?/.exec(s.slice(p)); if (!m) fail();
+      p += m[0].length; return parseFloat(m[0]);
+    }
+    function prod(){ let v=prim(); for(;;){ if (s[p]==='*'){p++; v*=prim();}
+      else if (s[p]==='/'){p++; v/=prim();} else return v; } }
+    function sum(){ let v=prod(); for(;;){ if (s[p]==='+'){p++; v+=prod();}
+      else if (s[p]==='-'){p++; v-=prod();} else return v; } }
+    const v = sum(); if (p !== s.length) fail(); return v;
+  }
+
   const MOVES = {forward:1,back:1,left:1,right:1,up:1,down:1};
   const ALIAS = { takeoff:'takeoff', land:'land', move_forward:'forward', move_back:'back',
     move_left:'left', move_right:'right', move_up:'up', move_down:'down',
     rotate_clockwise:'cw', rotate_counter_clockwise:'ccw', flip:'flip',
-    set_speed:'speed', go_xyz_speed:'go' };
+    set_speed:'speed', go_xyz_speed:'go', sleep:'sleep', time_sleep:'sleep' };
   function normalize(line){
     let s = line.replace(/#.*$/,'').replace(/;+\s*$/,'').trim(); if (!s) return '';
-    const m = s.match(/^([A-Za-z_]+)\s*\((.*)\)\s*$/);
-    if (m){ const verb = ALIAS[m[1]] || m[1];
+    const m = s.match(/^([A-Za-z_.]+)\s*\((.*)\)\s*$/);
+    if (m){ const verb = ALIAS[m[1].replace('.','_')] || m[1];
       const args = m[2].split(',').map(a=>a.trim().replace(/^['"]|['"]$/g,'')).filter(a=>a.length);
       return (verb + ' ' + args.join(' ')).trim(); }
     const t = s.split(/\s+/); if (ALIAS[t[0]]) t[0]=ALIAS[t[0]]; return t.join(' ');
   }
+  // numeric args stay as EXPRESSION STRINGS, evaluated per drone at dispatch
   function parse(line){
     const s = normalize(line); if (!s) return null;
-    const t = s.split(/\s+/), op = t[0].toLowerCase(), num = i => parseFloat(t[i]);
+    const t = s.split(/\s+/), op = t[0].toLowerCase();
     if (['command','takeoff','land','stop','emergency','streamon','streamoff'].includes(op))
       return {op, raw:s};
-    if (MOVES[op]){ const d=num(1);
-      if (!(d>=20 && d<=500)) return {error:'error (20-500 cm)', raw:s}; return {op, n:d, raw:s}; }
-    if (op==='cw' || op==='ccw'){ const d=num(1);
-      if (!(d>=1 && d<=360)) return {error:'error (1-360°)', raw:s}; return {op, n:d, raw:s}; }
-    if (op==='speed'){ const d=num(1);
-      if (!(d>=10 && d<=100)) return {error:'error (10-100)', raw:s}; return {op, n:d, raw:s}; }
+    if (MOVES[op] || op==='cw' || op==='ccw' || op==='speed' || op==='sleep' || op==='drones'){
+      if (t.length < 2) return {error:'error (argument manquant)', raw:s};
+      return {op, e:[t[1]], raw:s};
+    }
     if (op==='flip'){ const dir=(t[1]||'').replace(/^['"]|['"]$/g,'');
       if (!/^[lrfb]$/.test(dir)) return {error:'error (l/r/f/b)', raw:s}; return {op, dir, raw:s}; }
-    if (op==='go'){ const x=num(1),y=num(2),z=num(3),sp=num(4);
-      if ([x,y,z].some(v=>!(v>=-500&&v<=500)) || !(sp>=10&&sp<=100))
-        return {error:'error (range)', raw:s}; return {op, x, y, z, sp, raw:s}; }
+    if (op==='go'){ if (t.length < 5) return {error:'error (go x y z speed)', raw:s};
+      return {op, e:[t[1],t[2],t[3],t[4]], raw:s}; }
     if (op==='rc') return {op:'noop', raw:s};
     if (op.endsWith('?')) return {op:'query', q:op, raw:s};
     return {error:'unknown command', raw:s};
   }
+  function evalArgs(c, i){
+    try { return (c.e||[]).map(x=>evalExpr(x, i)); }
+    catch(_){ return null; }
+  }
+  function abort(msg){ log(msg,'err'); st.queue=[]; st.cur=null; st.running=false; readout(); }
+  const RANGE = {move:[20,500], rot:[1,360], speed:[10,100], sleep:[0.1,10], drones:[1,MAXD], go:[-500,500], gospd:[10,100]};
   function next(){
     if (!st.queue.length){ st.cur=null; st.running=false; readout(); return; }
     const c = st.queue.shift(); st.cur = c;
-    if (c.op!=='command' && !st.armed){ log(c.raw+' → error (envoyez "command" d\'abord)','err');
-      st.cur=null; return next(); }
+    if (c.op!=='command' && !st.armed) return abort(c.raw+' → error (envoyez "command" d\'abord)');
     const needFly = MOVES[c.op] || ['cw','ccw','go','flip','land'].includes(c.op);
-    if (needFly && !st.flying){ log(c.raw+' → error (drone au sol)','err'); st.cur=null; return next(); }
+    if (needFly && drones.some(d=>!d.flying)) return abort(c.raw+' → error (drone au sol)');
     log(c.raw,'cmd');
-    const fx=Math.cos(st.yaw), fy=Math.sin(st.yaw), p=frameRoot.position;
-    if (c.op==='command'){ st.armed=true; done('ok'); }
-    else if (c.op==='takeoff'){ c.target=TAKEOFF_Z; }
-    else if (c.op==='land'){ c.target=0; }
-    else if (c.op==='speed'){ st.speed=c.n/100; done('ok'); }
-    else if (c.op==='flip'){
-      if (p.z < 0.6){ log('→ error (trop bas pour un flip)','err'); st.cur=null; return next(); }
-      st.flip={axis:(c.dir==='f'||c.dir==='b')?'x':'y', sign:(c.dir==='f'||c.dir==='l')?-1:1, t:0, dur:0.6};
+    if (c.op==='command'){ st.armed=true; return done('ok'); }
+    if (c.op==='drones'){ const v=evalArgs(c,0);
+      if (!v || !(v[0]>=RANGE.drones[0] && v[0]<=RANGE.drones[1])) return abort('→ error (drones 1-'+MAXD+')');
+      spawn(v[0]); return done('ok'); }
+    if (c.op==='sleep'){ const v=evalArgs(c,0);
+      if (!v || !(v[0]>=RANGE.sleep[0] && v[0]<=RANGE.sleep[1])) return abort('→ error (sleep 0.1-10 s)');
+      st.timer=v[0]; readout(); return; }
+    if (c.op==='speed'){ const v=evalArgs(c,0);
+      if (!v || !(v[0]>=10 && v[0]<=100)) return abort('→ error (speed 10-100)');
+      drones.forEach(d=>d.speed=v[0]/100); return done('ok'); }
+    if (c.op==='query'){
+      const v = c.q==='battery?' ? Math.round(Math.min.apply(null, drones.map(d=>d.bat)))
+            : c.q==='height?' ? Math.round(drones[0].root.position.z*100)
+            : c.q==='sdk?' ? 20 : 'ok';
+      return done(String(v)); }
+    if (c.op==='noop' || c.op==='stop' || c.op==='streamon' || c.op==='streamoff' || c.op==='emergency')
+      return done('ok');
+    // per-drone motion jobs (parallel; command completes when ALL finish)
+    for (let k=0;k<drones.length;k++){
+      const d = drones[k], p = d.root.position;
+      const fx = Math.cos(d.yaw), fy = Math.sin(d.yaw);
+      const job = {op:c.op};
+      if (c.op==='takeoff') job.tz = TAKEOFF_Z;
+      else if (c.op==='land') job.tz = 0;
+      else if (c.op==='flip'){
+        if (p.z < 0.6) return abort('→ error (trop bas pour un flip)');
+        job.flip={axis:(c.dir==='f'||c.dir==='b')?'x':'y',
+                  sign:(c.dir==='f'||c.dir==='l')?-1:1, t:0, dur:0.6};
+      } else {
+        const v = evalArgs(c, k); if (!v) return abort('→ error (expression)');
+        if (MOVES[c.op]){
+          if (!(v[0]>=RANGE.move[0] && v[0]<=RANGE.move[1])) return abort('→ error (20-500 cm)');
+          const dst = v[0]/100;
+          if (c.op==='forward'){ job.tx=p.x+fx*dst; job.ty=p.y+fy*dst; job.tz2=p.z; }
+          else if (c.op==='back'){ job.tx=p.x-fx*dst; job.ty=p.y-fy*dst; job.tz2=p.z; }
+          else if (c.op==='left'){ job.tx=p.x-fy*dst; job.ty=p.y+fx*dst; job.tz2=p.z; }
+          else if (c.op==='right'){ job.tx=p.x+fy*dst; job.ty=p.y-fx*dst; job.tz2=p.z; }
+          else if (c.op==='up'){ job.tx=p.x; job.ty=p.y; job.tz2=p.z+dst; }
+          else { job.tx=p.x; job.ty=p.y; job.tz2=Math.max(0.05,p.z-dst); }
+          job.spd=d.speed;
+        } else if (c.op==='go'){
+          if (v.slice(0,3).some(x=>!(x>=RANGE.go[0]&&x<=RANGE.go[1])) ||
+              !(v[3]>=RANGE.gospd[0]&&v[3]<=RANGE.gospd[1])) return abort('→ error (range)');
+          job.tx=p.x+fx*(v[0]/100)-fy*(v[1]/100);
+          job.ty=p.y+fy*(v[0]/100)+fx*(v[1]/100);
+          job.tz2=Math.max(0.05,p.z+v[2]/100); job.spd=v[3]/100;
+        } else if (c.op==='cw' || c.op==='ccw'){
+          if (!(v[0]>=RANGE.rot[0] && v[0]<=RANGE.rot[1])) return abort('→ error (1-360°)');
+          job.dyaw=(c.op==='cw'?-1:1)*v[0]*DEG; job.yaw0=d.yaw; job.acc=0;
+        }
+      }
+      d.job = job;
     }
-    else if (MOVES[c.op]){ const d=c.n/100;
-      if (c.op==='forward'){ c.tx=p.x+fx*d; c.ty=p.y+fy*d; c.tz=p.z; }
-      else if (c.op==='back'){ c.tx=p.x-fx*d; c.ty=p.y-fy*d; c.tz=p.z; }
-      else if (c.op==='left'){ c.tx=p.x-fy*d; c.ty=p.y+fx*d; c.tz=p.z; }
-      else if (c.op==='right'){ c.tx=p.x+fy*d; c.ty=p.y-fx*d; c.tz=p.z; }
-      else if (c.op==='up'){ c.tx=p.x; c.ty=p.y; c.tz=p.z+d; }
-      else { c.tx=p.x; c.ty=p.y; c.tz=Math.max(0.05,p.z-d); }
-      c.spd=st.speed;
-    }
-    else if (c.op==='go'){ c.tx=p.x+fx*(c.x/100)-fy*(c.y/100);
-      c.ty=p.y+fy*(c.x/100)+fx*(c.y/100); c.tz=Math.max(0.05,p.z+c.z/100); c.spd=c.sp/100; }
-    else if (c.op==='cw' || c.op==='ccw'){ c.dyaw=(c.op==='cw'?-1:1)*c.n*DEG; c.yaw0=st.yaw; c.acc=0; }
-    else if (c.op==='query'){ const v = c.q==='battery?'?Math.round(st.bat):
-        c.q==='height?'?Math.round(p.z*100):c.q==='sdk?'?20:'ok'; done(String(v)); }
-    else { done('ok'); }
     readout();
   }
   function done(reply){ if (reply) log('→ '+reply,'ok');
-    if (st.cur && st.cur.op==='takeoff') st.flying=true;
-    if (st.cur && st.cur.op==='land')    st.flying=false;
     st.cur=null; next(); }
-  function step(dt){
-    if (st.running) st.bat = Math.max(0, st.bat - dt*0.25);
-    if (st.flip){ const f=st.flip; f.t+=dt;
+  function stepDrone(d, dt){
+    const j = d.job; if (!j) return true;
+    const p = d.root.position;
+    if (j.flip){ const f=j.flip; f.t+=dt;
       const a=Math.min(1,f.t/f.dur)*2*Math.PI*f.sign;
-      if (f.axis==='x') frameRoot.rotation.x=a; else frameRoot.rotation.y=a;
-      if (f.t>=f.dur){ frameRoot.rotation.x=0; frameRoot.rotation.y=0; st.flip=null;
-        if (st.cur && st.cur.op==='flip') done('ok'); }
+      if (f.axis==='x') d.root.rotation.x=a; else d.root.rotation.y=a;
+      if (f.t>=f.dur){ d.root.rotation.x=0; d.root.rotation.y=0; d.job=null; return true; }
+      return false; }
+    if (j.op==='takeoff'){ p.z=Math.min(j.tz,p.z+CLIMB*dt);
+      if (p.z>=j.tz-1e-4){ d.flying=true; d.job=null; return true; } return false; }
+    if (j.op==='land'){ p.z=Math.max(0,p.z-DESC*dt);
+      if (p.z<=1e-4){ p.z=0; d.flying=false; d.job=null; return true; } return false; }
+    if (j.op==='cw' || j.op==='ccw'){ const s=YAW_RATE*dt; j.acc+=s;
+      if (j.acc>=Math.abs(j.dyaw)){ d.yaw=j.yaw0+j.dyaw; d.root.rotation.z=d.yaw; d.job=null; return true; }
+      d.yaw += Math.sign(j.dyaw)*s; d.root.rotation.z=d.yaw; return false; }
+    if (j.tx!==undefined){ const dx=j.tx-p.x, dy=j.ty-p.y, dz=j.tz2-p.z;
+      const dist=Math.hypot(dx,dy,dz), s=(j.spd||d.speed)*dt;
+      if (dist<=Math.max(s,0.02)){ p.set(j.tx,j.ty,j.tz2); d.job=null; return true; }
+      p.x+=dx/dist*s; p.y+=dy/dist*s; p.z+=dz/dist*s; return false; }
+    d.job=null; return true;
+  }
+  function step(dt){
+    if (st.running) drones.forEach(d=>{ d.bat=Math.max(0,d.bat-dt*0.25); });
+    for (const d of drones) if (d.flying || d.job)
+      for (const pr of d.props)
+        pr.rotateOnAxis(PROP_SPIN, 26*dt*(pr.userData.dir||1));
+    if (st.timer > 0){ st.timer -= dt;
+      if (st.timer <= 0 && st.cur && st.cur.op==='sleep'){ st.timer=0; done('ok'); }
       readout(); return; }
     const c = st.cur; if (!c) return;
-    const p = frameRoot.position;
-    if (c.op==='takeoff'){ p.z=Math.min(c.target,p.z+CLIMB*dt); if (p.z>=c.target-1e-4) done('ok'); }
-    else if (c.op==='land'){ p.z=Math.max(0,p.z-DESC*dt); if (p.z<=1e-4){ p.z=0; done('ok'); } }
-    else if (c.op==='cw' || c.op==='ccw'){ const s=YAW_RATE*dt; c.acc+=s;
-      if (c.acc>=Math.abs(c.dyaw)){ st.yaw=c.yaw0+c.dyaw; done('ok'); }
-      else st.yaw += Math.sign(c.dyaw)*s;
-      frameRoot.rotation.z=st.yaw; }
-    else if (c.tx!==undefined){ const dx=c.tx-p.x, dy=c.ty-p.y, dz=c.tz-p.z;
-      const dist=Math.hypot(dx,dy,dz), s=(c.spd||st.speed)*dt;
-      if (dist<=Math.max(s,0.02)){ p.set(c.tx,c.ty,c.tz); done('ok'); }
-      else { p.x+=dx/dist*s; p.y+=dy/dist*s; p.z+=dz/dist*s; } }
+    let all = true;
+    for (const d of drones) if (!stepDrone(d, dt)) all = false;
+    if (all && drones.every(d=>!d.job)) done('ok');
     readout();
   }
   function reset(clearLog){
-    st.armed=false; st.flying=false; st.bat=100; st.speed=SPEED0; st.yaw=0;
-    st.queue=[]; st.cur=null; st.flip=null; st.running=false;
-    frameRoot.position.set(0,0,0); frameRoot.rotation.set(0,0,0);
-    if (clearLog) logEl.innerHTML=''; readout();
+    st.armed=false; st.running=false; st.queue=[]; st.cur=null; st.timer=0;
+    spawn(defaultN);
+    if (clearLog) logEl.innerHTML='';
+    readout();
   }
   function run(){
-    reset(true);
+    st.armed=false; st.running=false; st.queue=[]; st.cur=null; st.timer=0;
+    drones.forEach((d,k)=>{ d.yaw=0; d.flying=false; d.bat=100; d.speed=SPEED0; d.job=null;
+      d.root.position.set(0, homeY(k, drones.length), 0); d.root.rotation.set(0,0,0); });
+    logEl.innerHTML='';
     const cmds=[];
     for (const ln of $('pgCode').value.split('\n')){ const pr=parse(ln); if (!pr) continue;
       if (pr.error){ log(ln.trim()+' → '+pr.error,'err'); readout(); return; } cmds.push(pr); }
     if (!cmds.length) return;
     if (cmds[0].op!=='command'){ log('→ error : commencez le script par "command"','err'); return; }
-    st.queue=cmds; st.running=true; st.bat=100; next();
+    st.queue=cmds; st.running=true; next();
   }
+
+  // ---- presets: faithful mirrors of sdk/python/examples/*.py ---------------
+  const PRESETS = {
+    hover: ['# 01_hover.py — décoller, planer 5 s, atterrir','command','takeoff',
+            'sleep 5','land'].join('\n'),
+    square: ['# 02_square.py — carré de 1 m (go_xyz_speed + rotate_clockwise)','command','takeoff',
+             'go 100 0 0 50','cw 90','go 100 0 0 50','cw 90',
+             'go 100 0 0 50','cw 90','go 100 0 0 50','cw 90','land'].join('\n'),
+    swarm: ['# 03_swarm.py — essaim de 3 : jambes parallèles indexées par i',
+            'command','drones 3','takeoff',
+            'go 60+40*i (i-1)*80 0 60','cw 120*(i+1)','land'].join('\n'),
+  };
+  for (const [id, key] of [['pgP1','hover'],['pgP2','square'],['pgP3','swarm']])
+    $(id).addEventListener('click', ()=>{ $('pgCode').value = PRESETS[key]; });
   $('pgRun').addEventListener('click', run);
   $('pgReset').addEventListener('click', ()=>{ reset(true); log('réinitialisé','ok'); });
+
   grid.visible = false; shadow.visible = false;
   const bigGrid = new THREE.GridHelper(6, 60, 0x262d38, 0x141922);
   bigGrid.rotation.x = Math.PI/2; scene.add(bigGrid);
-  camera.position.set(2.4,-2.4,1.7); controls.target.set(0,0,0.35); controls.update();
+  camera.position.set(2.7,-2.7,1.8); controls.target.set(0,0,0.35); controls.update();
+
+  const defaultN = Math.max(1, Math.min(MAXD, parseInt(PARAMS.get('drones')||'1',10) || 1));
+  const preset = (PARAMS.get('preset')||'').toLowerCase();
+  if (PRESETS[preset]) $('pgCode').value = PRESETS[preset];
   reset(true);
-  return { step, get flying(){ return st.flying; } };
+  return { step };
 })();
 
 const clock = new THREE.Clock();
@@ -1104,11 +1253,7 @@ const PROP_SPIN = new THREE.Vector3(0,0,1);
 function loop(){
   requestAnimationFrame(loop);
   const dt = clock.getDelta();
-  if (PG){
-    PG.step(dt);
-    if (PG.flying) for (const pr of propMeshes.frame)
-      pr.rotateOnAxis(PROP_SPIN, 26*dt*(pr.userData.dir||1));
-  }
+  if (PG) PG.step(dt);
   if (spinRate){
     for (const pr of propMeshes[mode]){
       const dir = pr.userData.dir!==undefined ? pr.userData.dir
