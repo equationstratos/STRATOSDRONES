@@ -31,6 +31,8 @@ header.nav{position:sticky;top:0;z-index:20;backdrop-filter:blur(10px);
 .btn.p{background:var(--acc);color:#eef4ff;border-color:var(--acc)}
 .btn.p:hover{background:var(--acc2);border-color:var(--acc2)}
 .btn:hover{border-color:#3a3f49}
+/* prominent action bar above an embedded viewer */
+.viewer-bar{display:flex;justify-content:flex-end;margin:0 0 14px}
 
 /* hero */
 .hero{position:relative;overflow:hidden;border-bottom:1px solid var(--line);
@@ -94,17 +96,22 @@ ol.steps b{color:var(--txt)}
 
 /* configurator */
 .configurator{display:grid;grid-template-columns:1.1fr 1fr;gap:36px;align-items:start}
-.cfg-preview{border:1px solid var(--line);border-radius:var(--r);overflow:hidden;background:#fff}
+.cfg-preview{border:1px solid var(--line);border-radius:var(--r);overflow:hidden;
+  background:#0d1117;position:sticky;top:80px}
 .cfg-preview img{width:100%;display:block}
+.cfg-preview iframe{width:100%;height:560px;min-height:440px;border:0;display:block}
 .cfg-panel{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:24px}
 .cfg-name{font-weight:700;font-size:19px;margin-bottom:6px}
-.cfg-price{font-size:28px;font-weight:800;color:var(--acc);margin-bottom:18px}
+.cfg-price{font-size:28px;font-weight:800;color:var(--acc);margin-bottom:2px}
+.cfg-price-note{font-size:12px;color:var(--mut);margin-bottom:18px}
 .cfg-row-label{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--mut);margin-bottom:10px}
-.swatches{display:flex;gap:12px;flex-wrap:wrap}
-.sw-btn{width:34px;height:34px;border-radius:50%;border:2px solid var(--line);cursor:pointer;
+.swatches{display:flex;gap:10px;flex-wrap:wrap}
+.sw-btn{width:30px;height:30px;border-radius:50%;border:2px solid var(--line);cursor:pointer;
   background:var(--sw,#888);position:relative;transition:.15s;padding:0}
 .sw-btn:hover{border-color:#4a5262}
 .sw-btn.on{border-color:var(--acc);box-shadow:0 0 0 3px rgba(47,111,237,.25)}
+.ci-swatches{display:grid;grid-template-columns:1fr 1fr;gap:3px;width:44px;height:44px;flex:none}
+.ci-sw{border-radius:3px;border:1px solid var(--line)}
 .qty{display:inline-flex;align-items:center;gap:0;border:1px solid var(--line);border-radius:999px;overflow:hidden}
 .qty button{width:36px;height:36px;background:var(--bg2);color:var(--txt);border:0;cursor:pointer;font-size:16px}
 .qty button:hover{background:#1a1d24}
@@ -139,9 +146,20 @@ ol.steps b{color:var(--txt)}
 #cartScrim.on{display:block}
 
 /* footer */
-footer{padding:46px 0;color:var(--mut);font-size:14px}
-footer .wrap{display:flex;gap:24px;flex-wrap:wrap;align-items:center;justify-content:space-between}
+footer{padding:52px 0 30px;color:var(--mut);font-size:14px;border-top:1px solid var(--line)}
 footer a{color:var(--mut);text-decoration:underline;text-underline-offset:3px}
+footer a:hover{color:var(--txt)}
+.foot-grid{display:grid;grid-template-columns:2fr 1fr 1fr;gap:32px;align-items:start}
+.foot-brand{max-width:420px}
+.foot-social{display:flex;flex-wrap:wrap;gap:14px;margin-top:14px}
+.foot-social a{text-decoration:none;font-weight:600;font-size:13px;color:var(--txt);
+  border:1px solid var(--line);border-radius:999px;padding:6px 12px}
+.foot-social a:hover{border-color:var(--acc);color:var(--acc2)}
+.foot-links{display:flex;flex-direction:column;gap:8px}
+.foot-h{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--txt);
+  font-weight:700;margin-bottom:2px}
+.foot-links a{text-decoration:none}
+.foot-bottom{margin-top:30px;padding-top:20px;border-top:1px solid var(--line)}
 
 /* lightbox (CSS+tiny JS) */
 #lb{position:fixed;inset:0;background:rgba(4,5,7,.92);display:none;align-items:center;
@@ -152,6 +170,8 @@ footer a{color:var(--mut);text-decoration:underline;text-underline-offset:3px}
   .hero .wrap{grid-template-columns:1fr;padding:54px 24px}
   .g3,.g2{grid-template-columns:1fr}.gal{columns:2}
   .configurator{grid-template-columns:1fr}
+  .cfg-preview{position:static}
+  .foot-grid{grid-template-columns:1fr;gap:24px}
   .nav nav{display:none}
 }
 @media(max-width:560px){.gal{columns:1}}

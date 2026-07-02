@@ -215,7 +215,7 @@ TEMPLATE = r"""<!DOCTYPE html>
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>STRATOSDRONE — visualisateur 3D</title>
+<title>STRATOSDRONES — visualisateur 3D</title>
 <style>
   :root{--bg:#0b0e14;--panel:#12161d;--line:#262d38;--ink:#e6edf3;--mut:#8b949e;
         --acc:#2f6fed;--acc2:#63a4ff;}
@@ -262,14 +262,28 @@ TEMPLATE = r"""<!DOCTYPE html>
   #tip b{color:var(--ink)}
   .mini{font-size:10px;color:var(--mut);margin-top:6px}
   code{color:var(--acc2)}
+  /* embed (configurator live preview): hide all chrome, just the drone */
+  body.embed #side, body.embed #tip, body.embed #hud{display:none}
+  /* playground: swap the control panel for a script console */
+  #pg{width:340px;flex:none;background:var(--panel);border-right:1px solid var(--line);
+      display:none;flex-direction:column;overflow-y:auto}
+  body.playground #side, body.playground #tip{display:none}
+  body.playground #pg{display:flex}
+  #pgCode{width:100%;height:186px;resize:vertical;background:#0b0e14;color:var(--ink);
+      border:1px solid var(--line);border-radius:6px;padding:8px;
+      font:12px/1.45 ui-monospace,SFMono-Regular,Menlo,monospace;white-space:pre;overflow:auto}
+  .pg-log{height:118px;overflow:auto;font:11px/1.55 ui-monospace,Menlo,monospace;color:var(--mut);
+      background:#0b0e14;border:1px solid var(--line);border-radius:6px;padding:8px}
+  .pg-log .ok{color:var(--acc2)} .pg-log .err{color:#ff6b6b} .pg-log .cmd{color:var(--ink)}
+  .pg-log div{white-space:pre-wrap}
 </style>
 </head>
 <body>
 <div id="app">
   <div id="side">
     <header>
-      <h1><b>STRATOS</b>DRONE — 3D</h1>
-      <p>Tello EDU class · 118 mm · 3"</p>
+      <h1><b>STRATOS</b>DRONES — 3D</h1>
+      <p>Fr4n7-001 · Tello EDU class · 118 mm · 3"</p>
     </header>
 
     <div class="sec">
@@ -318,7 +332,7 @@ TEMPLATE = r"""<!DOCTYPE html>
     </div>
 
     <div class="sec">
-      <h2>STRATOSDRONE vs Tello EDU</h2>
+      <h2>STRATOSDRONES vs Tello EDU</h2>
       <table class="spec">
         <tr><td>Entraxe</td><td class="v">118 mm</td></tr>
         <tr><td>Hélices</td><td class="v">3" (76 mm)</td></tr>
@@ -337,6 +351,50 @@ TEMPLATE = r"""<!DOCTYPE html>
       <div class="row" style="margin-top:8px">
         <span style="flex:1">Opacité STL</span><span class="val" id="stlOpV">100%</span></div>
       <input type="range" id="stlOp" min="10" max="100" value="100"/>
+    </div>
+  </div>
+
+  <div id="pg">
+    <header>
+      <h1><b>STRATOS</b>DRONES — Playground</h1>
+      <p>Fr4n7-001 · pilotez le drone avec un script (SDK Tello)</p>
+    </header>
+    <div class="sec">
+      <h2>Script</h2>
+      <textarea id="pgCode" spellcheck="false">command
+takeoff
+forward 100
+cw 90
+forward 100
+cw 90
+forward 100
+cw 90
+forward 100
+cw 90
+land</textarea>
+      <div class="btns" style="margin-top:8px">
+        <button id="pgRun" class="on">▶ Exécuter</button>
+        <button id="pgReset">■ Réinitialiser</button>
+      </div>
+    </div>
+    <div class="sec">
+      <h2>État du vol</h2>
+      <table>
+        <tr><td>Batterie</td><td class="v" id="pgBat">100 %</td></tr>
+        <tr><td>Altitude</td><td class="v" id="pgAlt">0 cm</td></tr>
+        <tr><td>Cap (lacet)</td><td class="v" id="pgYaw">0°</td></tr>
+        <tr><td>Commande</td><td class="v" id="pgCmd">—</td></tr>
+      </table>
+    </div>
+    <div class="sec">
+      <h2>Journal</h2>
+      <div id="pgLog" class="pg-log"></div>
+    </div>
+    <div class="sec">
+      <h2>Commandes</h2>
+      <div class="mini">command · takeoff · land · forward/back/left/right/up/down &lt;20-500&gt; ·
+        cw/ccw &lt;1-360&gt; · go x y z speed · flip l/r/f/b · speed &lt;10-100&gt;.<br/>
+        Style Python accepté&nbsp;: <code>move_forward(100); rotate_clockwise(90); flip('f');</code></div>
     </div>
   </div>
 
@@ -728,6 +786,7 @@ let GUARD_GEO = null;
   if (body){  body.userData.home={x:0,y:0,z:0};      body.userData.exp=[0,-0.004]; frameShell.add(body); }
   if (capot){ capot.position.z=0.013;                                    // rim joint (13 mm)
               capot.userData.home={x:0,y:0,z:0.013};  capot.userData.exp=[0, 0.020]; frameShell.add(capot); }
+  frameRoot.userData.bodyMesh = body; frameRoot.userData.capotMesh = capot;  // for live recolour
   // --- mainboard (on the bosses, z=4.2 mm) + 1S pack (on the board, z=5.8 mm) ---
   const pcb = meshFromB64("__PCB_STL_B64__", 0x1f7a3d, .1, .7);
   if (pcb){ pcb.position.z=0.0042; pcb.userData.home={x:0,y:0,z:0.0042}; pcb.userData.exp=[0,-0.018]; frameElec.add(pcb); }
@@ -767,6 +826,7 @@ let GUARD_GEO = null;
     const prop = buildProp(mo.x, mo.y, 0.0205, orange, cw);
     prop.userData.home={x:mo.x, y:mo.y, z:0.0205}; prop.userData.exp=[0.04, 0.030];
     prop.userData.dir = cw ? 1 : -1;
+    prop.userData.front = orange;                 // front (fr/fl) vs rear, for live recolour
     frameProps.add(prop); propMeshes.frame.push(prop);
   }
 })();
@@ -850,10 +910,205 @@ function resize(){ const w=view.clientWidth,h=view.clientHeight;
   renderer.setSize(w,h); camera.aspect=w/h; camera.updateProjectionMatrix(); }
 addEventListener('resize', resize); resize();
 
+// ===========================================================================
+//  URL params & host messaging — embed (configurator preview) / playground
+// ===========================================================================
+const PARAMS = new URLSearchParams(location.search);
+const EMBED  = PARAMS.has('embed');
+const PLAY   = PARAMS.has('playground');
+
+// bounded zoom: tight for inspection/embed, wide for the flight playground
+if (PLAY){ controls.minDistance = 0.3;  controls.maxDistance = 14; }
+else     { controls.minDistance = 0.05; controls.maxDistance = 0.6; }
+
+// ---- live per-part recolour of the printed-frame model --------------------
+function setPartColor(part, hex){
+  if (!hex) return;
+  const c = new THREE.Color(hex);
+  const u = frameRoot.userData;
+  if (part === 'body'  && u.bodyMesh)  u.bodyMesh.material.color.copy(c);
+  if (part === 'capot' && u.capotMesh) u.capotMesh.material.color.copy(c);
+  if (part === 'pf' || part === 'pr'){
+    const wantFront = (part === 'pf');
+    for (const pr of propMeshes.frame){
+      if (!!pr.userData.front !== wantFront) continue;
+      pr.traverse(o => { if (o.isMesh) o.material.color.copy(c); });
+    }
+  }
+}
+function applyColors(o){
+  if (!o) return;
+  setPartColor('body',  o.body);
+  setPartColor('capot', o.capot);
+  setPartColor('pf',    o.propFront != null ? o.propFront : o.pf);
+  setPartColor('pr',    o.propRear  != null ? o.propRear  : o.pr);
+}
+applyColors({ body:PARAMS.get('body'), capot:PARAMS.get('capot'),
+              pf:PARAMS.get('pf'), pr:PARAMS.get('pr') });
+addEventListener('message', e => {
+  const m = e.data;
+  if (m && m.type === 'colors') applyColors(m);
+});
+
+if (EMBED || PLAY){
+  document.body.classList.add(EMBED ? 'embed' : 'playground');
+  mode = 'frame'; applyMode();
+}
+// tell the host we're ready so the configurator can (re)send its colours
+try { if (parent && parent !== window) parent.postMessage({type:'ready'}, '*'); } catch(_){}
+
+// ===========================================================================
+//  Playground — a tiny in-browser flight sim: a Tello-SDK script drives the
+//  drone over the grid. Verbs & ranges mirror fc_core/src/fc_sdk.c; the
+//  kinematics imitate fc_core/src/fc_params.c (speed 1 m/s, yaw ~96 dps,
+//  takeoff 0.8 m, land 0.45 m/s). Pure client-side — no Python, no network.
+// ===========================================================================
+const PG = (function(){
+  if (!PLAY) return null;
+  const DEG = Math.PI/180, SPEED0 = 1.0, YAW_RATE = 96*DEG;
+  const CLIMB = 0.42, DESC = 0.45, TAKEOFF_Z = 0.8;
+  const st = { armed:false, flying:false, bat:100, speed:SPEED0,
+               yaw:0, queue:[], cur:null, running:false, flip:null };
+  const $ = id => document.getElementById(id);
+  const logEl = $('pgLog');
+  function log(msg, cls){ const d=document.createElement('div');
+    if(cls) d.className=cls; d.textContent=msg; logEl.appendChild(d);
+    logEl.scrollTop = logEl.scrollHeight; }
+  function readout(){
+    $('pgBat').textContent = Math.max(0,Math.round(st.bat)) + ' %';
+    $('pgAlt').textContent = Math.round(frameRoot.position.z*100) + ' cm';
+    let deg = Math.round(st.yaw/DEG) % 360; if (deg<0) deg+=360;
+    $('pgYaw').textContent = deg + '°';
+    $('pgCmd').textContent = st.cur ? st.cur.raw : (st.running ? '—' : 'prêt');
+  }
+  const MOVES = {forward:1,back:1,left:1,right:1,up:1,down:1};
+  const ALIAS = { takeoff:'takeoff', land:'land', move_forward:'forward', move_back:'back',
+    move_left:'left', move_right:'right', move_up:'up', move_down:'down',
+    rotate_clockwise:'cw', rotate_counter_clockwise:'ccw', flip:'flip',
+    set_speed:'speed', go_xyz_speed:'go' };
+  function normalize(line){
+    let s = line.replace(/#.*$/,'').replace(/;+\s*$/,'').trim(); if (!s) return '';
+    const m = s.match(/^([A-Za-z_]+)\s*\((.*)\)\s*$/);
+    if (m){ const verb = ALIAS[m[1]] || m[1];
+      const args = m[2].split(',').map(a=>a.trim().replace(/^['"]|['"]$/g,'')).filter(a=>a.length);
+      return (verb + ' ' + args.join(' ')).trim(); }
+    const t = s.split(/\s+/); if (ALIAS[t[0]]) t[0]=ALIAS[t[0]]; return t.join(' ');
+  }
+  function parse(line){
+    const s = normalize(line); if (!s) return null;
+    const t = s.split(/\s+/), op = t[0].toLowerCase(), num = i => parseFloat(t[i]);
+    if (['command','takeoff','land','stop','emergency','streamon','streamoff'].includes(op))
+      return {op, raw:s};
+    if (MOVES[op]){ const d=num(1);
+      if (!(d>=20 && d<=500)) return {error:'error (20-500 cm)', raw:s}; return {op, n:d, raw:s}; }
+    if (op==='cw' || op==='ccw'){ const d=num(1);
+      if (!(d>=1 && d<=360)) return {error:'error (1-360°)', raw:s}; return {op, n:d, raw:s}; }
+    if (op==='speed'){ const d=num(1);
+      if (!(d>=10 && d<=100)) return {error:'error (10-100)', raw:s}; return {op, n:d, raw:s}; }
+    if (op==='flip'){ const dir=(t[1]||'').replace(/^['"]|['"]$/g,'');
+      if (!/^[lrfb]$/.test(dir)) return {error:'error (l/r/f/b)', raw:s}; return {op, dir, raw:s}; }
+    if (op==='go'){ const x=num(1),y=num(2),z=num(3),sp=num(4);
+      if ([x,y,z].some(v=>!(v>=-500&&v<=500)) || !(sp>=10&&sp<=100))
+        return {error:'error (range)', raw:s}; return {op, x, y, z, sp, raw:s}; }
+    if (op==='rc') return {op:'noop', raw:s};
+    if (op.endsWith('?')) return {op:'query', q:op, raw:s};
+    return {error:'unknown command', raw:s};
+  }
+  function next(){
+    if (!st.queue.length){ st.cur=null; st.running=false; readout(); return; }
+    const c = st.queue.shift(); st.cur = c;
+    if (c.op!=='command' && !st.armed){ log(c.raw+' → error (envoyez "command" d\'abord)','err');
+      st.cur=null; return next(); }
+    const needFly = MOVES[c.op] || ['cw','ccw','go','flip','land'].includes(c.op);
+    if (needFly && !st.flying){ log(c.raw+' → error (drone au sol)','err'); st.cur=null; return next(); }
+    log(c.raw,'cmd');
+    const fx=Math.cos(st.yaw), fy=Math.sin(st.yaw), p=frameRoot.position;
+    if (c.op==='command'){ st.armed=true; done('ok'); }
+    else if (c.op==='takeoff'){ c.target=TAKEOFF_Z; }
+    else if (c.op==='land'){ c.target=0; }
+    else if (c.op==='speed'){ st.speed=c.n/100; done('ok'); }
+    else if (c.op==='flip'){
+      if (p.z < 0.6){ log('→ error (trop bas pour un flip)','err'); st.cur=null; return next(); }
+      st.flip={axis:(c.dir==='f'||c.dir==='b')?'x':'y', sign:(c.dir==='f'||c.dir==='l')?-1:1, t:0, dur:0.6};
+    }
+    else if (MOVES[c.op]){ const d=c.n/100;
+      if (c.op==='forward'){ c.tx=p.x+fx*d; c.ty=p.y+fy*d; c.tz=p.z; }
+      else if (c.op==='back'){ c.tx=p.x-fx*d; c.ty=p.y-fy*d; c.tz=p.z; }
+      else if (c.op==='left'){ c.tx=p.x-fy*d; c.ty=p.y+fx*d; c.tz=p.z; }
+      else if (c.op==='right'){ c.tx=p.x+fy*d; c.ty=p.y-fx*d; c.tz=p.z; }
+      else if (c.op==='up'){ c.tx=p.x; c.ty=p.y; c.tz=p.z+d; }
+      else { c.tx=p.x; c.ty=p.y; c.tz=Math.max(0.05,p.z-d); }
+      c.spd=st.speed;
+    }
+    else if (c.op==='go'){ c.tx=p.x+fx*(c.x/100)-fy*(c.y/100);
+      c.ty=p.y+fy*(c.x/100)+fx*(c.y/100); c.tz=Math.max(0.05,p.z+c.z/100); c.spd=c.sp/100; }
+    else if (c.op==='cw' || c.op==='ccw'){ c.dyaw=(c.op==='cw'?-1:1)*c.n*DEG; c.yaw0=st.yaw; c.acc=0; }
+    else if (c.op==='query'){ const v = c.q==='battery?'?Math.round(st.bat):
+        c.q==='height?'?Math.round(p.z*100):c.q==='sdk?'?20:'ok'; done(String(v)); }
+    else { done('ok'); }
+    readout();
+  }
+  function done(reply){ if (reply) log('→ '+reply,'ok');
+    if (st.cur && st.cur.op==='takeoff') st.flying=true;
+    if (st.cur && st.cur.op==='land')    st.flying=false;
+    st.cur=null; next(); }
+  function step(dt){
+    if (st.running) st.bat = Math.max(0, st.bat - dt*0.25);
+    if (st.flip){ const f=st.flip; f.t+=dt;
+      const a=Math.min(1,f.t/f.dur)*2*Math.PI*f.sign;
+      if (f.axis==='x') frameRoot.rotation.x=a; else frameRoot.rotation.y=a;
+      if (f.t>=f.dur){ frameRoot.rotation.x=0; frameRoot.rotation.y=0; st.flip=null;
+        if (st.cur && st.cur.op==='flip') done('ok'); }
+      readout(); return; }
+    const c = st.cur; if (!c) return;
+    const p = frameRoot.position;
+    if (c.op==='takeoff'){ p.z=Math.min(c.target,p.z+CLIMB*dt); if (p.z>=c.target-1e-4) done('ok'); }
+    else if (c.op==='land'){ p.z=Math.max(0,p.z-DESC*dt); if (p.z<=1e-4){ p.z=0; done('ok'); } }
+    else if (c.op==='cw' || c.op==='ccw'){ const s=YAW_RATE*dt; c.acc+=s;
+      if (c.acc>=Math.abs(c.dyaw)){ st.yaw=c.yaw0+c.dyaw; done('ok'); }
+      else st.yaw += Math.sign(c.dyaw)*s;
+      frameRoot.rotation.z=st.yaw; }
+    else if (c.tx!==undefined){ const dx=c.tx-p.x, dy=c.ty-p.y, dz=c.tz-p.z;
+      const dist=Math.hypot(dx,dy,dz), s=(c.spd||st.speed)*dt;
+      if (dist<=Math.max(s,0.02)){ p.set(c.tx,c.ty,c.tz); done('ok'); }
+      else { p.x+=dx/dist*s; p.y+=dy/dist*s; p.z+=dz/dist*s; } }
+    readout();
+  }
+  function reset(clearLog){
+    st.armed=false; st.flying=false; st.bat=100; st.speed=SPEED0; st.yaw=0;
+    st.queue=[]; st.cur=null; st.flip=null; st.running=false;
+    frameRoot.position.set(0,0,0); frameRoot.rotation.set(0,0,0);
+    if (clearLog) logEl.innerHTML=''; readout();
+  }
+  function run(){
+    reset(true);
+    const cmds=[];
+    for (const ln of $('pgCode').value.split('\n')){ const pr=parse(ln); if (!pr) continue;
+      if (pr.error){ log(ln.trim()+' → '+pr.error,'err'); readout(); return; } cmds.push(pr); }
+    if (!cmds.length) return;
+    if (cmds[0].op!=='command'){ log('→ error : commencez le script par "command"','err'); return; }
+    st.queue=cmds; st.running=true; st.bat=100; next();
+  }
+  $('pgRun').addEventListener('click', run);
+  $('pgReset').addEventListener('click', ()=>{ reset(true); log('réinitialisé','ok'); });
+  grid.visible = false; shadow.visible = false;
+  const bigGrid = new THREE.GridHelper(6, 60, 0x262d38, 0x141922);
+  bigGrid.rotation.x = Math.PI/2; scene.add(bigGrid);
+  camera.position.set(2.4,-2.4,1.7); controls.target.set(0,0,0.35); controls.update();
+  reset(true);
+  return { step, get flying(){ return st.flying; } };
+})();
+
 const clock = new THREE.Clock();
+const PROP_SPIN = new THREE.Vector3(0,0,1);
 function loop(){
   requestAnimationFrame(loop);
   const dt = clock.getDelta();
+  if (PG){
+    PG.step(dt);
+    if (PG.flying) for (const pr of propMeshes.frame)
+      pr.rotateOnAxis(PROP_SPIN, 26*dt*(pr.userData.dir||1));
+  }
   if (spinRate){
     for (const pr of propMeshes[mode]){
       const dir = pr.userData.dir!==undefined ? pr.userData.dir
