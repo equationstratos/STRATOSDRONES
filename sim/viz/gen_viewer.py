@@ -393,8 +393,10 @@ land</textarea>
     <div class="sec">
       <h2>Pilotage clavier</h2>
       <button id="pgKbd" style="width:100%">🎮 Pilotage clavier : OFF</button>
-      <div class="mini"><b>T</b> décoller · <b>ZQSD/WASD</b> déplacer ·
-        <b>↑↓</b> altitude · <b>←→</b> lacet · <b>F</b> flip · <b>L</b> atterrir.
+      <div class="mini"><b>T</b> décoller · <b>↑</b> avancer · <b>↓</b> reculer ·
+        <b>←</b> gauche · <b>→</b> droite · <b>Z</b> monter · <b>W</b> descendre ·
+        <b>Q</b> pivoter à gauche · <b>D</b> pivoter à droite ·
+        <b>F</b> flip · <b>L</b> atterrir.
         Actif quand aucun script ne tourne — pilote toute la formation.</div>
     </div>
     <div class="sec">
@@ -1252,11 +1254,12 @@ const PG = (function(){
       if (!pending && drones.every(d=>!d.job)) done('ok');
     } else if (kbd.on && !st.queue.length){
       // free flight: rc-style velocities (fc_params: xy 1.5 m/s, z 1.0 m/s)
+      // arrows = translate (fwd/back/left/right) · z/w = climb/descend · q/d = yaw
       const K = kbd.k;
-      const vf = ((K.KeyW?1:0)-(K.KeyS?1:0))*1.5;
-      const vl = ((K.KeyA?1:0)-(K.KeyD?1:0))*1.5;
-      const vz = ((K.ArrowUp?1:0)-(K.ArrowDown?1:0))*1.0;
-      const wz = ((K.ArrowLeft?1:0)-(K.ArrowRight?1:0))*YAW_RATE;
+      const vf = ((K.ArrowUp?1:0)-(K.ArrowDown?1:0))*1.5;
+      const vl = ((K.ArrowLeft?1:0)-(K.ArrowRight?1:0))*1.5;
+      const vz = ((K.z?1:0)-(K.w?1:0))*1.0;
+      const wz = ((K.q?1:0)-(K.d?1:0))*YAW_RATE;
       if (vf||vl||vz||wz) for (const d of drones){
         if (!d.flying || d.job) continue;
         d.yaw += wz*dt; d.root.rotation.z = d.yaw;
@@ -1277,25 +1280,29 @@ const PG = (function(){
     kbtn.textContent = kbd.on ? '🎮 Pilotage clavier : ON' : '🎮 Pilotage clavier : OFF';
     log(kbd.on ? 'clavier activé — T pour décoller' : 'clavier désactivé', 'ok');
   });
+  // letters are tracked by the character TYPED (layout-independent naming:
+  // Z climbs on AZERTY and QWERTY alike); arrows by their code.
+  function keyTok(e){ return e.key.length === 1 ? e.key.toLowerCase() : e.code; }
   addEventListener('keydown', e=>{
     if (!kbd.on) return;
     const tag = (e.target && e.target.tagName) || '';
     if (/TEXTAREA|INPUT|SELECT/.test(tag)) return;
     if (/^Arrow/.test(e.code) || e.code==='Space') e.preventDefault();
-    kbd.k[e.code] = true;
+    const t = keyTok(e);
+    kbd.k[t] = true;
     if (e.repeat || st.cur || st.queue.length) return;
-    if (e.code==='KeyT'){ st.armed = true;
+    if (t==='t'){ st.armed = true;
       drones.forEach(d=>{ if (!d.flying && !d.job) d.job = {op:'takeoff', tz:TAKEOFF_Z}; });
       log('T → takeoff', 'cmd'); }
-    if (e.code==='KeyL'){
+    if (t==='l'){
       drones.forEach(d=>{ if (d.flying && !d.job) d.job = {op:'land', tz:0}; });
       log('L → land', 'cmd'); }
-    if (e.code==='KeyF'){
+    if (t==='f'){
       drones.forEach(d=>{ if (d.flying && !d.job && d.root.position.z > 0.6)
         d.job = {flip:{axis:'x', sign:-1, t:0, dur:0.6}}; });
       log('F → flip', 'cmd'); }
   });
-  addEventListener('keyup', e=>{ kbd.k[e.code] = false; });
+  addEventListener('keyup', e=>{ kbd.k[keyTok(e)] = false; });
   function reset(clearLog){
     st.armed=false; st.running=false; st.queue=[]; st.cur=null; st.timer=0;
     spawn(defaultN);
@@ -1345,6 +1352,10 @@ const PG = (function(){
   const preset = (PARAMS.get('preset')||'').toLowerCase();
   if (PRESETS[preset]) $('pgCode').value = PRESETS[preset];
   reset(true);
+  // debug/test hook: pose of drone 1
+  window.__pgState = () => ({ x:+drones[0].root.position.x.toFixed(3),
+    y:+drones[0].root.position.y.toFixed(3), z:+drones[0].root.position.z.toFixed(3),
+    yaw:+drones[0].yaw.toFixed(3) });
   return { step };
 })();
 
