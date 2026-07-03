@@ -379,14 +379,23 @@ land</textarea>
     </div>
     <div class="sec">
       <h2>Scripts du dépôt</h2>
-      <div class="btns" style="grid-template-columns:repeat(3,1fr)">
+      <div class="btns">
         <button id="pgP1">01 · Hover</button>
         <button id="pgP2">02 · Carré</button>
         <button id="pgP3">03 · Swarm ×3</button>
+        <button id="pgP4">★ Freestyle</button>
       </div>
-      <div class="mini">Miroirs fidèles de <code>sdk/python/examples/*.py</code> —
+      <div class="mini">01-03 : miroirs fidèles de <code>sdk/python/examples/*.py</code> —
         <a href="https://github.com/equationstratos/STRATOSDRONE/tree/claude/cool-ride-w1bpia/sdk/python/examples"
-           target="_blank" rel="noopener" style="color:var(--acc2)">voir les originaux Python</a>.</div>
+           target="_blank" rel="noopener" style="color:var(--acc2)">voir les originaux Python</a>.
+        ★ Freestyle : démo bonus (curves + flips), pas dans le dépôt.</div>
+    </div>
+    <div class="sec">
+      <h2>Pilotage clavier</h2>
+      <button id="pgKbd" style="width:100%">🎮 Pilotage clavier : OFF</button>
+      <div class="mini"><b>T</b> décoller · <b>ZQSD/WASD</b> déplacer ·
+        <b>↑↓</b> altitude · <b>←→</b> lacet · <b>F</b> flip · <b>L</b> atterrir.
+        Actif quand aucun script ne tourne — pilote toute la formation.</div>
     </div>
     <div class="sec">
       <h2>État du vol</h2>
@@ -406,7 +415,8 @@ land</textarea>
       <h2>Commandes</h2>
       <div class="mini">command · <b>drones &lt;1-6&gt;</b> · takeoff · land ·
         forward/back/left/right/up/down &lt;20-500&gt; · cw/ccw &lt;1-360&gt; ·
-        go x y z speed · flip l/r/f/b · speed &lt;10-100&gt; · <b>sleep &lt;s&gt;</b>.<br/>
+        go x y z speed · <b>curve x1 y1 z1 x2 y2 z2 speed</b> (10-60) ·
+        flip l/r/f/b · speed &lt;10-100&gt; · <b>sleep &lt;s&gt;</b>.<br/>
         En essaim, les arguments acceptent des expressions de l'index
         <code>i</code> (0,1,2…, sans espaces)&nbsp;:
         <code>go 60+40*i (i-1)*80 0 60</code> — comme
@@ -804,6 +814,22 @@ let GUARD_GEO = null;
   if (capot){ capot.position.z=0.013;                                    // rim joint (13 mm)
               capot.userData.home={x:0,y:0,z:0.013};  capot.userData.exp=[0, 0.020]; frameShell.add(capot); }
   frameRoot.userData.bodyMesh = body; frameRoot.userData.capotMesh = capot;  // for live recolour
+  // --- front camera lens, same implantation as the SCAD site renders:
+  //     barrel Ø8×3 flush with the nose wall, inner lens Ø4.6 (SCAD y=-36..-39
+  //     -> viewer +X after the z+90° STL rotation, ×0.001 scale) ---
+  const camBarrel = new THREE.Mesh(new THREE.CylinderGeometry(0.004, 0.004, 0.003, 32),
+    new THREE.MeshStandardMaterial({color:0x101216, metalness:.3, roughness:.35}));
+  camBarrel.rotation.z = Math.PI/2;               // cylinder Y axis -> X (forward)
+  camBarrel.position.set(0.0375, 0, 0.0065);
+  const camLens = new THREE.Mesh(new THREE.CylinderGeometry(0.0023, 0.0023, 0.0008, 32),
+    new THREE.MeshStandardMaterial({color:0x3a4a63, metalness:.2, roughness:.08}));
+  camLens.rotation.z = Math.PI/2;
+  camLens.position.set(0.0388, 0, 0.0065);
+  for (const m of [camBarrel, camLens]){
+    m.userData.home = {x:m.position.x, y:m.position.y, z:m.position.z};
+    m.userData.exp  = [0, -0.004];                // explodes with the body
+    frameShell.add(m);
+  }
   // --- mainboard (on the bosses, z=4.2 mm) + 1S pack (on the board, z=5.8 mm) ---
   const pcb = meshFromB64("__PCB_STL_B64__", 0x1f7a3d, .1, .7);
   if (pcb){ pcb.position.z=0.0042; pcb.userData.home={x:0,y:0,z:0.0042}; pcb.userData.exp=[0,-0.018]; frameElec.add(pcb); }
@@ -1069,7 +1095,8 @@ const PG = (function(){
   const ALIAS = { takeoff:'takeoff', land:'land', move_forward:'forward', move_back:'back',
     move_left:'left', move_right:'right', move_up:'up', move_down:'down',
     rotate_clockwise:'cw', rotate_counter_clockwise:'ccw', flip:'flip',
-    set_speed:'speed', go_xyz_speed:'go', sleep:'sleep', time_sleep:'sleep' };
+    set_speed:'speed', go_xyz_speed:'go', curve_xyz_speed:'curve',
+    sleep:'sleep', time_sleep:'sleep' };
   function normalize(line){
     let s = line.replace(/#.*$/,'').replace(/;+\s*$/,'').trim(); if (!s) return '';
     const m = s.match(/^([A-Za-z_.]+)\s*\((.*)\)\s*$/);
@@ -1092,6 +1119,8 @@ const PG = (function(){
       if (!/^[lrfb]$/.test(dir)) return {error:'error (l/r/f/b)', raw:s}; return {op, dir, raw:s}; }
     if (op==='go'){ if (t.length < 5) return {error:'error (go x y z speed)', raw:s};
       return {op, e:[t[1],t[2],t[3],t[4]], raw:s}; }
+    if (op==='curve'){ if (t.length < 8) return {error:'error (curve x1 y1 z1 x2 y2 z2 speed)', raw:s};
+      return {op, e:[t[1],t[2],t[3],t[4],t[5],t[6],t[7]], raw:s}; }
     if (op==='rc') return {op:'noop', raw:s};
     if (op.endsWith('?')) return {op:'query', q:op, raw:s};
     return {error:'unknown command', raw:s};
@@ -1106,7 +1135,7 @@ const PG = (function(){
     if (!st.queue.length){ st.cur=null; st.running=false; readout(); return; }
     const c = st.queue.shift(); st.cur = c;
     if (c.op!=='command' && !st.armed) return abort(c.raw+' → error (envoyez "command" d\'abord)');
-    const needFly = MOVES[c.op] || ['cw','ccw','go','flip','land'].includes(c.op);
+    const needFly = MOVES[c.op] || ['cw','ccw','go','curve','flip','land'].includes(c.op);
     if (needFly && drones.some(d=>!d.flying)) return abort(c.raw+' → error (drone au sol)');
     log(c.raw,'cmd');
     if (c.op==='command'){ st.armed=true; return done('ok'); }
@@ -1155,6 +1184,20 @@ const PG = (function(){
           job.tx=p.x+fx*(v[0]/100)-fy*(v[1]/100);
           job.ty=p.y+fy*(v[0]/100)+fx*(v[1]/100);
           job.tz2=Math.max(0.05,p.z+v[2]/100); job.spd=v[3]/100;
+        } else if (c.op==='curve'){
+          // quadratic Bézier through the mid waypoint — fc_sdk: coords ±500, speed 10-60
+          if (v.slice(0,6).some(x=>!(x>=RANGE.go[0]&&x<=RANGE.go[1])) ||
+              !(v[6]>=10&&v[6]<=60)) return abort('→ error (curve: ±500 cm, speed 10-60)');
+          const bod=(x,y,z)=>({x:p.x+fx*(x/100)-fy*(y/100),
+                               y:p.y+fy*(x/100)+fx*(y/100),
+                               z:Math.max(0.05,p.z+z/100)});
+          job.b0={x:p.x,y:p.y,z:p.z}; job.b1=bod(v[0],v[1],v[2]); job.b2=bod(v[3],v[4],v[5]);
+          let len=0, px=job.b0.x, py=job.b0.y, pz=job.b0.z;
+          for (let q=1;q<=20;q++){ const s=q/20, a=(1-s)*(1-s), m=2*(1-s)*s, bq=s*s;
+            const qx=a*job.b0.x+m*job.b1.x+bq*job.b2.x, qy=a*job.b0.y+m*job.b1.y+bq*job.b2.y,
+                  qz=a*job.b0.z+m*job.b1.z+bq*job.b2.z;
+            len+=Math.hypot(qx-px,qy-py,qz-pz); px=qx; py=qy; pz=qz; }
+          job.T=Math.max(0.2, len/(v[6]/100)); job.t=0;
         } else if (c.op==='cw' || c.op==='ccw'){
           if (!(v[0]>=RANGE.rot[0] && v[0]<=RANGE.rot[1])) return abort('→ error (1-360°)');
           job.dyaw=(c.op==='cw'?-1:1)*v[0]*DEG; job.yaw0=d.yaw; job.acc=0;
@@ -1178,6 +1221,12 @@ const PG = (function(){
       if (p.z>=j.tz-1e-4){ d.flying=true; d.job=null; return true; } return false; }
     if (j.op==='land'){ p.z=Math.max(0,p.z-DESC*dt);
       if (p.z<=1e-4){ p.z=0; d.flying=false; d.job=null; return true; } return false; }
+    if (j.op==='curve'){ j.t+=dt; const s=Math.min(1, j.t/j.T);
+      const a=(1-s)*(1-s), m=2*(1-s)*s, bq=s*s;
+      p.set(a*j.b0.x+m*j.b1.x+bq*j.b2.x,
+            a*j.b0.y+m*j.b1.y+bq*j.b2.y,
+            a*j.b0.z+m*j.b1.z+bq*j.b2.z);
+      if (s>=1){ d.job=null; return true; } return false; }
     if (j.op==='cw' || j.op==='ccw'){ const s=YAW_RATE*dt; j.acc+=s;
       if (j.acc>=Math.abs(j.dyaw)){ d.yaw=j.yaw0+j.dyaw; d.root.rotation.z=d.yaw; d.job=null; return true; }
       d.yaw += Math.sign(j.dyaw)*s; d.root.rotation.z=d.yaw; return false; }
@@ -1188,19 +1237,65 @@ const PG = (function(){
     d.job=null; return true;
   }
   function step(dt){
-    if (st.running) drones.forEach(d=>{ d.bat=Math.max(0,d.bat-dt*0.25); });
+    if (st.running || drones.some(d=>d.flying))
+      drones.forEach(d=>{ d.bat=Math.max(0,d.bat-dt*0.25); });
     for (const d of drones) if (d.flying || d.job)
       for (const pr of d.props)
         pr.rotateOnAxis(PROP_SPIN, 26*dt*(pr.userData.dir||1));
     if (st.timer > 0){ st.timer -= dt;
       if (st.timer <= 0 && st.cur && st.cur.op==='sleep'){ st.timer=0; done('ok'); }
       readout(); return; }
-    const c = st.cur; if (!c) return;
-    let all = true;
-    for (const d of drones) if (!stepDrone(d, dt)) all = false;
-    if (all && drones.every(d=>!d.job)) done('ok');
+    // advance per-drone jobs — from the script command OR manual keyboard T/L/F
+    let pending = false;
+    for (const d of drones) if (d.job && !stepDrone(d, dt)) pending = true;
+    if (st.cur){
+      if (!pending && drones.every(d=>!d.job)) done('ok');
+    } else if (kbd.on && !st.queue.length){
+      // free flight: rc-style velocities (fc_params: xy 1.5 m/s, z 1.0 m/s)
+      const K = kbd.k;
+      const vf = ((K.KeyW?1:0)-(K.KeyS?1:0))*1.5;
+      const vl = ((K.KeyA?1:0)-(K.KeyD?1:0))*1.5;
+      const vz = ((K.ArrowUp?1:0)-(K.ArrowDown?1:0))*1.0;
+      const wz = ((K.ArrowLeft?1:0)-(K.ArrowRight?1:0))*YAW_RATE;
+      if (vf||vl||vz||wz) for (const d of drones){
+        if (!d.flying || d.job) continue;
+        d.yaw += wz*dt; d.root.rotation.z = d.yaw;
+        const fx=Math.cos(d.yaw), fy=Math.sin(d.yaw), p=d.root.position;
+        p.x = Math.max(-2.9, Math.min(2.9, p.x + (fx*vf - fy*vl)*dt));
+        p.y = Math.max(-2.9, Math.min(2.9, p.y + (fy*vf + fx*vl)*dt));
+        p.z = Math.max(0.05, Math.min(5,  p.z + vz*dt));
+      }
+    }
     readout();
   }
+
+  // ---- manual keyboard flight (playground, when no script is running) ------
+  const kbd = {on:false, k:Object.create(null)};
+  const kbtn = $('pgKbd');
+  kbtn.addEventListener('click', ()=>{
+    kbd.on = !kbd.on; kbtn.classList.toggle('on', kbd.on);
+    kbtn.textContent = kbd.on ? '🎮 Pilotage clavier : ON' : '🎮 Pilotage clavier : OFF';
+    log(kbd.on ? 'clavier activé — T pour décoller' : 'clavier désactivé', 'ok');
+  });
+  addEventListener('keydown', e=>{
+    if (!kbd.on) return;
+    const tag = (e.target && e.target.tagName) || '';
+    if (/TEXTAREA|INPUT|SELECT/.test(tag)) return;
+    if (/^Arrow/.test(e.code) || e.code==='Space') e.preventDefault();
+    kbd.k[e.code] = true;
+    if (e.repeat || st.cur || st.queue.length) return;
+    if (e.code==='KeyT'){ st.armed = true;
+      drones.forEach(d=>{ if (!d.flying && !d.job) d.job = {op:'takeoff', tz:TAKEOFF_Z}; });
+      log('T → takeoff', 'cmd'); }
+    if (e.code==='KeyL'){
+      drones.forEach(d=>{ if (d.flying && !d.job) d.job = {op:'land', tz:0}; });
+      log('L → land', 'cmd'); }
+    if (e.code==='KeyF'){
+      drones.forEach(d=>{ if (d.flying && !d.job && d.root.position.z > 0.6)
+        d.job = {flip:{axis:'x', sign:-1, t:0, dur:0.6}}; });
+      log('F → flip', 'cmd'); }
+  });
+  addEventListener('keyup', e=>{ kbd.k[e.code] = false; });
   function reset(clearLog){
     st.armed=false; st.running=false; st.queue=[]; st.cur=null; st.timer=0;
     spawn(defaultN);
@@ -1230,8 +1325,13 @@ const PG = (function(){
     swarm: ['# 03_swarm.py — essaim de 3 : jambes parallèles indexées par i',
             'command','drones 3','takeoff',
             'go 60+40*i (i-1)*80 0 60','cw 120*(i+1)','land'].join('\n'),
+    freestyle: ['# ★ Bonus (hors dépôt) — curves + flips, effet dynamique',
+            'command','drones 3','takeoff','up 30+20*i',
+            'flip f','curve 80 (i-1)*60 20 160 0 0 60',
+            'flip b','curve 80 (1-i)*60 -20 160 0 0 50',
+            'cw 120+60*i','flip l','land'].join('\n'),
   };
-  for (const [id, key] of [['pgP1','hover'],['pgP2','square'],['pgP3','swarm']])
+  for (const [id, key] of [['pgP1','hover'],['pgP2','square'],['pgP3','swarm'],['pgP4','freestyle']])
     $(id).addEventListener('click', ()=>{ $('pgCode').value = PRESETS[key]; });
   $('pgRun').addEventListener('click', run);
   $('pgReset').addEventListener('click', ()=>{ reset(true); log('réinitialisé','ok'); });
