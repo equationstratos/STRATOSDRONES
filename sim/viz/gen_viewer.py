@@ -276,6 +276,17 @@ TEMPLATE = r"""<!DOCTYPE html>
       background:#0b0e14;border:1px solid var(--line);border-radius:6px;padding:8px}
   .pg-log .ok{color:var(--acc2)} .pg-log .err{color:#ff6b6b} .pg-log .cmd{color:var(--ink)}
   .pg-log div{white-space:pre-wrap}
+  /* mobile: stack the panel above the canvas instead of side-by-side */
+  @media (max-width:700px){
+    #app{flex-direction:column}
+    #side,#pg{width:100%;max-height:46%;border-right:0;border-bottom:1px solid var(--line)}
+    #view{min-height:54%}
+    #tip{display:none}
+    #hud{font-size:10px;padding:6px 9px}
+    #pgCode{height:120px}
+    .pg-log{height:80px}
+    header{padding:10px 14px}
+  }
 </style>
 </head>
 <body>
@@ -474,7 +485,10 @@ const camera = new THREE.PerspectiveCamera(42, 1, 0.001, 100);
 camera.up.set(0, 0, 1);
 
 const renderer = new THREE.WebGLRenderer({antialias:true});
-renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+// cap the backbuffer: full retina x2 is invisible on this dark scene but
+// doubles GPU load — a real cost when several viewers share one page
+renderer.setPixelRatio(Math.min(devicePixelRatio,
+  matchMedia('(max-width:700px)').matches ? 1.25 : 1.5));
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1.05;
 view.appendChild(renderer.domElement);
@@ -1361,21 +1375,47 @@ const PG = (function(){
 
 const clock = new THREE.Clock();
 const PROP_SPIN = new THREE.Vector3(0,0,1);
+
+// Only render while actually on screen: with several viewers embedded in
+// one page, offscreen 60 fps loops are what makes scrolling stutter.
+// (IntersectionObserver in a same-origin iframe tracks visibility within
+// the TOP page's viewport, so each embed pauses itself when scrolled out.)
+let ioVisible = true, looping = false, hostControlled = false;
+window.__vizRendering = () => looping;
+function startLoop(){ if (!looping){ looping = true; clock.getDelta(); requestAnimationFrame(loop); } }
+function active(){ return ioVisible && !document.hidden; }
+// embedded: the HOST page observes its iframes (an iframe-local observer
+// only sees the iframe's own viewport) and posts {type:'viz', visible}
+addEventListener('message', e => {
+  const m = e.data;
+  if (m && m.type === 'viz'){ hostControlled = true;
+    ioVisible = !!m.visible; if (active()) startLoop(); }
+});
+try {
+  new IntersectionObserver(es => {
+    if (hostControlled) return;            // the host page knows better
+    ioVisible = es[0].isIntersecting;
+    if (active()) startLoop();
+  }, {threshold: 0.01}).observe(view);
+} catch(_){ /* very old browsers: keep rendering */ }
+document.addEventListener('visibilitychange', () => { if (active()) startLoop(); });
+
 function loop(){
+  if (!active()){ looping = false; return; }
   requestAnimationFrame(loop);
-  const dt = clock.getDelta();
+  const dt = Math.min(clock.getDelta(), 0.1);   // clamp across pauses
   if (PG) PG.step(dt);
   if (spinRate){
     for (const pr of propMeshes[mode]){
       const dir = pr.userData.dir!==undefined ? pr.userData.dir
                 : ((pr.position.x>0)===(pr.position.y<0) ? 1 : -1);
-      pr.rotateOnAxis(new THREE.Vector3(0,0,1), spinRate*dt*dir);
+      pr.rotateOnAxis(PROP_SPIN, spinRate*dt*dir);
     }
   }
   controls.update();
   renderer.render(scene, camera);
 }
-loop();
+startLoop();
 </script>
 </body>
 </html>

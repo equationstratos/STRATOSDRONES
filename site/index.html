@@ -15,7 +15,8 @@
 <header class="nav">
   <div class="wrap">
     <a class="brand" href="#top">STRATO<b>S</b>DRONES</a>
-    <nav>
+    <button class="nav-burger" id="navBurger" type="button" aria-label="Menu" aria-expanded="false">☰</button>
+    <nav id="siteNav">
       <a href="#specs">Specs</a>
       <a href="#design">Design</a>
       <a href="#variants">Variants</a>
@@ -55,7 +56,7 @@
       </div>
     </div>
     <figure>
-      <img src="assets/cad/hero.jpg" alt="Stratos Drones Fr4n7-001 Tello-look airframe render with clip-on prop guards" width="800" height="520">
+      <img decoding="async" src="assets/cad/hero.jpg" alt="Stratos Drones Fr4n7-001 Tello-look airframe render with clip-on prop guards" width="800" height="520">
     </figure>
   </div>
 </section>
@@ -122,7 +123,7 @@
       just like the drone it's modelled on.</p>
     <div class="grid g2">
       <div class="card">
-        <div class="ph"><img src="assets/cad/arms.jpg" alt="Double-strut Tello-look arms, top view"></div>
+        <div class="ph"><img loading="lazy" decoding="async" src="assets/cad/arms.jpg" alt="Double-strut Tello-look arms, top view"></div>
         <div class="bd">
           <h3>Double-strut arms</h3>
           <p>Two solid struts per motor, splayed from the body to each pod — the same
@@ -132,7 +133,7 @@
         </div>
       </div>
       <div class="card">
-        <div class="ph"><img src="assets/cad/battery.jpg" alt="1S battery pack lifted out of the rear slot, exploded view"></div>
+        <div class="ph"><img loading="lazy" decoding="async" src="assets/cad/battery.jpg" alt="1S battery pack lifted out of the rear slot, exploded view"></div>
         <div class="bd">
           <h3>Rear-loading battery, on top of the board</h3>
           <p>The pack slides in from the back over a honeycomb-vented floor and rides
@@ -155,7 +156,7 @@
       print or design.</p>
     <div class="grid g3">
       <div class="card">
-        <div class="ph"><img src="assets/cad/guards.jpg" alt="Top-down view, four prop guards clipped on, rings concentric with each prop"></div>
+        <div class="ph"><img loading="lazy" decoding="async" src="assets/cad/guards.jpg" alt="Top-down view, four prop guards clipped on, rings concentric with each prop"></div>
         <div class="bd">
           <h3>Drop-in fit</h3>
           <p>Sized straight from the real guard's geometry — no redesign, no
@@ -163,7 +164,7 @@
         </div>
       </div>
       <div class="card">
-        <div class="ph"><img src="assets/cad/iso.jpg" alt="Assembled airframe, three-quarter view, capot and struts"></div>
+        <div class="ph"><img loading="lazy" decoding="async" src="assets/cad/iso.jpg" alt="Assembled airframe, three-quarter view, capot and struts"></div>
         <div class="bd">
           <h3>One printed pair</h3>
           <p>Just <code>body_bottom_v2.stl</code> + <code>body_top_v2.stl</code> —
@@ -171,7 +172,7 @@
         </div>
       </div>
       <div class="card">
-        <div class="ph"><img src="assets/cad/underside.jpg" alt="Underside view showing the honeycomb vent floor and sensor apertures"></div>
+        <div class="ph"><img loading="lazy" decoding="async" src="assets/cad/underside.jpg" alt="Underside view showing the honeycomb vent floor and sensor apertures"></div>
         <div class="bd">
           <h3>Sensors stay clear</h3>
           <p>A honeycomb-vented floor with two dedicated apertures keeps the downward
@@ -194,9 +195,8 @@
       <a class="btn p" href="viewer.html" target="_blank" rel="noopener">⛶ Open full-screen</a>
     </div>
     <div style="border:1px solid var(--line);border-radius:var(--r);overflow:hidden">
-      <iframe id="mainViewer" data-cfg src="viewer.html" title="Stratos Drones Fr4n7-001 interactive 3-D viewer"
-        style="width:100%;height:720px;border:0;display:block;background:#0d1117"
-        loading="lazy"></iframe>
+      <iframe id="mainViewer" data-cfg class="vframe tall" src="viewer.html"
+        title="Stratos Drones Fr4n7-001 interactive 3-D viewer" loading="lazy"></iframe>
     </div>
   </div>
 </section>
@@ -215,9 +215,8 @@
       <a class="btn p" href="viewer.html?playground=1" target="_blank" rel="noopener">⛶ Open playground full-screen</a>
     </div>
     <div style="border:1px solid var(--line);border-radius:var(--r);overflow:hidden">
-      <iframe id="playViewer" data-cfg src="viewer.html?playground=1" title="Stratos Drones Fr4n7-001 flight playground"
-        style="width:100%;height:640px;border:0;display:block;background:#0d1117"
-        loading="lazy"></iframe>
+      <iframe id="playViewer" data-cfg class="vframe" src="viewer.html?playground=1"
+        title="Stratos Drones Fr4n7-001 flight playground" loading="lazy"></iframe>
     </div>
     <p class="mini" style="margin-top:12px;color:var(--mut)">Kinematics imitate the real
       flight constants (1 m/s cruise, ~96°/s yaw, 0.8 m takeoff) — enough to feel like the
@@ -244,10 +243,8 @@
       <a class="btn p" href="viewer.html?playground=1&amp;drones=3&amp;preset=swarm" target="_blank" rel="noopener">⛶ Open swarm demo full-screen</a>
     </div>
     <div style="border:1px solid var(--line);border-radius:var(--r);overflow:hidden">
-      <iframe id="swarmViewer" data-cfg src="viewer.html?playground=1&amp;drones=3&amp;preset=swarm"
-        title="Stratos Drones Fr4n7-001 swarm demo — three drones"
-        style="width:100%;height:640px;border:0;display:block;background:#0d1117"
-        loading="lazy"></iframe>
+      <iframe id="swarmViewer" data-cfg class="vframe" src="viewer.html?playground=1&amp;drones=3&amp;preset=swarm"
+        title="Stratos Drones Fr4n7-001 swarm demo — three drones" loading="lazy"></iframe>
     </div>
     <div class="grid g2" style="margin-top:26px">
       <div class="feat">
@@ -323,19 +320,19 @@ swarm.land()</code></pre>
       suite, all courtyard-checked so nothing overlaps.</p>
     <div class="grid g3">
       <div class="card">
-        <div class="ph"><img src="assets/pcb/component_map.jpg" alt="PCB component map, top and bottom"></div>
+        <div class="ph"><img loading="lazy" decoding="async" src="assets/pcb/component_map.jpg" alt="PCB component map, top and bottom"></div>
         <div class="bd"><h3>Every reference, mapped</h3>
           <p>A generated component map labels every part on both sides of the board so you
             can place and inspect it with confidence before ordering.</p></div>
       </div>
       <div class="card">
-        <div class="ph"><img src="assets/pcb/top.jpg" alt="PCB top render, routed"></div>
+        <div class="ph"><img loading="lazy" decoding="async" src="assets/pcb/top.jpg" alt="PCB top render, routed"></div>
         <div class="bd"><h3>Top — MCU, RF, motor drivers</h3>
           <p>ESP32-P4 + C6 down the spine, motor FETs in the corners, USB-C on the
             edge. Four copper planes poured (GND ×2, 3V3, VBAT).</p></div>
       </div>
       <div class="card">
-        <div class="ph"><img src="assets/pcb/bottom.jpg" alt="PCB bottom render, sensor side"></div>
+        <div class="ph"><img loading="lazy" decoding="async" src="assets/pcb/bottom.jpg" alt="PCB bottom render, sensor side"></div>
         <div class="bd"><h3>Bottom — the sensor side</h3>
           <p>ToF + optical-flow looking straight down through a dedicated aperture in
             the VBAT pour, clear of copper.</p></div>
@@ -354,23 +351,23 @@ swarm.land()</code></pre>
     <h2>Gallery</h2>
     <p class="sub">Concept brief, CAD renders and the board. Click any image to enlarge.</p>
     <div class="gal" id="gal">
-      <a href="assets/cad/hero.jpg"><img src="assets/cad/hero.jpg" alt="Tello-look hero render with prop guards" loading="lazy"></a>
-      <a href="assets/cad/guards.jpg"><img src="assets/cad/guards.jpg" alt="Top-down, four prop guards" loading="lazy"></a>
+      <a href="assets/cad/hero.jpg"><img decoding="async" src="assets/cad/hero.jpg" alt="Tello-look hero render with prop guards" loading="lazy"></a>
+      <a href="assets/cad/guards.jpg"><img loading="lazy" decoding="async" src="assets/cad/guards.jpg" alt="Top-down, four prop guards" loading="lazy"></a>
       <a href="assets/concept/1.jpg"><img src="assets/concept/1.jpg" alt="Concept — isometric view and dimensions" loading="lazy"></a>
-      <a href="assets/cad/battery.jpg"><img src="assets/cad/battery.jpg" alt="Rear battery, exploded view" loading="lazy"></a>
+      <a href="assets/cad/battery.jpg"><img loading="lazy" decoding="async" src="assets/cad/battery.jpg" alt="Rear battery, exploded view" loading="lazy"></a>
       <a href="assets/concept/2.jpg"><img src="assets/concept/2.jpg" alt="Concept — propulsion configuration" loading="lazy"></a>
-      <a href="assets/cad/arms.jpg"><img src="assets/cad/arms.jpg" alt="Double-strut arms, top view" loading="lazy"></a>
+      <a href="assets/cad/arms.jpg"><img loading="lazy" decoding="async" src="assets/cad/arms.jpg" alt="Double-strut arms, top view" loading="lazy"></a>
       <a href="assets/concept/3.jpg"><img src="assets/concept/3.jpg" alt="Concept render" loading="lazy"></a>
       <a href="assets/cad/front.jpg"><img src="assets/cad/front.jpg" alt="Front view, camera lens" loading="lazy"></a>
       <a href="assets/concept/4.jpg"><img src="assets/concept/4.jpg" alt="Concept render" loading="lazy"></a>
-      <a href="assets/pcb/component_map.jpg"><img src="assets/pcb/component_map.jpg" alt="Component map" loading="lazy"></a>
+      <a href="assets/pcb/component_map.jpg"><img loading="lazy" decoding="async" src="assets/pcb/component_map.jpg" alt="Component map" loading="lazy"></a>
       <a href="assets/concept/5.jpg"><img src="assets/concept/5.jpg" alt="Concept render" loading="lazy"></a>
       <a href="assets/cad/side.jpg"><img src="assets/cad/side.jpg" alt="Side view, low profile capot" loading="lazy"></a>
-      <a href="assets/cad/underside.jpg"><img src="assets/cad/underside.jpg" alt="Underside, honeycomb vent floor" loading="lazy"></a>
+      <a href="assets/cad/underside.jpg"><img loading="lazy" decoding="async" src="assets/cad/underside.jpg" alt="Underside, honeycomb vent floor" loading="lazy"></a>
       <a href="assets/concept/6.jpg"><img src="assets/concept/6.jpg" alt="Concept render" loading="lazy"></a>
       <a href="assets/concept/7.jpg"><img src="assets/concept/7.jpg" alt="Concept render" loading="lazy"></a>
-      <a href="assets/pcb/top.jpg"><img src="assets/pcb/top.jpg" alt="PCB top, routed" loading="lazy"></a>
-      <a href="assets/pcb/bottom.jpg"><img src="assets/pcb/bottom.jpg" alt="PCB bottom, sensor side" loading="lazy"></a>
+      <a href="assets/pcb/top.jpg"><img loading="lazy" decoding="async" src="assets/pcb/top.jpg" alt="PCB top, routed" loading="lazy"></a>
+      <a href="assets/pcb/bottom.jpg"><img loading="lazy" decoding="async" src="assets/pcb/bottom.jpg" alt="PCB bottom, sensor side" loading="lazy"></a>
       <a href="assets/cad/section.jpg"><img src="assets/cad/section.jpg" alt="Battery-over-board cross-section" loading="lazy"></a>
       <a href="assets/concept/8.jpg"><img src="assets/concept/8.jpg" alt="Concept render" loading="lazy"></a>
       <a href="assets/concept/9.jpg"><img src="assets/concept/9.jpg" alt="Concept render" loading="lazy"></a>
@@ -523,6 +520,39 @@ swarm.land()</code></pre>
   });
   lb.addEventListener('click', function(){ lb.classList.remove('on'); img.src=''; });
   document.addEventListener('keydown', function(e){ if(e.key==='Escape'){ lb.classList.remove('on'); img.src=''; } });
+})();
+
+// mobile burger menu
+(function(){
+  var b = document.getElementById('navBurger'), nav = document.getElementById('siteNav');
+  if (!b || !nav) return;
+  b.addEventListener('click', function(){
+    var open = nav.classList.toggle('open');
+    b.setAttribute('aria-expanded', open ? 'true' : 'false');
+  });
+  nav.addEventListener('click', function(e){
+    if (e.target.closest('a')){ nav.classList.remove('open'); b.setAttribute('aria-expanded','false'); }
+  });
+})();
+
+// pause offscreen 3-D viewers: tell each embedded viewer whether its iframe
+// is actually visible in THIS page, so only the one(s) on screen render.
+(function(){
+  if (!('IntersectionObserver' in window)) return;
+  function send(f, visible){
+    if (f.contentWindow){ try { f.contentWindow.postMessage({type:'viz', visible:visible}, '*'); } catch(e){} }
+  }
+  function inView(f){
+    var r = f.getBoundingClientRect();
+    return r.bottom > 0 && r.top < innerHeight;
+  }
+  var io = new IntersectionObserver(function(es){
+    es.forEach(function(en){ send(en.target, en.isIntersecting); });
+  }, {threshold: 0.02});
+  document.querySelectorAll('iframe[data-cfg]').forEach(function(f){
+    io.observe(f);
+    f.addEventListener('load', function(){ send(f, inView(f)); });
+  });
 })();
 </script>
 

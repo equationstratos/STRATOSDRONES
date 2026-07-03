@@ -26,6 +26,8 @@ header.nav{position:sticky;top:0;z-index:20;backdrop-filter:blur(10px);
 .brand b{color:var(--acc)}
 .nav nav{margin-left:auto;display:flex;gap:22px;font-size:14px}
 .nav nav a{color:var(--mut)}.nav nav a:hover{color:var(--txt)}
+.nav-burger{display:none;margin-left:auto;background:none;border:1px solid var(--line);
+  border-radius:8px;color:var(--txt);font-size:18px;line-height:1;padding:7px 11px;cursor:pointer}
 .btn{display:inline-block;padding:10px 18px;border-radius:999px;font-size:14px;font-weight:600;
   border:1px solid var(--line);transition:.15s}
 .btn.p{background:var(--acc);color:#eef4ff;border-color:var(--acc)}
@@ -51,8 +53,13 @@ header.nav{position:sticky;top:0;z-index:20;backdrop-filter:blur(10px);
 .tag{display:inline-block;font-size:12px;letter-spacing:.12em;text-transform:uppercase;
   color:var(--acc);border:1px solid #1a2c4d;background:#0b1220;padding:5px 11px;border-radius:999px;margin-bottom:18px}
 
-/* sections */
-section{padding:74px 0;border-bottom:1px solid var(--line)}
+/* sections — content-visibility lets the browser skip layout/paint of
+   offscreen sections entirely: the main scroll-smoothness win */
+section{padding:74px 0;border-bottom:1px solid var(--line);
+  content-visibility:auto;contain-intrinsic-size:auto 900px}
+/* embedded viewers (heights per breakpoint, no inline styles) */
+.vframe{width:100%;height:640px;border:0;display:block;background:#0d1117}
+.vframe.tall{height:720px}
 h2{font-size:clamp(24px,3vw,34px);margin:0 0 6px;letter-spacing:-.01em}
 .sub{color:var(--mut);margin:0 0 34px;max-width:60ch}
 
@@ -186,11 +193,35 @@ footer a:hover{color:var(--txt)}
 #lb.on{display:flex}#lb img{max-width:94vw;max-height:92vh;border-radius:10px}
 
 @media(max-width:900px){
+  /* the blur repaints on every scroll frame — solid bg is much cheaper */
+  header.nav{backdrop-filter:none;background:rgba(10,11,13,.96)}
   .hero .wrap{grid-template-columns:1fr;padding:54px 24px}
   .g3,.g2{grid-template-columns:1fr}.gal{columns:2}
   .configurator{grid-template-columns:1fr}
   .cfg-preview{position:static}
   .foot-grid{grid-template-columns:1fr;gap:24px}
+  /* burger menu: nav becomes a dropdown panel under the header */
+  .nav-burger{display:inline-block}
   .nav nav{display:none}
+  .nav nav.open{display:flex;flex-direction:column;gap:0;position:absolute;
+    top:62px;left:0;right:0;background:var(--bg2);border-bottom:1px solid var(--line);
+    padding:6px 0;z-index:40}
+  .nav nav.open a{padding:12px 24px;border-bottom:1px solid rgba(35,38,45,.5);font-size:15px}
+  .nav .wrap{position:relative;gap:12px}
+  .spec{display:block;overflow-x:auto}
+  .vframe{height:520px}.vframe.tall{height:520px}
+  .cfg-preview iframe{height:420px;min-height:320px}
+  .viewer-bar{justify-content:stretch}
+  .viewer-bar .btn{width:100%;text-align:center}
 }
-@media(max-width:560px){.gal{columns:1}}
+@media(max-width:560px){
+  .gal{columns:1}
+  .wrap{padding:0 16px}
+  section{padding:52px 0}
+  .kpis{gap:16px}
+  .vframe,.vframe.tall{height:460px}
+  .cc-label{width:74px;font-size:12px}
+  .cart-btn{padding:8px 12px;font-size:13px}
+  .nav .btn.p{display:none}   /* GitHub button lives in hero + footer too */
+  .brand{font-size:13px;letter-spacing:.1em}
+}
