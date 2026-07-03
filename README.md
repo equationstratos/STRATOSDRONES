@@ -1,73 +1,118 @@
-# STRATOSDRONE
+# STRATOSDRONE — presentation site
 
-**A fully open-source DJI Tello EDU class drone** — hardware (KiCad PCB you can order assembled from JLCPCB), 3D-printable frame (OpenSCAD), flight firmware (ESP32-P4 + ESP32-C6), Tello SDK 2.0 wire-compatible programming interface, swarming, and a complete Gazebo simulation that speaks the exact same protocol as the real drone.
+A single-page, dependency-free presentation of the project: hero, specs vs the
+DJI Tello EDU, the Tello-look double-strut design, the real clip-on prop
+guards, a live embedded 3-D viewer, the PCB, how the project is built, and a
+gallery of the concept brief + CAD/PCB renders.
 
-> Fly your mission scripts against the Gazebo sim today, order the PCB, print the frame, and run the *same unmodified Python code* on the real drone.
+Plain HTML/CSS/JS — **no build step**, no frameworks, no tracking.
 
-## Specs vs DJI Tello EDU
+## Files
 
-| | DJI Tello EDU | STRATOSDRONE |
-|---|---|---|
-| Weight / wheelbase | 87 g / 118 mm | ~92 g / 118 mm |
-| Motors / props | brushed 8520 / 3" | identical (Tello-compatible props) |
-| MCU | proprietary + Myriad 2 | **ESP32-P4** (flight + camera + H.264 hw encoder) + **ESP32-C6** (Wi-Fi 6) |
-| Sensors | IMU, baro, ToF, optical flow | ICM-42688-P, SPL06-001, VL53L1X, PMW3901 |
-| Camera | 5 MP, 720p30 H.264 | **OV5647 5 MP MIPI-CSI, hardware H.264 720p30 (Tello wire format) + 1080p30 extension** |
-| SDK | Tello SDK 2.0 (UDP 8889/8890/11111) | **wire-compatible incl. video** — [djitellopy](https://github.com/damiafuentes/DJITelloPy) works unmodified — plus extensions |
-| Swarm | STA mode on shared AP | identical, **plus simulated swarms in Gazebo** |
-| Simulation | none | full Gazebo Harmonic model running the *same* flight-control code |
-| License | closed | MIT (code), CERN-OHL-P-2.0 (hardware), CC-BY-4.0 (docs) |
+| File | Purpose |
+|---|---|
+| `index.html` | the page |
+| `style.css` | dark, minimal theme |
+| `viewer.html` | the interactive 3-D viewer, embedded live via `<iframe>` in the "Spin it around yourself" section — a straight copy of `sim/viz/drone_viewer.html` (self-contained, ~5 MB, no external requests) |
+| `assets/concept/*.jpg` | the original concept brief (resized from `/g`) |
+| `assets/cad/*.jpg` | OpenSCAD renders of the `tello_style` v2 airframe (hero, arms, battery, guards, iso/front/side/underside/section) |
+| `assets/pcb/*.jpg` | the PCB component map and routed top/bottom renders |
 
-## Repository layout
+## Refreshing the embedded viewer
 
-```
-fc_core/            Platform-independent flight control core (pure C99, no RTOS deps)
-                    — compiled into BOTH the ESP32-P4 firmware and the Gazebo plugin
-firmware/           ESP-IDF project for ESP32-P4 (esp32p4 target)
-sim/                Gazebo Harmonic plugin, drone SDF model, worlds, swarm launcher
-sim/viz/            Self-contained 3-D drone viewer (open drone_viewer.html) generated from the SDF
-sdk/python/         stratospy: thin djitellopy add-on for STRATOS extensions + examples
-android/            Android ground-control app (Tello SDK 2.0 client — takeoff/land/flip, joysticks, live video)
-hardware/pcb/       KiCad project + JLCPCB fab outputs (gerbers, BOM, CPL) + component map
-hardware/frame/     Parametric OpenSCAD frames → STL:
-                      • frame.scad …        open racing-style X-frame
-                      • tello_style/ …      closed Tello-size clamshell body
-docs/               Build guide, bring-up, SDK reference, architecture, safety
-```
-
-## Quick start (simulation)
+`viewer.html` is a plain copy — after regenerating the real one, just copy it over:
 
 ```bash
-# Ubuntu 24.04 — install Gazebo Harmonic (see docs/build_guide.md), then:
-cd sim && cmake -B build && cmake --build build
-./spawn_swarm.sh 1                      # one simulated drone on 127.0.0.2
-
-pip install djitellopy
-python sdk/python/examples/01_hover.py  # takeoff → hover → land, via the Tello protocol
-python sdk/python/examples/03_swarm.py  # ./spawn_swarm.sh 3 first
+python3 sim/viz/gen_viewer.py
+cp sim/viz/drone_viewer.html site/viewer.html
 ```
 
-## Status
+## View locally
 
-- [x] `fc_core` flight control core + host tests (ctest, closed-loop SIL)
-- [x] Gazebo Harmonic model + plugin, Tello-protocol UDP endpoint, multi-drone
-- [x] Python SDK layer + examples
-- [x] KiCad PCB + JLCPCB fab package *(review in KiCad before ordering — see docs/build_guide.md)*
-- [x] OpenSCAD frame → STL
-- [x] ESP32-P4 firmware tree (flight task, drivers, SDK server, H.264 video)
-- [ ] Hardware bring-up (waiting on first PCB batch — see docs/bringup.md)
-- [ ] Real-world flight tuning, camera pipeline validation, 2-drone swarm
+Open `index.html` directly, or serve the folder:
 
-## Safety
+```bash
+cd site && python3 -m http.server 8000
+# → http://localhost:8000
+```
 
-This is a flying machine with spinning propellers. Read `docs/safety.md` before the first
-flight: prop guards on, props off for the first power-up, never hand-catch, lipo handling.
+## Deploy
 
-## Licenses
+Pushed to `claude/cool-ride-w1bpia` or `main`, `.github/workflows/pages.yml`
+publishes this folder to GitHub Pages as-is (after checking every referenced
+asset exists). Enable Pages once in **Settings → Pages → Source: GitHub Actions**.
 
-- Code (fc_core, firmware, sim, sdk): [MIT](LICENSE)
-- Hardware (hardware/): [CERN-OHL-P-2.0](LICENSES/CERN-OHL-P-2.0.txt)
-- Documentation (docs/): [CC-BY-4.0](LICENSES/CC-BY-4.0.txt)
+## Refreshing the images
 
-Clean-room policy: Crazyflie / ESP-Drone / Betaflight are used as *algorithmic references
-only* (papers, datasheets, published behavior). No GPL code is copied. See CONTRIBUTING.md.
+`hero.jpg`, `guards.jpg` and the frame-only shots (`arms.jpg`, `iso.jpg`,
+`front.jpg`, `side.jpg`, `underside.jpg`) all come from
+`hardware/frame/tello_style/assembly_site.scad` (with guards/motors/props)
+and `assembly_site_plain.scad` (frame + capot only), rendered by:
+
+```bash
+cd hardware/frame/tello_style && python3 render_site_images.py
+```
+
+That script renders each view as **two** clean single-colour layers
+(`-D SHOW_CAPOT=false` for the body+accessories, `-D SHOW_BODY=false` for the
+capot alone) and composites them in Python, instead of one
+`SHOW_BODY=SHOW_CAPOT=true` pass. OpenSCAD's preview ("thrown together") mode
+dithers a checkerboard between the body's and capot's colours wherever their
+surfaces are close/touching, and this OpenSCAD build (2021.01) drops
+per-object colour entirely under `--render`/`render()` for multi-coloured
+scenes — two single-colour renders + compositing sidesteps both. It outputs
+PNGs next to itself; move `v2_*.png` into `preview/` and resize everything
+into `site/assets/cad/` (see the bottom of this section for the resize
+snippet).
+
+`assembly_site_exploded.scad` (exploded/assembly) and `_section.scad`
+(battery section — translucent shells, no boolean cut) aren't part of the
+two-layer pipeline and still render in one pass; they don't touch the
+capot/body boundary in a way that dithers.
+
+The body/capot/UI accent colour (currently blue, `#2f6fed`) is set in three
+places that need to move together: the `color()` calls in the four
+`assembly_site*.scad` scenes, the capot/LED/front-prop/`--acc` colours in
+`sim/viz/gen_viewer.py`, and `--acc`/`--acc2` in `site/style.css`.
+
+The PCB renders are regenerated straight from the current board:
+
+```bash
+cd hardware/pcb
+python3 scripts/gen_component_map.py          # -> preview/component_map.png
+kicad-cli pcb export svg --layers "F.Cu,F.Silkscreen,Edge.Cuts,F.Mask" \
+  --page-size-mode 2 -o /tmp/pcb_top.svg stratosdrone.kicad_pcb
+python3 -c "import cairosvg; cairosvg.svg2png(url='/tmp/pcb_top.svg', \
+  write_to='/tmp/pcb_top.png', output_width=1000, background_color='white')"
+```
+
+After re-rendering, resize into `site/assets/`:
+
+```bash
+python3 - <<'PY'
+from PIL import Image; import pathlib
+jobs = {
+  "hardware/frame/tello_style/hero.png":                        "site/assets/cad/hero.jpg",
+  "hardware/frame/tello_style/guards.png":                      "site/assets/cad/guards.jpg",
+  "hardware/frame/tello_style/preview/v2_top.png":              "site/assets/cad/arms.jpg",
+  "hardware/frame/tello_style/preview/v2_exploded.png":         "site/assets/cad/battery.jpg",
+  "hardware/frame/tello_style/preview/v2_iso.png":              "site/assets/cad/iso.jpg",
+  "hardware/frame/tello_style/preview/v2_front.png":            "site/assets/cad/front.jpg",
+  "hardware/frame/tello_style/preview/v2_side.png":             "site/assets/cad/side.jpg",
+  "hardware/frame/tello_style/preview/v2_underside.png":        "site/assets/cad/underside.jpg",
+  "hardware/frame/tello_style/preview/v2_battery_section.png":  "site/assets/cad/section.jpg",
+  "hardware/pcb/preview/component_map.png":                     "site/assets/pcb/component_map.jpg",
+  "/tmp/pcb_top.png":                                            "site/assets/pcb/top.jpg",
+}
+for src, dst in jobs.items():
+    p = pathlib.Path(src)
+    if not p.exists(): continue
+    im = Image.open(p).convert("RGB")
+    im.thumbnail((1600, 1600))
+    pathlib.Path(dst).parent.mkdir(parents=True, exist_ok=True)
+    im.save(dst, quality=86, optimize=True)
+    print("wrote", dst)
+PY
+```
+
+The concept images in `assets/concept/` are resized copies of `/g/1.png … 10.png`.
