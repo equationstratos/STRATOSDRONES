@@ -6,7 +6,7 @@
 
 ## Specs vs DJI Tello EDU
 
-| | DJI Tello EDU | STRATOSDRONE |
+| | DJI Tello EDU | STRATOSDRONES |
 |---|---|---|
 | Weight / wheelbase | 87 g / 118 mm | ~92 g / 118 mm |
 | Motors / props | brushed 8520 / 3" | identical (Tello-compatible props) |
