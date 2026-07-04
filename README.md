@@ -28,6 +28,7 @@ sim/                Gazebo Harmonic plugin, drone SDF model, worlds, swarm launc
 sim/viz/            Self-contained 3-D drone viewer (open drone_viewer.html) generated from the SDF
 sdk/python/         stratospy: thin djitellopy add-on for STRATOS extensions + examples
 android/            Android ground-control app (Tello SDK 2.0 client — takeoff/land/flip, joysticks, live video)
+fr4n6/              Fr4n6-001 — the 5" brushless FPV-class model (charter, CAD, hardware plan; same fc_core)
 hardware/pcb/       KiCad project + JLCPCB fab outputs (gerbers, BOM, CPL) + component map
 hardware/frame/     Parametric OpenSCAD frames → STL:
                       • frame.scad …        open racing-style X-frame
