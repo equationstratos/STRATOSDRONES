@@ -1,4 +1,4 @@
-# STRATOSDRONE
+# STRATOSDRONES
 
 **A fully open-source DJI Tello EDU class drone** — hardware (KiCad PCB you can order assembled from JLCPCB), 3D-printable frame (OpenSCAD), flight firmware (ESP32-P4 + ESP32-C6), Tello SDK 2.0 wire-compatible programming interface, swarming, and a complete Gazebo simulation that speaks the exact same protocol as the real drone.
 
