@@ -85,10 +85,15 @@ fr4n6/
   DESIGN.md          architecture & decisions (electronics, firmware, CAD, sim)
   ROADMAP.md         milestones M0–M4
   hardware/          block diagram, part selection, PCB plan (KiCad to come)
-  cad/               parametric OpenSCAD frame → STL (+ preview renders)
+  cad/               parametric OpenSCAD frame + Avata-2-style body → STL
+  viz/               self-contained browser 3-D viewer (drone_viewer.html)
   firmware/          fc_core integration notes + Fr4n6 parameter preset
   sim/               Gazebo model parameters for the 5" airframe
 ```
+
+**See it in 3-D:** open [`viz/drone_viewer.html`](viz/) — an offline WebGL
+viewer of the Avata-2-styled airframe (orbit, part toggles, live recolour),
+built exactly like the Fr4n7's `sim/viz/` viewer.
 
 ## Status
 
