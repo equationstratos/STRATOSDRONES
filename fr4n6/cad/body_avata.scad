@@ -1,132 +1,141 @@
-// Fr4n6-001 — Avata-2-inspired cinewhoop unibody (viewer/styling model, v0)
+// Fr4n6-001 — Avata-2-inspired cinewhoop (viewer/styling model, v1)
 //
-// Design language borrowed from the DJI Avata 2 silhouette: the four prop
-// ducts are FUSED into one rounded unibody shell (squircle outline with
-// pinched waists), a low flat-domed hump carries the electronics, the
-// battery rides on top at the rear like a backpack, and the camera head
-// sits in a protective U-frame on the nose. Scaled to the Fr4n6-001's
-// 5" / 220 mm-wheelbase geometry (the Avata 2 itself is a 3" machine).
+// Design language studied from the DJI Avata 2 silhouette (raised central
+// spine + four distinct low ducts joined by sculpted struts, a figure-8
+// flank on each side, protruding tilted camera head on the nose, battery
+// integrated in the rear of the spine). This is our OWN original OpenSCAD
+// geometry — a stylistic homage, NOT a copy of any DJI mesh — scaled to
+// the Fr4n6-001's 5" / 220 mm geometry.
 //
-// This file feeds fr4n6/viz/gen_viewer.py (browser 3-D viewer): each PART
-// below is exported as its own STL so the viewer can colour/toggle/spin
-// groups independently.
-//
-//   for P in shell dome battery camera motors prop; do
+// Each PART exports as its own STL so fr4n6/viz/gen_viewer.py can colour,
+// toggle and spin the groups independently.
+//   for P in shell canopy battery camera motors prop; do
 //     xvfb-run -a openscad -o stl/avata_$P.stl --export-format binstl \
 //       -D "PART=\"$P\"" body_avata.scad; done
 //
 // SPDX-License-Identifier: CERN-OHL-P-2.0
-$fn = 72;
+$fn = 80;
 
-PART = "assembly";     // shell|dome|battery|camera|motors|prop|assembly
+PART = "assembly";     // shell|canopy|battery|camera|motors|prop|assembly
 
 /* ------------- master geometry (matches frame.scad) ------------- */
-wheelbase = 220;                 // motor diagonal
-prop_d    = 127;                 // 5"
-posXY     = wheelbase/2/sqrt(2); // duct centres at (±posXY, ±posXY)
-duct_di   = prop_d + 8;          // bore
-duct_t    = 6;                   // ring wall
-duct_h    = 40;                  // deep Avata-style ducts
-shell_do  = duct_di + 2*duct_t;
+wheelbase = 220;                    // motor diagonal
+prop_d    = 127;                    // 5"
+posXY     = wheelbase/2/sqrt(2);    // 77.78 — duct centres at (±posXY,±posXY)
+duct_di   = prop_d + 9;             // bore
+duct_t    = 5.0;                    // thin ring wall (Avata look)
+duct_h    = 38;                     // deep ducts
+duct_z    = 2;                      // ducts sit LOW
+Rring     = duct_di/2 + duct_t/2;   // ring centreline radius
 
-module ring_solid(){ cylinder(d=shell_do, h=duct_h, center=true); }
-module bore(){ cylinder(d=duct_di, h=duct_h+40, center=true); }
+// central spine (raised body running front(+X)→rear(−X))
+sp_x0 = -96; sp_x1 = 92;            // rear … nose
+sp_w  = 42;                         // spine width (Y)
+sp_z0 = 12; sp_z1 = 54;            // spine sits high, above the ducts
 
-/* ---------------- unibody shell (with ducts) ---------------- */
-module shell(){
-  difference(){
-    union(){
-      // squircle unibody: hull of the four outer rings…
-      hull() for (x=[-1,1], y=[-1,1]) translate([x*posXY, y*posXY, 0]) ring_solid();
-      // nose block for the camera bay
-      translate([posXY+shell_do/2-24, 0, -4])
-        minkowski(){ cube([34, 66, duct_h-14], center=true); sphere(r=6); }
-    }
-    // pinched waists on the four sides (Avata's sculpted flanks)
-    for (a=[0:90:270]) rotate([0,0,a])
-      translate([posXY+shell_do/2+92, 0, 0]) cylinder(r=118, h=duct_h+30, center=true);
-    // the four duct bores
-    for (x=[-1,1], y=[-1,1]) translate([x*posXY, y*posXY, 0]) bore();
-    // duct inlet chamfers
-    for (x=[-1,1], y=[-1,1]) translate([x*posXY, y*posXY, duct_h/2])
-      cylinder(d1=duct_di, d2=duct_di+14, h=8, center=true);
-    // belly relief under the centre (sensor window sits here)
-    translate([0,0,-duct_h/2]) minkowski(){ cube([120, 90, 22], center=true); sphere(4); }
-    // camera opening in the nose
-    translate([posXY+shell_do/2-6, 0, 2]) rotate([0,90,0]) rotate([0,0,90])
-      cube([34, 40, 40], center=true);
+module rbox(sz, r){ minkowski(){ cube([sz[0]-2*r, sz[1]-2*r, sz[2]-2*r], center=true);
+                                  sphere(r=r); } }
+
+/* ---------------- one duct ring ---------------- */
+module duct(){
+  translate([0,0,duct_z]) difference(){
+    cylinder(d=duct_di+2*duct_t, h=duct_h, center=true);
+    cylinder(d=duct_di, h=duct_h+4, center=true);
+    translate([0,0,duct_h/2])                                   // inlet chamfer
+      cylinder(d1=duct_di, d2=duct_di+12, h=7, center=true);
+    translate([0,0,-duct_h/2])                                  // exit chamfer
+      cylinder(d1=duct_di+9, d2=duct_di, h=6, center=true);
   }
-  // landing pads under the outer corner of each duct ring
-  pad_r = duct_di/2 + duct_t/2;
-  for (x=[-1,1], y=[-1,1])
-    translate([x*(posXY + pad_r/sqrt(2)), y*(posXY + pad_r/sqrt(2)), -duct_h/2-4])
-      cylinder(d1=26, d2=20, h=8, center=true);
+}
+module ducts(){ for (x=[-1,1], y=[-1,1]) translate([x*posXY, y*posXY, 0]) duct(); }
+
+/* ---------------- sculpted struts spine → each duct ------------- */
+module strut(dcx, dcy){
+  inx = dcx - dcx/abs(dcx)*Rring*0.72;      // point on the duct inner rim
+  iny = dcy - dcy/abs(dcy)*Rring*0.72;
+  sx  = dcx*0.42;                            // anchor on the spine flank
+  sy  = (sp_w/2-2)*(dcy>0?1:-1);
+  hull(){
+    translate([sx, sy, sp_z0+9])  rbox([16,10,16], 3);
+    translate([inx, iny, duct_z+8]) rbox([16,14,14], 3);
+  }
+  // a lower tie so the strut reads as a webbed sweep, not a stick
+  hull(){
+    translate([sx*1.1, sy*0.8, sp_z0+2]) rbox([12,8,8], 2);
+    translate([(inx+dcx)/2, (iny+dcy)/2, duct_z+2]) rbox([12,12,8], 2);
+  }
+}
+module struts(){ for (x=[-1,1], y=[-1,1]) strut(x*posXY, y*posXY); }
+
+/* ---------------- spine lower body (structural) ---------------- */
+module spine_base(){
+  intersection(){
+    translate([(sp_x0+sp_x1)/2, 0, (sp_z0+sp_z1)/2])
+      rbox([sp_x1-sp_x0, sp_w, sp_z1-sp_z0], 12);
+    translate([0,0,-40]) cube([400, sp_w+40, 96], center=true);   // keep lower half
+  }
 }
 
-/* ---------------- electronics dome (recolourable "capot") -------- */
-module dome(){
-  translate([6, 0, duct_h/2])
-    difference(){
-      minkowski(){ cube([150, 96, 22], center=true); sphere(r=10); }
-      translate([0,0,-22]) cube([220, 160, 30], center=true);   // flat underside
-    }
+/* ---------------- canopy (recolourable accent top) ------------- */
+module canopy(){
+  intersection(){
+    translate([(sp_x0+sp_x1)/2+4, 0, (sp_z0+sp_z1)/2])
+      rbox([sp_x1-sp_x0-6, sp_w-2, sp_z1-sp_z0], 12);
+    translate([0,0,60]) cube([400, sp_w+40, 96], center=true);    // keep upper half
+  }
 }
 
-/* ---------------- battery backpack ---------------- */
+/* ---------------- battery (integrated rear of spine) ----------- */
 module battery(){
-  translate([-posXY-6, 0, duct_h/2+16]){
-    minkowski(){ cube([96, 46, 22], center=true); sphere(r=6); }
-    // latch groove detail
-    translate([50, 0, 0]) cube([4, 30, 14], center=true);
-  }
+  translate([sp_x0+22, 0, (sp_z0+sp_z1)/2])
+    difference(){
+      rbox([46, sp_w-3, sp_z1-sp_z0-4], 9);
+      translate([-24,0,0]) for (i=[-6:3:6])                      // rear vents
+        translate([0,i,-6]) cube([6,1.4,16], center=true);
+    }
 }
 
-/* ---------------- camera head ---------------- */
+/* ---------------- camera head (nose, tilted up) ---------------- */
 module camera(){
-  translate([posXY+shell_do/2-8, 0, 2]) rotate([0, -25, 0]){
-    sphere(d=30);                                     // gimbal-ish head
-    rotate([0,90,0]) cylinder(d=17, h=17);            // lens barrel
-    rotate([0,90,0]) translate([0,0,16]) cylinder(d=12, h=2.6);  // glass
+  translate([sp_x1-4, 0, sp_z0+10]) rotate([0,-22,0]){
+    rbox([20,30,26], 8);                                          // gimbal shroud
+    translate([12,0,0]) rotate([0,90,0]) cylinder(d=18, h=10);    // lens barrel
+    translate([20,0,0]) rotate([0,90,0]) cylinder(d=12, h=2.6);   // glass
   }
 }
 
 /* ---------------- motors (one per duct) ---------------- */
 module motor_one(){
-  // 3 flat spokes + can + bell, sitting low in the duct
   for (a=[0:120:240]) rotate([0,0,a])
-    translate([duct_di/4, 0, -duct_h/2+5]) cube([duct_di/2, 9, 4], center=true);
-  translate([0,0,-6]) cylinder(d=30, h=20, center=true);
-  translate([0,0,6.5]) cylinder(d1=32, d2=27, h=6, center=true);
+    translate([duct_di/4, 0, duct_z-duct_h/2+6]) cube([duct_di/2, 9, 4], center=true);
+  translate([0,0,duct_z-4]) cylinder(d=30, h=20, center=true);
+  translate([0,0,duct_z+7]) cylinder(d1=32, d2=27, h=6, center=true);
 }
-module motors(){
-  for (x=[-1,1], y=[-1,1]) translate([x*posXY, y*posXY, 0]) motor_one();
-}
+module motors(){ for (x=[-1,1], y=[-1,1]) translate([x*posXY, y*posXY, 0]) motor_one(); }
 
-/* ---------------- one 3-blade prop (viewer instances ×4) --------- */
+/* ---------------- one 3-blade prop (viewer instances ×4) ------- */
 module prop(){
-  translate([0,0,12]){
-    cylinder(d=16, h=9, center=true);                 // hub
-    for (a=[0:120:240]) rotate([0,0,a])
-      rotate([0,0,14]) translate([prop_d/4-4, 0, 0])
-        rotate([8,0,0])                                // blade pitch
-          scale([1, 0.22, 0.06])
-            sphere(d=prop_d/2+6);                      // petal blade
+  translate([0,0,duct_z+12]){
+    cylinder(d=16, h=9, center=true);
+    for (a=[0:120:240]) rotate([0,0,a]) rotate([0,0,14])
+      translate([prop_d/4-4,0,0]) rotate([8,0,0])
+        scale([1,0.22,0.06]) sphere(d=prop_d/2+6);
   }
 }
 
 /* ---------------- exports / preview ---------------- */
-if (PART=="shell") shell();
-else if (PART=="dome") dome();
+if      (PART=="shell")   { ducts(); struts(); spine_base(); }
+else if (PART=="canopy")  canopy();
 else if (PART=="battery") battery();
-else if (PART=="camera") camera();
-else if (PART=="motors") motors();
-else if (PART=="prop") prop();
+else if (PART=="camera")  camera();
+else if (PART=="motors")  motors();
+else if (PART=="prop")    prop();
 else {
-  color("#2a2e35") shell();
-  color("#2f6fed") dome();
+  color("#23272e"){ ducts(); struts(); spine_base(); }
+  color("#2f6fed") canopy();
   color("#3a4048") battery();
   color("#14161b") camera();
   color("#474d57") motors();
   color("#20242c") for (x=[-1,1], y=[-1,1])
-    translate([x*posXY, y*posXY, 0]) scale([1, (x*y>0)?1:-1, 1]) prop();
+    translate([x*posXY, y*posXY, 0]) scale([1,(x*y>0)?1:-1,1]) prop();
 }

@@ -301,7 +301,7 @@ def main():
             .replace("__IMPORTMAP__", importmap())
             .replace("__STLS__", json.dumps({
                 "shell": b64(os.path.join(STL, "avata_shell.stl")),
-                "dome": b64(os.path.join(STL, "avata_dome.stl")),
+                "dome": b64(os.path.join(STL, "avata_canopy.stl")),
                 "battery": b64(os.path.join(STL, "avata_battery.stl")),
                 "camera": b64(os.path.join(STL, "avata_camera.stl")),
                 "motors": b64(os.path.join(STL, "avata_motors.stl")),
