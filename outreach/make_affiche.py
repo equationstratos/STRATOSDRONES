@@ -24,7 +24,8 @@ HERO = "/home/user/STRATOSDRONE/site/assets/cad/hero.jpg"
 CONTACT = {
     "name":  "Patrick Ardanny",
     "phone": "07 84 84 99 74",
-    "email": "equationstratos001@gmail.com",
+    "email": "stratosdrone001@gmail.com",
+    "x":     "@stratosdrones77",
     "zone_fr": "Bordeaux · interventions dans toute la France",
     "zone_en": "Bordeaux · available across France",
     "link":  "equationstratos.github.io/STRATOSDRONES",
@@ -220,7 +221,7 @@ TPL = Template(r"""<!doctype html><html lang="$lang"><head><meta charset="utf-8"
           <div class="cta">$cta</div>
           <div class="contact">
             <span><b>$name</b></span><span>📞 $phone</span><span>✉️ $email</span>
-            <span>📍 $zone</span><span>🔗 $link</span>
+            <span>📍 $zone</span><span>🔗 $link</span><span><b>X</b> $x</span>
           </div>
           <div class="refer">$refer</div>
         </div>
@@ -243,7 +244,7 @@ def build(lang, theme):
         k_skills=t["k_skills"], cards=cards, k_for=t["k_for"], auds=auds, note=t["note"],
         k_fmt=t["k_fmt"], fmts=fmts, cta=t["cta"],
         name=CONTACT["name"], phone=CONTACT["phone"], email=CONTACT["email"],
-        zone=t["zone"], link=CONTACT["link"], refer=t["refer"],
+        zone=t["zone"], link=CONTACT["link"], x=CONTACT["x"], refer=t["refer"],
         qr_svg=QR_SVG, qr_lbl=t["qr"])
 
 # generate the 3 distinct HTMLs
