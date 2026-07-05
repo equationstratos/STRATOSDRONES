@@ -963,6 +963,9 @@ function setView(v){ const p=VIEWS[v]||VIEWS.iso; camera.position.set(p[0],p[1],
   controls.target.set(0,0,0.004); controls.update(); }
 document.querySelectorAll('[data-view]').forEach(b=> b.onclick=()=>setView(b.dataset.view));
 setView('iso');
+// headless/marketing hook: drive the camera from screenshot scripts
+window.__cam = (px,py,pz, tx,ty,tz)=>{ camera.position.set(px,py,pz);
+  controls.target.set(tx||0, ty||0, tz==null?0.004:tz); controls.update(); };
 
 // ---- resize + render loop --------------------------------------------------
 function resize(){ const w=view.clientWidth,h=view.clientHeight;
