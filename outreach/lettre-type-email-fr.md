@@ -57,7 +57,7 @@ Un simple contact transmis me serait très précieux, et je vous en remercie par
 Bien cordialement,
 
 **Patrick Ardanny**
-07 84 84 99 74 · stratosdrone001@gmail.com
+07 84 84 99 74 · stratosdrones001@gmail.com
 https://equationstratos.github.io/STRATOSDRONES/ · X : https://x.com/stratosdrones77
 Bordeaux · interventions dans toute la France
 
@@ -80,7 +80,7 @@ Et **si cela ne vous concerne pas**, auriez-vous dans votre réseau **une person
 structure** que cela pourrait intéresser ? Merci d'avance pour le contact.
 
 Bien cordialement,
-**Patrick Ardanny** — 07 84 84 99 74 · stratosdrone001@gmail.com ·
+**Patrick Ardanny** — 07 84 84 99 74 · stratosdrones001@gmail.com ·
 https://equationstratos.github.io/STRATOSDRONES/ · X : https://x.com/stratosdrones77
 
 ---

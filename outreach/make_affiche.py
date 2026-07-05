@@ -24,7 +24,7 @@ HERO = "/home/user/STRATOSDRONE/site/assets/cad/hero.jpg"
 CONTACT = {
     "name":  "Patrick Ardanny",
     "phone": "07 84 84 99 74",
-    "email": "stratosdrone001@gmail.com",
+    "email": "stratosdrones001@gmail.com",
     "x":     "@stratosdrones77",
     "zone_fr": "Bordeaux · interventions dans toute la France",
     "zone_en": "Bordeaux · available across France",
@@ -120,7 +120,7 @@ CSS = r"""
   .page { width:210mm; height:297mm; display:flex; flex-direction:column; overflow:hidden; background:var(--pagebg,#f5f8fc); }
 
   /* hero */
-  .hero { position:relative; height:104mm; overflow:hidden; }
+  .hero { position:relative; height:96mm; overflow:hidden; }
   .htext { position:relative; z-index:2; padding:13mm 12mm 0; }
   .browrow { display:flex; align-items:center; gap:4mm; }
   .brand { font-weight:800; letter-spacing:.14em; font-size:11pt; }

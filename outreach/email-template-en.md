@@ -57,7 +57,7 @@ along would be very valuable, and I thank you in advance.
 Kind regards,
 
 **Patrick Ardanny**
-+33 7 84 84 99 74 · stratosdrone001@gmail.com
++33 7 84 84 99 74 · stratosdrones001@gmail.com
 https://equationstratos.github.io/STRATOSDRONES/ · X: https://x.com/stratosdrones77
 Bordeaux · available across France
 
@@ -79,7 +79,7 @@ And **if it isn't for you**, might you know **a person or an organisation** in y
 who could be interested? Thanks in advance for the referral.
 
 Kind regards,
-**Patrick Ardanny** — +33 7 84 84 99 74 · stratosdrone001@gmail.com ·
+**Patrick Ardanny** — +33 7 84 84 99 74 · stratosdrones001@gmail.com ·
 https://equationstratos.github.io/STRATOSDRONES/ · X: https://x.com/stratosdrones77
 
 ---
