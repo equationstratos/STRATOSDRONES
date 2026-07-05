@@ -1,0 +1,26 @@
+[
+  {
+    "html": "affiche-fr-dark.html",
+    "out": "affiche-fr-a4",
+    "format": "A4",
+    "scale": 1.0
+  },
+  {
+    "html": "affiche-fr-dark.html",
+    "out": "affiche-fr-a3",
+    "format": "A3",
+    "scale": 1.41428
+  },
+  {
+    "html": "affiche-fr-light.html",
+    "out": "affiche-fr-a4-claire",
+    "format": "A4",
+    "scale": 1.0
+  },
+  {
+    "html": "affiche-en-dark.html",
+    "out": "affiche-en-a4",
+    "format": "A4",
+    "scale": 1.0
+  }
+]
