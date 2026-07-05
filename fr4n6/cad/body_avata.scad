@@ -1,12 +1,18 @@
-// Fr4n6-001 — Avata-2-inspired cinewhoop (viewer/styling model, v3)
+// Fr4n6-001 — Avata-2-inspired cinewhoop (viewer/styling model, v4)
 //
-// Design language studied from the DJI Avata 2 silhouette: a true cinewhoop
-// UNIBODY — the four prop ducts are bores cut through ONE sculpted shell
-// (webbed/filled between the ducts, gently waisted on the flanks), a low
-// wide canopy running nose-to-tail, a rear "backpack" battery, and a tilted
-// camera head on the nose. This is our OWN original OpenSCAD geometry — a
-// stylistic homage, NOT a copy of any DJI mesh — scaled to the Fr4n6-001's
-// 5" / 220 mm class.
+// Design language studied from two references the project owner picked:
+//   * DJI Avata 2 (top view) — a molded cinewhoop UNIBODY: four prop ducts
+//     cut through one sculpted, gently-waisted shell, with a NARROW raised
+//     spine/channel running nose-to-tail and a distinct central electronics
+//     module.
+//   * BetaFPV Pavo-style analog cinewhoop — the "technical" details: a finned
+//     heat-sink stack over the flight controller, tall rear antennas, a
+//     tilted nose camera, motors visible inside the ducts.
+//
+// Our fusion: the Avata molded unibody + a BetaFPV-style finned avionics
+// module (which also matches the Fr4n6's real ESP32-P4 cooling story). This
+// is our OWN original OpenSCAD geometry — a stylistic homage, NOT a copy of
+// any DJI/BetaFPV mesh — scaled to the Fr4n6-001's 5" / 220 mm class.
 //
 //   for P in shell canopy battery camera motors prop; do
 //     xvfb-run -a openscad -o stl/avata_$P.stl --export-format binstl \
@@ -24,14 +30,13 @@ posXY     = wheelbase/2/sqrt(2);    // 77.78
 duct_bore = prop_d + 9;             // 136 — prop swept bore
 wall      = 5;
 duct_or   = duct_bore/2 + wall;     // 73 — outer radius of a duct
-plate_h   = 24;                     // unibody thickness at the ducts
-split     = 30;                     // canopy(top) / shell(bottom) divider
+plate_h   = 22;                     // unibody thickness at the ducts (flat top)
 edge_y    = posXY + duct_or;        // 150.78 — flank extent before waisting
 
 /* ---------------- rounded primitives ---------------- */
 module rbox(sz, r){ minkowski(){ cube([sz[0]-2*r, sz[1]-2*r, sz[2]-2*r], center=true);
                                   sphere(r=r); } }
-// rounded-edge cylinder, base at z=0, total height h, fillet rr
+// rounded-edge cylinder, base at z=0, total height h, fillet rr  (needs h>2rr, r>rr)
 module rcyl(r, h, rr){ translate([0,0,rr]) minkowski(){
     cylinder(r=r-rr, h=h-2*rr); sphere(r=rr); } }
 
@@ -51,69 +56,71 @@ module plate(){
   }
 }
 
-/* ---------------- central canopy crown (nose-to-tail hump) ------ */
-// wide + low, biased to the front; the rear third is the battery.
-module crown(){
-  hull(){
-    translate([-30,0,16]) rcyl(34, 24, 13);   // canopy rear (meets battery)
-    translate([ 16,0,20]) rcyl(37, 26, 16);   // peak, widest
-    translate([ 58,0,12]) rcyl(25, 18, 10);   // shoulder
-    translate([ 84,0, 7]) rcyl(13, 12,  6);   // nose lead-in to camera
-  }
-}
-
-/* ---------------- duct bores + raised lips ---------------------- */
+/* ---------------- duct bores + flush lips ---------------------- */
 module bores(){ for (x=[-1,1], y=[-1,1])
   translate([x*posXY, y*posXY, -1]) cylinder(d=duct_bore, h=plate_h+40); }
 module lips(){ for (x=[-1,1], y=[-1,1])
   translate([x*posXY, y*posXY, plate_h-4]) difference(){
-    cylinder(r=duct_or,      h=6);
-    translate([0,0,-1]) cylinder(r=duct_bore/2, h=8);
-    translate([0,0,4]) cylinder(r1=duct_bore/2, r2=duct_bore/2+3, h=3); // top chamfer
+    cylinder(r=duct_or,      h=5);
+    translate([0,0,-1]) cylinder(r=duct_bore/2, h=7);
+    translate([0,0,3]) cylinder(r1=duct_bore/2, r2=duct_bore/2+3, h=3); // top chamfer
   } }
 
-/* full outer body (plate + crown), bores punched through */
-module body_full(){ difference(){ union(){ plate(); crown(); lips(); } bores(); } }
-
-module top_of(z0){ translate([0,0, 200+z0]) cube([500,400,400], center=true); }
-module bot_of(z0){ translate([0,0,-200+z0]) cube([500,400,400], center=true); }
-
-/* ---------------- canopy (recolourable accent lid) ------------- */
+/* ---------------- narrow spine (the recolourable canopy) -------- */
+// low, near-parallel channel nose-to-tail — NOT a wide teardrop.
+module spine(){
+  hull(){
+    translate([-40,0,13]) rcyl(20, 14, 6);   // rear (meets battery)
+    translate([  4,0,14]) rcyl(23, 16, 7);   // middle (under avionics)
+    translate([ 50,0,12]) rcyl(17, 13, 6);   // shoulder
+    translate([ 86,0, 9]) rcyl(10, 11, 4);   // nose lead-in to camera
+  }
+}
 module canopy(){
   difference(){
-    intersection(){ crown(); top_of(split); }        // just the crown's top slice
-    // front intake slot + two top vent lines for detail
-    translate([70, 0, 30]) rotate([0,22,0]) cube([9, 26, 7], center=true);
-    for (s=[-1,1]) translate([-4, s*11, 44]) rotate([0,3,0]) cube([54, 2.6, 7], center=true);
+    spine();
+    translate([74,0,15]) rotate([0,26,0]) cube([8, 20, 6], center=true); // nose intake slot
   }
 }
 
-/* ---------------- rear antennas -------------------------------- */
-module antennas(){
-  for (s=[-1,1]) translate([-92, s*15, plate_h]) rotate([0,26,0])
-    { cylinder(d=3, h=24); translate([0,0,24]) sphere(d=5); }
+/* ---- avionics module: BetaFPV-style finned FC stack (dark) ----- */
+module avionics(){
+  translate([4,0,0]){
+    translate([0,0,27]) rbox([44, 30, 9], 4);                 // FC/air-unit base
+    for (i=[-5:1:5]) translate([i*3.4, 0, 34]) cube([1.6, 24, 8], center=true); // heat-sink fins
+    for (s=[-1,1]) translate([22, s*6, 28]) rotate([0,90,0]) cylinder(d=4, h=3); // sensor lenses
+  }
 }
 
-/* ---------------- shell = body below split + lips + antennas ---- */
+/* ---------------- rear antennas (BetaFPV whips) ---------------- */
+module antennas(){
+  for (s=[-1,1]) translate([-86, s*14, plate_h-3]) rotate([0,-26,0]) rotate([s*8,0,0]){
+    cylinder(d=3.4, h=30);                    // coax whip
+    translate([0,0,30]) rcyl(4, 13, 3.8);     // rubber cap
+  }
+}
+
+/* ---------------- shell = body + module + antennas ------------- */
 module shell(){
-  intersection(){ body_full(); bot_of(split); }
+  difference(){ union(){ plate(); lips(); } bores(); }
+  avionics();
   antennas();
 }
 
 /* ---------------- battery (integrated rear backpack) ----------- */
 module battery(){
   translate([-72, 0, plate_h-2]) difference(){
-    rbox([58, 54, 30], 10);
+    rbox([58, 54, 28], 10);
     for (i=[-10:4:10]) translate([-29, i, 3]) cube([4, 2, 20], center=true); // rear vents
-    translate([0,0,-30]) cube([90,80,44], center=true);                      // flat base
-    translate([34,0,6]) cube([16,60,40], center=true);                       // front face to canopy
+    translate([0,0,-28]) cube([90,80,44], center=true);                      // flat base
+    translate([34,0,6]) cube([16,60,40], center=true);                       // front face to spine
   }
 }
 
 /* ---------------- camera head (nose, tilted up) ---------------- */
 module camera(){
-  translate([93, 0, 18]) rotate([0,-18,0]){
-    rbox([24, 32, 27], 10);                                       // gimbal shroud
+  translate([92, 0, 15]) rotate([0,-24,0]){
+    rbox([24, 32, 26], 10);                                       // gimbal shroud
     translate([14,0,0]) rotate([0,90,0]) cylinder(d=20, h=12);    // lens barrel
     translate([24,0,0]) rotate([0,90,0]) cylinder(d=13, h=2.8);   // glass
   }

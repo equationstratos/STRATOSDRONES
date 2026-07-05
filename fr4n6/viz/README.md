@@ -9,13 +9,16 @@ double-click — Three.js r160 and the six part STLs are inlined as base64
 
 ## Design
 
-The airframe styling follows the **DJI Avata 2** design language — a
-cinewhoop where the four prop ducts are fused into one sculpted unibody
-shell, a low electronics dome, a rear "backpack" battery, and a protected
-camera head on the nose — reinterpreted at the Fr4n6-001's 5" / 220 mm
-geometry. The geometry is our own original OpenSCAD
+The airframe fuses two references. From the **DJI Avata 2** molded
+cinewhoop: four prop ducts cut through one sculpted, gently-waisted unibody
+with a narrow raised spine running nose-to-tail, a rear "backpack" battery,
+and a tilted nose camera. From a **BetaFPV-style analog cinewhoop**: the
+technical details — a finned heat-sink stack over the flight controller
+(which doubles as the Fr4n6's real ESP32-P4 cooling story) and tall rear
+antennas. Reinterpreted at the Fr4n6-001's 5" / 220 mm geometry. The
+geometry is our own original OpenSCAD
 ([`../cad/body_avata.scad`](../cad/body_avata.scad)); it is a stylistic
-homage, not a copy of any DJI CAD.
+homage, not a copy of any DJI or BetaFPV CAD.
 
 ## Features
 
@@ -34,7 +37,7 @@ homage, not a copy of any DJI CAD.
 ```bash
 # 1. export the six part STLs from the Avata-style body
 cd fr4n6/cad
-for P in shell dome battery camera motors prop; do
+for P in shell canopy battery camera motors prop; do
   xvfb-run -a openscad -o stl/avata_$P.stl --export-format binstl \
     -D "PART=\"$P\"" body_avata.scad; done
 # 2. inline them + vendored Three.js into the single HTML
