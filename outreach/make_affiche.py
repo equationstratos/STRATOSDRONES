@@ -235,7 +235,7 @@ def build(lang, theme):
     cards = "".join(f'<div class="card"><div class="ic">{e}</div><div>'
                     f'<div class="ct">{ti}</div><div class="cd">{d}</div></div></div>'
                     for e, ti, d in t["skills"])
-    auds = "".join(f'<div class="aud"><span class="ae">{e}</span>{l}</div>' for e, l in t["auds"])
+    auds = "".join(f'<div class="aud">{l}</div>' for e, l in t["auds"])
     fmts = "".join(f'<div class="fmt">{f}</div>' for f in t["fmts"])
     return TPL.substitute(
         lang=lang, css=CSS, tcls=f"t-{theme}", hero=HERO_B64,
