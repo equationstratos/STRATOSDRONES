@@ -16,7 +16,7 @@ revendeurs et constructeurs de drones).
 | **`lettre-type-email-fr.md`** | Lettre type e-mail (FR) : 3 objets, version longue + courte, tableau d'adaptation par destinataire. |
 | **`email-template-en.md`** | Version anglaise de la lettre. |
 
-Coordonnées intégrées : **Patrick Ardanny · 07 84 84 99 74 ·
+Coordonnées intégrées : **Patrick Ardanny ·
 stratosdrones001@gmail.com · Bordeaux / toute la France**.
 Le **QR code** de l'affiche pointe vers <https://equationstratos.github.io/STRATOSDRONES/>.
 

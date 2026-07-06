@@ -220,7 +220,7 @@ TPL = Template(r"""<!doctype html><html lang="$lang"><head><meta charset="utf-8"
         <div class="ftxt">
           <div class="cta">$cta</div>
           <div class="contact">
-            <span><b>$name</b></span><span>📞 $phone</span><span>✉️ $email</span>
+            <span><b>$name</b></span><span>✉️ $email</span>
             <span>📍 $zone</span><span>🔗 $link</span><span><b>X</b> $x</span>
           </div>
           <div class="refer">$refer</div>
