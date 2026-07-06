@@ -300,3 +300,11 @@ pad overlaps, primarily between:
   still match `design.py` after any edit to the database.
 - After manual routing in KiCad, **regenerate the fab files from KiCad**, not
   from `export_fab.py` (which exports the unrouted board).
+- Silkscreen **branding** (the Stratos Drones S-propeller logo + "STRATOS
+  DRONES" wordmark, on B.SilkS) is added by `scripts/add_logo.py` — a
+  text-level append (no `pcbnew`) that **preserves the routing** and is
+  idempotent (re-running replaces its own block). It is **already applied to
+  the committed board**; if you ever re-run `make board` (which regenerates
+  the *unrouted* board from `design.py`), re-run `add_logo.py` afterwards and
+  before exporting fab files. Logo lives in the clean B.Cu-pour area above the
+  sensor aperture (y<27 mm) so it never sits over the optical windows.
