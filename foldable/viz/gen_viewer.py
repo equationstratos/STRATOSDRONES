@@ -152,7 +152,8 @@ TEMPLATE = r"""<!DOCTYPE html>
   </div>
   <div id="view">
     <div id="tip"><b>Souris :</b> glisser = orbite · molette = zoom · clic-droit = pan.
-      Bras avant <b>inversés</b> : pliés, ils ne se croisent jamais.</div>
+      Bras avant <b>inversés</b> : pliés, ils ne se croisent jamais.
+      <b>Déployer</b> anime bouton → verrou → ressorts (masque le capot pour voir le verrou).</div>
   </div>
 </div>
 
@@ -210,10 +211,12 @@ function group(name){ const g = new THREE.Group(); G[name]=g; root.add(g); retur
 const gBody  = group('body');  gBody.add (mesh(STLB64.body,  0xcfd4da, .25, .55));
 const gCapot = group('capot'); gCapot.add(mesh(STLB64.capot, 0x2f6fed, .35, .45));
 const gMech  = group('mech');
-gMech.add(mesh(STLB64.latch,  0x23272e, .3, .5));
-const bt = mesh(STLB64.button, 0x2f6fed, .3, .45);
-bt.position.set(0.010, -0.0296, 0.0106); bt.rotation.x = Math.PI/2;  // head outside
-gMech.add(bt);
+const latchM = mesh(STLB64.latch,  0x23272e, .3, .5);
+gMech.add(latchM);
+const BTN_Y = -0.0296;
+const btnM = mesh(STLB64.button, 0x2f6fed, .3, .45);
+btnM.position.set(0.010, BTN_Y, 0.0106); btnM.rotation.x = Math.PI/2;  // head outside
+gMech.add(btnM);
 
 // ---- the four folding arms — each a group pivoted at its hinge ----
 // FOLD_A and the pivot/motor table come from frame_foldable.scad
@@ -244,13 +247,54 @@ for (const k of Object.keys(ARMS)){
   A[k] = g; gArms.add(g);
 }
 
+// ---- torsion springs at the four pivots ----
+// Drawn just above the top jaw (through the capot's corner notches) so the
+// mechanism reads at a glance — the real coils live inside the jaw pocket.
+const sprMat = new THREE.MeshStandardMaterial({color:0xaab2bd, metalness:.85, roughness:.35});
+const gSprings = group('springs');
+const springLegs = [];
+function springCoil(){
+  const pts=[], r=0.0027, turns=3.5;
+  for(let i=0;i<=64;i++){ const a=i/64*turns*2*Math.PI;
+    pts.push(new THREE.Vector3(Math.cos(a)*r, Math.sin(a)*r, 0.002*i/64)); }
+  return new THREE.Mesh(new THREE.TubeGeometry(
+    new THREE.CatmullRomCurve3(pts), 128, 0.00035, 6, false), sprMat);
+}
+function springLeg(len){
+  const m = new THREE.Mesh(new THREE.CylinderGeometry(0.00035, 0.00035, len, 6), sprMat);
+  m.rotation.z = Math.PI/2;   // along +X, then parent-rotated
+  m.position.x = len/2;
+  return m;
+}
+for (const k of Object.keys(ARMS)){
+  const a = ARMS[k];
+  const coil = springCoil();
+  coil.position.set(a.pivot[0], a.pivot[1], 0.0106);
+  gSprings.add(coil);
+  const legA = new THREE.Group();       // body-side leg — static, points inboard
+  legA.add(springLeg(0.004));
+  legA.position.set(a.pivot[0], a.pivot[1], 0.0106);
+  legA.rotation.z = Math.atan2(-a.pivot[1], -a.pivot[0]);
+  gSprings.add(legA);
+  const legB = new THREE.Group();       // arm-side leg — winds with the arm
+  legB.add(springLeg(0.0045));
+  legB.position.set(0, 0, 0.0126);      // pivot-local inside the arm group
+  legB.rotation.z = Math.atan2(a.motor[1], a.motor[0]);
+  A[k].add(legB); springLegs.push(legB);
+}
+
 // centre the whole drone on the grid (deployed pose)
 const box = new THREE.Box3().setFromObject(root);
 const c = box.getCenter(new THREE.Vector3());
 root.position.set(-c.x, -c.y, -box.min.z);
 
-// ---- fold animation ----
+// ---- fold animation + latch/button choreography ----
+// Deploy = press the button -> the latch slides back 4.5 mm -> the torsion
+// springs snap the arms open -> button & latch spring back forward.
+// Fold   = hold the button pressed while the arms rotate in, release at the
+// end (the pins click into the keyholes) — as on the real V1.
 let foldT = PARAMS.get('fold') ? 1 : 0, foldTarget = foldT;
+let press = 0, pressTarget = 0, phase = null;   // 'deploy' | 'fold' | null
 function applyFold(t){
   for (const k of Object.keys(A)) A[k].rotation.z = ARMS[k].sign * FOLD_A * t;
   document.getElementById('fold').value = Math.round(t*100);
@@ -259,20 +303,29 @@ function applyFold(t){
   document.getElementById('bDeploy').classList.toggle('on', t < 0.5);
   document.getElementById('bFold').classList.toggle('on', t >= 0.5);
 }
-applyFold(foldT);
+function applyPress(p){
+  latchM.position.y = p*0.0045;               // slider stroke = latch_travel
+  btnM.position.y   = BTN_Y + p*0.0045;
+}
+applyFold(foldT); applyPress(0);
 window.__foldT = () => foldT;
-document.getElementById('bDeploy').addEventListener('click', ()=>{ foldTarget = 0; startLoop(); });
-document.getElementById('bFold').addEventListener('click',  ()=>{ foldTarget = 1; startLoop(); });
+window.__press = () => press;
+function deploySeq(){ if (foldT<0.02) return; phase='deploy'; pressTarget=1; startLoop(); }
+function foldSeq(){ phase='fold'; pressTarget=1; foldTarget=1; startLoop(); }
+document.getElementById('bDeploy').addEventListener('click', deploySeq);
+document.getElementById('bFold').addEventListener('click',  foldSeq);
 document.getElementById('fold').addEventListener('input', e=>{
-  foldT = foldTarget = e.target.value/100; applyFold(foldT); startLoop(); });
+  foldT = foldTarget = e.target.value/100; phase=null; pressTarget=0;
+  applyFold(foldT); startLoop(); });
 
 // ---- part toggles ----
 const GROUPS = {
-  body:  {label:'Châssis (chapes + pieds)', color:'#cfd4da'},
-  capot: {label:'Capot',                    color:'#2f6fed'},
-  arms:  {label:'Bras repliables',          color:'#b9bec6'},
-  mech:  {label:'Verrou + bouton',          color:'#23272e'},
-  props: {label:'Hélices',                  color:'#2456c9'},
+  body:   {label:'Châssis (chapes + pieds)', color:'#cfd4da'},
+  capot:  {label:'Capot',                    color:'#2f6fed'},
+  arms:   {label:'Bras repliables',          color:'#b9bec6'},
+  mech:   {label:'Verrou + bouton',          color:'#23272e'},
+  springs:{label:'Ressorts (pivots)',        color:'#aab2bd'},
+  props:  {label:'Hélices',                  color:'#2456c9'},
 };
 const groupsEl = document.getElementById('groups');
 for (const k of Object.keys(GROUPS)){
@@ -280,6 +333,8 @@ for (const k of Object.keys(GROUPS)){
   l.innerHTML = `<input type="checkbox" checked><span class="sw" style="background:${GROUPS[k].color}"></span>${GROUPS[k].label}`;
   l.querySelector('input').addEventListener('change', e=>{
     if (k==='props'){ for (const pm of propMeshes) pm.visible = e.target.checked; }
+    else if (k==='springs'){ G.springs.visible = e.target.checked;
+      for (const lg of springLegs) lg.visible = e.target.checked; }
     else G[k].visible = e.target.checked; });
   groupsEl.appendChild(l);
 }
@@ -297,8 +352,8 @@ applyColors({body:PARAMS.get('body'), shell:PARAMS.get('shell'), capot:PARAMS.ge
   dome:PARAMS.get('dome'), arms:PARAMS.get('arms'), props:PARAMS.get('props')});
 addEventListener('message', e=>{ const m=e.data; if(!m) return;
   if(m.type==='colors'){ applyColors(m); window.__lastColors=m; }
-  if(m.type==='deploy'){ foldTarget=0; startLoop(); }
-  if(m.type==='fold'){ foldTarget=1; startLoop(); } });
+  if(m.type==='deploy'){ deploySeq(); }
+  if(m.type==='fold'){ foldSeq(); } });
 try { if (parent && parent!==window) parent.postMessage({type:'ready'}, '*'); } catch(_){}
 
 // ---- wireframe / grid ----
@@ -341,9 +396,23 @@ function loop(){
   if(!activeR()){ looping=false; return; }
   requestAnimationFrame(loop);
   const dt = Math.min(clock.getDelta(), 0.1);
+  // button/latch stroke (fast: ~0.18 s)
+  if (press !== pressTarget){
+    press += Math.sign(pressTarget-press)*Math.min(dt/0.18, Math.abs(pressTarget-press));
+    applyPress(press);
+  }
+  // choreography gates
+  if (phase==='deploy'){
+    if (press > 0.85 && foldTarget !== 0) foldTarget = 0;         // latch open -> springs act
+    if (foldT < 0.7 && pressTarget !== 0) pressTarget = 0;        // release the button
+    if (foldT <= 0 && press <= 0.02) phase = null;
+  } else if (phase==='fold'){
+    if (foldT >= 0.995 && pressTarget !== 0) pressTarget = 0;     // pins click in
+    if (press <= 0.02 && foldT >= 0.995) phase = null;
+  }
   if (foldT !== foldTarget){
-    const step = dt/1.2;                                  // full sweep ~1.2 s
-    foldT += Math.sign(foldTarget-foldT)*Math.min(step, Math.abs(foldTarget-foldT));
+    const dur = (foldTarget === 0) ? 0.55 : 1.4;   // springs snap open; folding is manual
+    foldT += Math.sign(foldTarget-foldT)*Math.min(dt/dur, Math.abs(foldTarget-foldT));
     applyFold(foldT);
   }
   if(spinRate) for(const pm of propMeshes) pm.rotation.z += spinRate*dt*pm.userData.dir;

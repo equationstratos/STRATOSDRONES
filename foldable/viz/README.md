@@ -12,9 +12,16 @@ Each arm is its own Three.js group pivoted at its hinge, so the viewer
 plays the real kinematics (FOLD_A = 79.45°, signs FR+/FL−/RR−/RL+ from
 `../cad/frame_foldable.scad`):
 
-- **« Déployer / Replier »** buttons tween the fold (~1.2 s) and a slider
-  scrubs it; folding also eases the blades into the along-arm transport
-  pose.
+- **« Déployer »** plays the whole V1 mechanism: the nose button pushes
+  in → the keyhole latch slides back 4.5 mm → the torsion springs snap the
+  arms open (~0.55 s) → button + latch spring back. **« Replier »** holds
+  the button pressed while the arms rotate in, releasing at the click —
+  exactly the real manual refold. A slider scrubs the pose; folding eases
+  the blades into the along-arm transport position.
+- The **torsion springs are drawn** as steel coils at the four pivots
+  (arm-side legs wind with the arms). They render just above the top jaw
+  — through the capot's corner notches — for readability; the real coils
+  live inside the jaw pocket. Hide the capot to watch the latch work.
 - `postMessage({type:'deploy'})` / `({type:'fold'})` drive it from a host
   page — the browser twin of the `deploy` SDK verb (spec in
   [`../DESIGN.md`](../DESIGN.md)). `?fold=1` opens folded.
