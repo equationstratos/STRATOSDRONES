@@ -5,12 +5,12 @@ CAD. Fold math and mechanism rationale: [`../DESIGN.md`](../DESIGN.md).
 
 | PART | Print | Note |
 |---|---|---|
-| `body` | 1× | pod + clevis knuckles + latch guides + feet |
-| `capot` | 1× | foldable-specific lid (raised battery channel) |
-| `arm_front` | 2× (1 mirrored) | inverted pod — prop under the belly |
-| `arm_rear` | 2× (1 mirrored) | v2-style pod — prop on top |
-| `latch` | 1× | sliding rails + keyhole blades + crossbar |
-| `button` | 1× (V1) | umbrella-style release pin |
+| `body` | 1× | pod + outrigger ear knuckles + motor-ring cradles + feet |
+| `capot` | 1× | foldable-specific lid (battery channel, TOP-button bore) |
+| `arm_front` | 2× (1 mirrored) | STRAIGHT bar, inverted pod — prop under the belly |
+| `arm_rear` | 2× (1 mirrored) | STRAIGHT bar, v2-style pod — prop on top |
+| `latch` | 1× | sliding rails + 45° ejector wedges + crossbar |
+| `button` | 1× (V1) | vertical TOP pin, cone cams the crossbar |
 | `servo_cam` | 1× (V2) | cam disc for a 3.7 g nano-servo horn |
 | `arm_fr/fl/rr/rl` | — | pivot-local exports for the viewer (pre-mirrored) |
 | `assembly` / `assembly_folded` | — | previews (ghost prop discs) |

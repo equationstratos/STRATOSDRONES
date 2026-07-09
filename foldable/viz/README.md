@@ -12,12 +12,13 @@ Each arm is its own Three.js group pivoted at its hinge, so the viewer
 plays the real kinematics (FOLD_A = 79.45°, signs FR+/FL−/RR−/RL+ from
 `../cad/frame_foldable.scad`):
 
-- **« Déployer »** plays the whole V1 mechanism: the nose button pushes
-  in → the keyhole latch slides back 4.5 mm → the torsion springs snap the
-  arms open (~0.55 s) → button + latch spring back. **« Replier »** holds
-  the button pressed while the arms rotate in, releasing at the click —
-  exactly the real manual refold. A slider scrubs the pose; folding eases
-  the blades into the along-arm transport position.
+- **« Déployer »** plays the whole V1 mechanism: the TOP button pushes
+  down → the ejector latch slides back 4.5 mm and cams the nacelles out of
+  their cradles → the torsion springs snap the arms open (~0.55 s) →
+  button + latch spring back. **« Replier »** needs no button — the arms
+  rotate in until the motor-ring cradles click, as on the real thing. A
+  slider scrubs the pose; folding eases the blades into the along-arm
+  transport position.
 - The **torsion springs are drawn** as steel coils at the four pivots
   (arm-side legs wind with the arms). They render just above the top jaw
   — through the capot's corner notches — for readability; the real coils

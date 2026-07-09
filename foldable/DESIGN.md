@@ -3,36 +3,39 @@
 ## 1. Fold kinematics (all derived in `cad/frame_foldable.scad`)
 
 Frame coords: origin at pod centre, front = −Y. Motors at (±41.72, ±41.72)
-(118 mm wheelbase). Pivot axes (M2 verticals) sit in the four corner "dead
-zones" at **(±19, ±37)**, just outside the pod's r9 corner arc but inside
-its 42 × 78 bbox.
+(118 mm wheelbase). v1 is **Thingiverse-style**: the arms are **STRAIGHT
+flat bars** and the M2 pivots sit on four **outrigger ears** at
+**(±27.8, ±37)** — fully outside the pod, tied to its corners by solid
+bridges — so the folded bar lies parallel to the flank with the nacelle
+just clear of the wall.
 
 Front-right canonical numbers (the other corners are mirrors):
 
 | Quantity | Value |
 |---|---|
-| pivot → motor distance `L` | 23.21 mm |
-| dogleg offset `crank_out` | 8.8 mm (folded beam centreline at x = 27.8) |
-| along-beam length `a` | 21.48 mm |
-| deployed direction `th_dep` | −11.74° |
-| folded direction `th_fold` | 67.71° |
-| **fold sweep `FOLD_A`** | **79.45°** |
-| folded motor position | (27.8, ∓15.53) |
+| pivot → motor distance `L` | 14.70 mm |
+| deployed direction `th_dep` | −18.73° |
+| folded direction `th_fold` | +90° (along the flank) |
+| **fold sweep `FOLD_A`** | **108.73°** |
+| folded motor position | (27.8, ∓22.30) |
 | folded width (over nacelles) | 68.3 mm (vs 96.1 deployed, **−35 %**) |
 
-`crank_out` is sized so the folded **nacelle** (Ø12.7 on the 27.8 line)
-clears the pod wall (21) by 0.45 mm — the beam alone would allow 25, the
-pod is what binds. Rotation signs: FR +, FL −, RR −, RL + (front folds
-rearward, rear folds forward along the same flank).
+`pivot_x = 27.8` is sized so the folded **nacelle** (Ø12.7 centred on the
+pivot line) clears the pod wall (21) by 0.45 mm. Rotation signs: FR +,
+FL −, RR −, RL + (front folds rearward, rear folds forward along the same
+flank). The bar is born at the claw Ø6.4 and reaches its full 8 mm width
+7 mm out — still reads as one straight Thingiverse bar, but the root
+rotates inside the clevis.
 
 **Why the arms can never cross (the owner's inverted-front-arm trick):**
-folded, the front beam occupies y ∈ [−37, −15.5] and the rear beam
-y ∈ [+15.5, +37] — disjoint bands, 18.3 mm between nacelle rims. Only the
+folded, the front beam occupies y ∈ [−37, −22.3] and the rear beam
+y ∈ [+22.3, +37] — disjoint bands, 31.9 mm between nacelle rims. Only the
 **props** overlap in plan; because the front pods are inverted, the front
 prop plane (−3.5) and rear plane (+19.7) are 23 mm apart. Machine-checked:
 `PART=collision_folded|collision_arms|collision_deployed` each export
-**exactly 684 bytes** (an empty intersection + 1 mm marker cube) — re-run
-after any TUNE change.
+**exactly 684 bytes** (an empty intersection + 1 mm marker cube; the
+folded gate excludes only the cradle grip bumps, which seat 0.55 into the
+nacelle groove by design) — re-run after any TUNE change.
 
 **Transport rule:** with props mounted, align the blades along the arms
 before folding (the viewer's animation does this automatically). Aligned,
@@ -55,32 +58,36 @@ toward DEPLOYED.
   shallow groove in the slot ceiling and clicks into a deeper recess at the
   deployed angle. Forward-flight drag tends to fold the FRONT arms, so
   their detent is load-bearing — first-print item to verify (`TUNE`).
-- The clevis mouth opens 180° behind the deployed direction (the dogleg
-  hugs the barrel), leaving a ~90° sector that ties the jaws together —
-  where the corner web sits.
+- The clevis mouth opens ±76° around the sweep (the tapered bar root hugs
+  the barrel), leaving a ~90° C-sector that ties the jaws — plus the full
+  top/bottom bridge webs back to the pod corner.
 
-## 3. Latch — one slider, two release ends (V1/V2 share everything else)
+## 3. Mooring at the MOTOR RING — cradles + ejector latch + TOP button
 
-Folded, each arm's **riser + overhang** enters the body through a wall
-window and presents a Ø3 **pin** (top z 12.8, under the capot). A sliding
-frame — two rails + keyhole **blades** — sits over the beams:
+Per the owner's direction, the folded arm is moored to the body **at the
+motor receptacle**: each nacelle carries a **circumferential groove at
+mid-height** (z 3.5–7.5, 0.7 deep — « l'encoche au milieu du cercle
+récepteur ») and docks against the flank at (±27.8, ∓22.3):
 
-- slider **forward** → pins captured in the keyholes' round ends → arms
-  locked folded (the spring torque presses the pins into the round ends,
-  never out);
-- slider pushed **rearward 4.5 mm** → pins land in the open rectangles →
-  all four arms spring out; the deployed detents catch them.
+- a **far-side flexing lip** (body-centre side — the pivot side is the
+  folded beam's corridor) carries **two grip bumps straddling the
+  equator**: they snap 0.55 into the groove → over-centre retention at the
+  heaviest point of the arm — the best hold;
+- an **inboard stop pad** on the wall takes the spring preload;
+- **fold-in needs NO button**: push the arms in until the cradles click.
 
-Return: a small rubber band between the slider's rear hooks and the floor
-hooks (printed-flex spring is the planned upgrade, `TUNE`). **Folding back
-in is manual in both versions**: hold the release pressed while rotating
-the arms until the pins drop into the keyholes.
+**Release — the sliding ejector latch (shared V1/V2):** two rails inside
+the side walls end in **45° wedges** behind each docked nacelle (through
+wall windows, 1 mm standoff at rest). Slider pushed **rearward 4.5 mm** →
+the wedges cam the nacelles **outboard past the lips** → the torsion
+springs finish the deploy. Return: small rubber band to the floor hooks
+(printed-flex spring is the planned upgrade, `TUNE`).
 
-- **V1 button**: Ø4.6 pin through the nose (Ø5 hole at (10, front face,
-  z 10.6)) pressing the slider's crossbar — umbrella style.
-- **V2 servo**: a 3.7 g nano-servo (20 × 8.5 × 11.5) on the PCB front-left
-  drives `servo_cam` (Ø9 disc + lobe) against the same crossbar. The V1
-  button stays as a manual backup.
+- **V1 button — ON TOP**: a vertical pin (head proud of the capot at
+  (0, −26.6); tip guided in a floor boss) whose **cone cams the slider's
+  crossbar rearward** — press down, arms pop open, umbrella style.
+- **V2 servo**: a 3.7 g nano-servo drives `servo_cam` (Ø9 disc + lobe)
+  against the same crossbar. The V1 button stays as a manual backup.
 
 ## 4. The `deploy` SDK verb — **SPECIFIED, NOT YET IMPLEMENTED**
 

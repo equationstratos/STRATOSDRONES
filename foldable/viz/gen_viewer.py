@@ -152,8 +152,10 @@ TEMPLATE = r"""<!DOCTYPE html>
   </div>
   <div id="view">
     <div id="tip"><b>Souris :</b> glisser = orbite · molette = zoom · clic-droit = pan.
-      Bras avant <b>inversés</b> : pliés, ils ne se croisent jamais.
-      <b>Déployer</b> anime bouton → verrou → ressorts (masque le capot pour voir le verrou).</div>
+      Bras <b>droits</b> (style thing:1604440), avant <b>inversés</b> : pliés, ils ne se
+      croisent jamais et s'amarrent <b>par la nacelle moteur</b> dans les berceaux.
+      <b>Déployer</b> = bouton du dessus → verrou-éjecteur → ressorts
+      (masque le capot pour voir le verrou). <b>Replier</b> = pousser jusqu'au clic.</div>
   </div>
 </div>
 
@@ -213,20 +215,21 @@ const gCapot = group('capot'); gCapot.add(mesh(STLB64.capot, 0x2f6fed, .35, .45)
 const gMech  = group('mech');
 const latchM = mesh(STLB64.latch,  0x23272e, .3, .5);
 gMech.add(latchM);
-const BTN_Y = -0.0296;
+const BTN_Z = 0.001;                     // v1: TOP button, vertical pin
 const btnM = mesh(STLB64.button, 0x2f6fed, .3, .45);
-btnM.position.set(0.010, BTN_Y, 0.0106); btnM.rotation.x = Math.PI/2;  // head outside
+btnM.position.set(0, -0.0266, BTN_Z);
 gMech.add(btnM);
 
 // ---- the four folding arms — each a group pivoted at its hinge ----
 // FOLD_A and the pivot/motor table come from frame_foldable.scad
-// (FOLD_A = 79.448 deg; pivots (±19, ∓37) mm; motors ±22.72, ∓4.72 mm local).
-const FOLD_A = 1.38668;
+// (v1: STRAIGHT arms on outrigger ears — FOLD_A = 108.73 deg;
+//  pivots (±27.8, ∓37) mm; motors ±13.92, ∓4.72 mm pivot-local).
+const FOLD_A = 1.89769;
 const ARMS = {
-  fr: {stl:'arm_fr', pivot:[ 0.019,-0.037], sign:+1, motor:[ 0.02272,-0.00472], front:true },
-  fl: {stl:'arm_fl', pivot:[-0.019,-0.037], sign:-1, motor:[-0.02272,-0.00472], front:true },
-  rr: {stl:'arm_rr', pivot:[ 0.019, 0.037], sign:-1, motor:[ 0.02272, 0.00472], front:false},
-  rl: {stl:'arm_rl', pivot:[-0.019, 0.037], sign:+1, motor:[-0.02272, 0.00472], front:false},
+  fr: {stl:'arm_fr', pivot:[ 0.0278,-0.037], sign:+1, motor:[ 0.01392,-0.00472], front:true },
+  fl: {stl:'arm_fl', pivot:[-0.0278,-0.037], sign:-1, motor:[-0.01392,-0.00472], front:true },
+  rr: {stl:'arm_rr', pivot:[ 0.0278, 0.037], sign:-1, motor:[ 0.01392, 0.00472], front:false},
+  rl: {stl:'arm_rl', pivot:[-0.0278, 0.037], sign:+1, motor:[-0.01392, 0.00472], front:false},
 };
 const gArms = group('arms');
 const gProp = group('props');        // toggle proxy — props live inside arm groups
@@ -305,13 +308,15 @@ function applyFold(t){
 }
 function applyPress(p){
   latchM.position.y = p*0.0045;               // slider stroke = latch_travel
-  btnM.position.y   = BTN_Y + p*0.0045;
+  btnM.position.z   = BTN_Z - p*0.0035;       // TOP button pushes DOWN
 }
 applyFold(foldT); applyPress(0);
 window.__foldT = () => foldT;
 window.__press = () => press;
 function deploySeq(){ if (foldT<0.02) return; phase='deploy'; pressTarget=1; startLoop(); }
-function foldSeq(){ phase='fold'; pressTarget=1; foldTarget=1; startLoop(); }
+// v1: folding back needs NO button — push the arms in until the motor-ring
+// cradles click (the button/latch stay put).
+function foldSeq(){ phase='fold'; foldTarget=1; startLoop(); }
 document.getElementById('bDeploy').addEventListener('click', deploySeq);
 document.getElementById('bFold').addEventListener('click',  foldSeq);
 document.getElementById('fold').addEventListener('input', e=>{
@@ -407,8 +412,7 @@ function loop(){
     if (foldT < 0.7 && pressTarget !== 0) pressTarget = 0;        // release the button
     if (foldT <= 0 && press <= 0.02) phase = null;
   } else if (phase==='fold'){
-    if (foldT >= 0.995 && pressTarget !== 0) pressTarget = 0;     // pins click in
-    if (press <= 0.02 && foldT >= 0.995) phase = null;
+    if (foldT >= 0.995) phase = null;                             // cradles click in
   }
   if (foldT !== foldTarget){
     const dur = (foldTarget === 0) ? 0.55 : 1.4;   // springs snap open; folding is manual
