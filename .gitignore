@@ -27,6 +27,8 @@ fp-info-cache
 # CAD exports are committed on release; intermediates are not
 hardware/frame/*.echo
 hardware/frame/*.csg
+foldable/cad/*.echo
+foldable/cad/*.csg
 
 # misc
 *.log
