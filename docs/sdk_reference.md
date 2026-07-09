@@ -39,6 +39,7 @@ the Tello). Motion commands reply `ok` only when the motion **completes**;
 | `param <name> <value>` / `param <name>?` | set/get a flight-core gain (see `fc_params.c`) |
 | `EXT led r g b` | set the RGB status LEDs (0–255) |
 | `EXT version?` | → `stratos <version>` |
+| `deploy` | **Fr4n7-F foldable only — SPECIFIED, NOT YET IMPLEMENTED.** Releases the folded-arm latch (V2 servo cam, ≈1 s) then `ok`; `error Not foldable` otherwise. Full spec + implementation map: `foldable/DESIGN.md` §4 |
 
 ## State packet (10 Hz, Tello format)
 
