@@ -2,9 +2,10 @@
 
 A **folding-arm variant** of the Fr4n7-001: same electronics (the Fr4n7
 mainboard), same 8520 motors and 3" props, same firmware — but four
-**straight Thingiverse-style arms** pivot on corner outrigger ears and fold
-flat along the flanks, where each one **docks by its motor ring** into a
-snap cradle. Spring-loaded pivots pop them open in half a second:
+**sculpted paddle arms** (thing:1604440 style) pivot inside rounded corner
+LOBES and fold flat along the flanks, where each one **docks by its motor
+ring** into a snap cradle. Spring-loaded pivots pop them open in half a
+second:
 
 - **V1 « manuelle »** — an umbrella-style **mechanical push-button ON TOP**
   releases the ejector latch. Zero electronics added.
@@ -17,10 +18,11 @@ snap cradle. Spring-loaded pivots pop them open in half a second:
 ## Inspirations (credit where due)
 
 - **[Thingiverse thing:1604440](https://www.thingiverse.com/thing:1604440)**
-  — the folding mini-quad concept this follows closely: **straight flat
-  arms** on corner pivots, folding alongside the body. **Clean-room**: our
-  geometry is original parametric OpenSCAD; nothing was copied from that
-  mesh — same discipline as the Fr4n6's Avata homage.
+  — the folding mini-quad concept this follows closely: **flat sculpted
+  paddle arms** pivoting inside the body's rounded corner lobes, folding
+  alongside it into one compact silhouette. **Clean-room**: our geometry is
+  original parametric OpenSCAD; nothing was copied from that mesh — same
+  discipline as the Fr4n6's Avata homage.
 - **The project owner's printed prototype** (photos in the project log):
   the key optimisation is his — the **front arms mount INVERTED** (pod
   flipped, prop *under* the belly). Folded, the front arm sweeps rearward in
@@ -35,7 +37,7 @@ snap cradle. Spring-loaded pivots pop them open in half a second:
 |---|---|---|
 | Wheelbase (deployed) | 118 mm | **same** |
 | Footprint | 96 × 92.5 mm fixed | **≈ 68 × 83 mm folded** (−35 % width, blades aligned) |
-| Arms | printed into the shell | **4 straight pivoting arms (M2 axes + torsion springs), docking by the motor ring into snap cradles** |
+| Arms | printed into the shell | **4 sculpted paddle arms in corner-lobe hinges (M2 + torsion springs), docking by the motor ring into snap cradles** |
 | Deploy | — | **spring-loaded; TOP button (V1) or servo + `deploy` (V2); fold-in = push until click** |
 | Props | one plane | **two planes** (front low / rear high — inverted front pods) |
 | Landing | belly | **4 feet** in the blade-free "dead diamond" |

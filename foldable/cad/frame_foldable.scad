@@ -152,17 +152,25 @@ module at_corner(sx, sy) {
         children();
 }
 
-/* ============ outrigger ears + clevis knuckles (body side) ============
-   Thingiverse-style: the pivots live on posts OUTSIDE the pod, tied to the
-   corner by a solid bridge, so the STRAIGHT arms fold cleanly alongside. */
+/* ============ corner LOBES — sandwich hinges in the body line ============
+   Thingiverse-style elegance: each pivot lives inside a rounded corner LOBE
+   — two stacked plates (below and above the arm) that flow out of the pod
+   corner, the arm paddle rotating in the gap between them. Reads as one
+   sculpted silhouette instead of a bolted-on ear. */
+lobe_d = 13.6;
+module lobe_slab_local(z0, h) {
+    hull() {
+        translate([0,0,z0]) cylinder(d=lobe_d, h=h);
+        // tongue into the pod corner — kept slim so the hull's flank stays
+        // >1 mm clear of the DOCKED nacelle (checked by the folded gate)
+        translate([-8.5, 3.5, z0]) cylinder(d=10, h=h);
+    }
+}
 module knuckle_tower_local() {
+    lobe_slab_local(0, jaw_b);                            // lower plate
+    lobe_slab_local(jaw_b + slot_h, jaw_t);               // upper plate
+    // C-pillar around the barrel keeps the sandwich tied at the slot band
     cylinder(d=knuckle_d, h=jaw_b + slot_h + jaw_t);
-    // bridge back to the pod corner (canonical FR: pod corner is at (-x,+y))
-    for (zb=[[0,jaw_b],[jaw_b+slot_h, jaw_t]])
-        hull() {
-            translate([0,0,zb[0]]) cylinder(d=knuckle_d-1, h=zb[1]);
-            translate([-(pivot_x-19), 5.4, zb[0]]) cylinder(d=knuckle_d-1, h=zb[1]);
-        }
 }
 module knuckle_cuts_local() {
     translate([0,0,-eps]) cylinder(d=pivot_d, h=20);                  // M2 bore
@@ -178,7 +186,7 @@ module knuckle_cuts_local() {
     // clevis mouth: fan for the straight beam over the full sweep. The bar
     // root flares from the claw Ø to full width over 7 mm, so the opening
     // needs ±72°; the extrude stops AT the slot ceiling (detent lives there).
-    a0 = th_dep - 76; a1 = th_fold + 76;
+    a0 = th_dep - 88; a1 = th_fold + 88;   // wide paddle root tangents need ±88°
     translate([0,0,jaw_b-0.2]) linear_extrude(slot_h+0.2)
         polygon(concat([[0,0]], [for (a=[a0 : 6 : a1]) 12*[cos(a),sin(a)]],
                        [12*[cos(a1),sin(a1)]]));
@@ -248,7 +256,7 @@ module latch_u() {        // ONE printed part: rails + ejector wedges + crossbar
         for (sy=[-1,1]) hull() {   // 45° ejector wedge (1 mm standoff at rest;
                                    // slider +4.5 rearward cams the nacelle out)
             translate([sx*rail_x-1.0,        sy*25.3-1.8, rail_z0]) cube([2.0, 3.6, rail_z1-rail_z0]);
-            translate([sx*21.9-1.0,          sy*28.5-1.8, rail_z0]) cube([2.0, 3.6, rail_z1-rail_z0]);
+            translate([sx*21.0-1.0,          sy*28.5-1.8, rail_z0]) cube([2.0, 3.6, rail_z1-rail_z0]);
         }
         translate([sx*rail_x-0.6, 25.4, rail_z0]) cube([1.2, 2.6, 5.2]);   // band hook
     }
@@ -363,12 +371,19 @@ module claw() {
             cylinder(d=leg_d, h=2);                                    // arm-side spring leg
     }
 }
-module beam_arm() {   // straight flat bar; born at the claw Ø, full width by 7 mm
-    u = M_loc / norm(M_loc);
-    hull() {
-        translate([0,0,arm_zc])                    cylinder(d=claw_d, h=arm_h, center=true, $fn=36);
-        translate([7*u[0], 7*u[1], arm_zc])        cylinder(d=arm_w,  h=arm_h, center=true, $fn=36);
-        translate([M_loc[0], M_loc[1], arm_zc])    cylinder(d=arm_w,  h=arm_h, center=true, $fn=36);
+module beam_arm() {   // sculpted flat PADDLE (thing:1604440 style): wide shoulder
+    u = M_loc / norm(M_loc);          // at the pivot, gentle waist, blends into the cup
+    v = [-u[1], u[0]];                // sideways unit
+    difference() {
+        hull() {
+            translate([0,0,arm_zc])                 cylinder(d=claw_d, h=arm_h, center=true, $fn=36);
+            translate([7*u[0],  7*u[1],  arm_zc])   cylinder(d=11.0,   h=arm_h, center=true, $fn=48);
+            translate([M_loc[0], M_loc[1], arm_zc]) cylinder(d=12.4,   h=arm_h, center=true, $fn=48);
+        }
+        // concave flank scoops -> the elegant waist
+        for (s=[-1,1])
+            translate([10.6*u[0] + s*14.6*v[0], 10.6*u[1] + s*14.6*v[1], arm_zc])
+                cylinder(r=9.6, h=arm_h+2, center=true, $fn=64);
     }
 }
 module arm_canonical(inv=true) {

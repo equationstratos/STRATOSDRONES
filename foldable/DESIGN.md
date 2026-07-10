@@ -3,11 +3,13 @@
 ## 1. Fold kinematics (all derived in `cad/frame_foldable.scad`)
 
 Frame coords: origin at pod centre, front = −Y. Motors at (±41.72, ±41.72)
-(118 mm wheelbase). v1 is **Thingiverse-style**: the arms are **STRAIGHT
-flat bars** and the M2 pivots sit on four **outrigger ears** at
-**(±27.8, ±37)** — fully outside the pod, tied to its corners by solid
-bridges — so the folded bar lies parallel to the flank with the nacelle
-just clear of the wall.
+(118 mm wheelbase). v1 follows thing:1604440's design language: the arms
+are **sculpted flat PADDLES** (wide shoulder at the pivot, gentle waist,
+blending into the motor cup) and each M2 pivot lives inside a rounded
+**corner LOBE** at **(±27.8, ±37)** — two stacked plates flowing out of
+the pod corner, the paddle rotating in the sandwich gap — so the folded
+arm lies flat along the flank with the nacelle just clear of the wall,
+and the whole thing reads as one silhouette.
 
 Front-right canonical numbers (the other corners are mirrors):
 
@@ -23,9 +25,10 @@ Front-right canonical numbers (the other corners are mirrors):
 `pivot_x = 27.8` is sized so the folded **nacelle** (Ø12.7 centred on the
 pivot line) clears the pod wall (21) by 0.45 mm. Rotation signs: FR +,
 FL −, RR −, RL + (front folds rearward, rear folds forward along the same
-flank). The bar is born at the claw Ø6.4 and reaches its full 8 mm width
-7 mm out — still reads as one straight Thingiverse bar, but the root
-rotates inside the clevis.
+flank). The paddle is born at the claw Ø6.4, swells to an 11 mm shoulder
+7 mm out, then two concave flank scoops give the waist before the Ø12.4
+cup blend — the root rotates inside the lobe sandwich (mouth ±88°, the
+sandwich stays tied by a 75° C-pillar plus both full plates).
 
 **Why the arms can never cross (the owner's inverted-front-arm trick):**
 folded, the front beam occupies y ∈ [−37, −22.3] and the rear beam
