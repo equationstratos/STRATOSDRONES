@@ -2,13 +2,14 @@
 
 A **folding-arm variant** of the Fr4n7-001: same electronics (the Fr4n7
 mainboard), same 8520 motors and 3" props, same firmware — but four
-**sculpted paddle arms** (thing:1604440 style) pivot inside rounded corner
-LOBES and fold flat along the flanks, where each one **docks by its motor
-ring** into a snap cradle. Spring-loaded pivots pop them open in half a
-second:
+**sculpted paddle arms** pivot on **inset corner hinges dimensioned from
+the real thing:1604440** (M3 axes, 6 mm inside the corner) and fold flat
+along the flanks, each one snapping in by its own **arm-mounted tab**
+(nothing protrudes from the body). Spring-loaded pivots pop them open in
+half a second:
 
-- **V1 « manuelle »** — an umbrella-style **mechanical push-button ON TOP**
-  releases the ejector latch. Zero electronics added.
+- **V1 « manuelle »** — a **centred TOP push-button** (umbrella style)
+  releases the latch. Zero electronics added.
 - **V2 « commande »** — a 3.7 g nano-servo cam releases the *same* latch,
   triggered by a new **`deploy`** SDK verb (and the BOOT button as a physical
   fallback). The verb is **specified, not yet implemented** — see
@@ -37,8 +38,8 @@ second:
 |---|---|---|
 | Wheelbase (deployed) | 118 mm | **same** |
 | Footprint | 96 × 92.5 mm fixed | **≈ 68 × 83 mm folded** (−35 % width, blades aligned) |
-| Arms | printed into the shell | **4 sculpted paddle arms in corner-lobe hinges (M2 + torsion springs), docking by the motor ring into snap cradles** |
-| Deploy | — | **spring-loaded; TOP button (V1) or servo + `deploy` (V2); fold-in = push until click** |
+| Arms | printed into the shell | **4 sculpted paddle arms on INSET corner hinges (M3 + torsion springs), snap tabs ON THE ARMS into flush wall windows** |
+| Deploy | — | **spring-loaded; centred TOP button (V1) or servo + `deploy` (V2); alt mechanisms: worm-crank / scissor / iris (printable demos)** |
 | Props | one plane | **two planes** (front low / rear high — inverted front pods) |
 | Landing | belly | **4 feet** in the blade-free "dead diamond" |
 | Electronics / firmware | Fr4n7 board + fc_core | **identical** (servo on J9's EXP_IO for V2) |

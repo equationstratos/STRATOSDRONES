@@ -5,19 +5,21 @@ CAD. Fold math and mechanism rationale: [`../DESIGN.md`](../DESIGN.md).
 
 | PART | Print | Note |
 |---|---|---|
-| `body` | 1× | pod + corner-lobe hinges + motor-ring cradles + feet |
-| `capot` | 1× | foldable-specific lid (battery channel, TOP-button bore) |
-| `arm_front` | 2× (1 mirrored) | sculpted paddle, inverted pod — prop under the belly |
-| `arm_rear` | 2× (1 mirrored) | sculpted paddle, v2-style pod — prop on top |
-| `latch` | 1× | sliding rails + 45° ejector wedges + crossbar |
-| `button` | 1× (V1) | vertical TOP pin, cone cams the crossbar |
+| `body` | 1× | pod + INSET corner hinges + flush tab windows + feet |
+| `capot` | 1× | foldable-specific lid (battery channel, centred button bore) |
+| `arm_front` | 2× (1 mirrored) | paddle + snap tab, inverted pod — prop under the belly |
+| `arm_rear` | 2× (1 mirrored) | paddle + snap tab, v2-style pod — prop on top |
+| `latch` | 1× | rails above the PCB + 4 release fingers + centre bridge/sleeve |
+| `button` | 1× (V1) | vertical CENTRED pin, cone cams the bridge |
+| `mechanisms.scad` | demos | `worm_crank` / `scissor` / `iris_cam` (+ `_kit` flat plates) — printable alternative mechanisms |
 | `servo_cam` | 1× (V2) | cam disc for a 3.7 g nano-servo horn |
 | `arm_fr/fl/rr/rl` | — | pivot-local exports for the viewer (pre-mirrored) |
 | `assembly` / `assembly_folded` | — | previews (ghost prop discs) |
 | `collision_deployed/_folded/_arms` | — | **gates: binstl must be exactly 684 B** |
 
-Hardware per drone: 4× M2×12 + nyloc, 2 LH + 2 RH torsion springs (0.5 mm
-wire, Øi 4), 1 rubber band (latch return), V2 only: 3.7 g nano servo.
+Hardware per drone: 4× M3×14 + nyloc (as the original thing:1604440),
+2 LH + 2 RH torsion springs (0.5 mm wire, Øi 4), 1 rubber band (latch
+return), V2 only: 3.7 g nano servo.
 
 ## Regenerate
 

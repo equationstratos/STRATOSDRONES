@@ -55,11 +55,14 @@ arm_h = 5.6; arm_w = 8.0; prop_d = 76.2;   // STRAIGHT flat bar, uniform width
 
 /* ---------------- folding mechanism parameters ----------------
    (everything marked TUNE is a first-print estimate) */
-pivot_x   = 27.8;   pivot_y = 37;   // pivots on corner OUTRIGGER ears, fully
-                                    // outside the pod: folded beam clears the
-                                    // wall by 2.8, folded nacelle by 0.45  // TUNE
-pivot_d   = 2.2;                    // M2 x 12 + nyloc (4x)
-claw_d    = 6.4;                    // arm pivot barrel
+pivot_x   = 24.5;   pivot_y = 36;   // pivots INSET into the body corner, like
+                                    // the real thing:1604440 (theirs: 6 mm in
+                                    // from the plate edge, M3)             // TUNE
+crank_out = 3.3;                    // slight paddle crank so the folded beam
+                                    // centreline lands at x = 27.8 (nacelle
+                                    // clears the wall by 0.45)             // TUNE
+pivot_d   = 3.2;                    // M3 x 14 + nyloc (4x) — as the original
+claw_d    = 8.0;                    // arm pivot barrel (M3 core needs meat)
 jaw_b     = 2.4;                    // bottom clevis jaw (nyloc pocket underneath)
 slot_h    = 6.0;                    // clevis slot height (claw 5.6 + 0.4 clr)
 jaw_t     = 2.6;                    // top clevis jaw (torsion-spring pocket inside)
@@ -69,25 +72,28 @@ leg_d     = 1.4;                    // spring leg holes
 det_d     = 1.8;                    // deployed detent bump/recess          // TUNE
 arm_z0    = jaw_b + 0.2;            // beam/claw bottom (2.6)
 arm_zc    = arm_z0 + arm_h/2;       // beam centre (5.4)
-groove_z0 = 3.5; groove_z1 = 7.5;   // nacelle mooring groove band (mid-height)
-groove_dp = 0.7;                    // groove depth into the ring            // TUNE
-lip_gap   = 11.6;                   // cradle lip opening (< nacelle 12.7)   // TUNE
-latch_travel = 4.5;                 // slider stroke to eject                // TUNE
+tab_z0 = 8.6; tab_z1 = 11.3;        // arm-side snap TAB band (above the beam)
+tab_w  = 3.6; tab_t = 1.7;          // tab plan size
+lip_h  = 1.0;                       // tab hook lip, catches the window edge // TUNE
+latch_travel = 3.2;                 // slider stroke (1.5 engages, rest margin) // TUNE
 foot_h    = 8;                      // landing feet below the belly
 prop_z_lo = -3.5;                   // FRONT (inverted) prop plane — under the belly
 prop_z_hi = 19.7;                   // REAR prop plane — above the capot (as v2)
 
 /* ---------------- fold math (documented in ../DESIGN.md) ----------------
    FR canonical, arm local frame = pivot at origin, deployed pose, front = -Y.
-   STRAIGHT arm: the beam axis passes through the pivot. */
-L_pm    = norm([motor_off-pivot_x, motor_off-pivot_y]);      // 14.70 pivot->motor
-th_dep  = atan2(-(motor_off-pivot_y), motor_off-pivot_x);    // -18.73° deployed dir
-th_fold = 90;                                                // folded: along the flank
-FOLD_A  = th_fold - th_dep;                                  // 108.73° fold sweep
-M_loc   = [motor_off-pivot_x, -(motor_off-pivot_y)];         // motor (13.92,-4.72)
-dock_y  = pivot_y - L_pm;                                    // folded nacelle |y| = 22.3
+   Slightly CRANKED paddle: folded beam axis parallel to the flank, offset
+   crank_out outboard of the (inset) pivot. */
+L_pm    = norm([motor_off-pivot_x, motor_off-pivot_y]);      // 18.15 pivot->motor
+a_beam  = sqrt(L_pm*L_pm - crank_out*crank_out);             // 17.85 along-beam
+th_dep  = atan2(-(motor_off-pivot_y), motor_off-pivot_x);    // -18.38° deployed dir
+th_fold = atan2(a_beam, crank_out);                          //  79.5° folded dir
+FOLD_A  = th_fold - th_dep;                                  //  97.9° fold sweep
+M_loc   = [motor_off-pivot_x, -(motor_off-pivot_y)];         // motor (17.22,-5.72)
+D_loc   = crank_out*[cos(th_dep-90), sin(th_dep-90)];        // dogleg foot (deployed)
+dock_y  = pivot_y - a_beam;                                  // folded nacelle |y| = 18.15
 echo(str("ASSERT wheelbase=", wheelbase, "  FOLD_A=", FOLD_A,
-         "  folded_motor=(", pivot_x, ",", dock_y, ")"));
+         "  folded_motor=(", pivot_x + crank_out, ",", dock_y, ")"));
 
 /* landing feet — inside the "dead diamond" that no blade (folded, aligned or
    mid-swing fan) sweeps at prop_z_lo (re-checked for the ear pivots). */
@@ -157,13 +163,13 @@ module at_corner(sx, sy) {
    — two stacked plates (below and above the arm) that flow out of the pod
    corner, the arm paddle rotating in the gap between them. Reads as one
    sculpted silhouette instead of a bolted-on ear. */
-lobe_d = 13.6;
+lobe_d = 12.0;
 module lobe_slab_local(z0, h) {
-    hull() {
-        translate([0,0,z0]) cylinder(d=lobe_d, h=h);
-        // tongue into the pod corner — kept slim so the hull's flank stays
-        // >1 mm clear of the DOCKED nacelle (checked by the folded gate)
-        translate([-8.5, 3.5, z0]) cylinder(d=10, h=h);
+    hull() {   // compact corner plate: pivot boss INSET like the original —
+               // blended into both pod faces, nothing reads as an add-on
+        translate([0,0,z0])          cylinder(d=lobe_d, h=h);
+        translate([-7.5, -1.5, z0])  cylinder(d=9, h=h);   // into the side wall
+        translate([-3.5,  2.6, z0])  cylinder(d=9, h=h);   // into the end wall
     }
 }
 module knuckle_tower_local() {
@@ -173,8 +179,8 @@ module knuckle_tower_local() {
     cylinder(d=knuckle_d, h=jaw_b + slot_h + jaw_t);
 }
 module knuckle_cuts_local() {
-    translate([0,0,-eps]) cylinder(d=pivot_d, h=20);                  // M2 bore
-    translate([0,0,-eps]) cylinder(d=4.4/cos(30), h=1.7, $fn=6);      // nyloc pocket
+    translate([0,0,-eps]) cylinder(d=pivot_d, h=20);                  // M3 bore
+    translate([0,0,-eps]) cylinder(d=5.6/cos(30), h=2.3, $fn=6);      // M3 nyloc pocket
     translate([0,0,jaw_b-0.2]) cylinder(d=claw_d+0.5, h=slot_h+0.4);  // barrel bore
     translate([0,0,jaw_b+slot_h-eps]) cylinder(d=spring_od, h=spring_pk+eps); // spring pocket
     rotate([0,0,th_fold+25]) translate([spring_od/2-0.7, 0, jaw_b+slot_h-eps])
@@ -186,7 +192,9 @@ module knuckle_cuts_local() {
     // clevis mouth: fan for the straight beam over the full sweep. The bar
     // root flares from the claw Ø to full width over 7 mm, so the opening
     // needs ±72°; the extrude stops AT the slot ceiling (detent lives there).
-    a0 = th_dep - 88; a1 = th_fold + 88;   // wide paddle root tangents need ±88°
+    a0 = th_dep - 110; a1 = th_fold + 88;  // cranked paddle root wraps the barrel:
+                                           // dogleg side opens −110° (C-pillar ~64°,
+                                           // the sandwich plates carry the load)
     translate([0,0,jaw_b-0.2]) linear_extrude(slot_h+0.2)
         polygon(concat([[0,0]], [for (a=[a0 : 6 : a1]) 12*[cos(a),sin(a)]],
                        [12*[cos(a1),sin(a1)]]));
@@ -198,35 +206,15 @@ module knuckle_voids() { for (sx=[-1,1], sy=[-1,1]) at_corner(sx,sy) knuckle_cut
    A flexing C-cradle on each flank grips the nacelle's mid-height GROOVE
    when folded (the owner's "encoche au milieu du cercle récepteur") — best
    grip: it holds the heavy end. The sliding latch EJECTS the nacelles. */
-module at_dock(sx, sy) {   // same mirror scheme, centred on the folded nacelle
-    translate([sx*pivot_x, sy*dock_y, 0])
-        mirror([sx<0?1:0,0,0]) mirror([0,sy>0?1:0,0]) children();
-}
-module cradle_bumps_local() {   // TWO grip bumps on the far lip, straddling the
-    for (s=[-1,1])              // equator -> over-centre snap; seat 0.55 in the groove
-        translate([s*1.9, 7.1, (groove_z0+groove_z1)/2])
-            rotate([0,90,0]) cylinder(d=2.6, h=2.6, center=true, $fn=24);
-}
-module cradle_local() {   // canonical: folded nacelle centred at (0,0).
-    // The pivot side is the folded BEAM's corridor, so the snap lip lives on
-    // the FAR (body-centre) side only; an inboard stop pad takes the wall side.
-    difference() {
-        hull() {   // far-side flexing lip, anchored into the wall
-            translate([-nacelle_d/2-1.4, 6.5, groove_z0-1.2])
-                cube([2.6, 2.6, groove_z1-groove_z0+2.4]);
-            translate([ 2.4, 6.5, groove_z0-1.2])
-                cube([2.4, 2.6, groove_z1-groove_z0+2.4]);
-        }
-        translate([0,0,(groove_z0+groove_z1)/2])   // 0.3 running clearance
-            cylinder(d=nacelle_d+0.6, h=groove_z1-groove_z0+3.2, center=true);
-    }
-    cradle_bumps_local();
-    // inboard stop pad: the nacelle rests against it, flush with the wall
-    translate([-nacelle_d/2-1.35, -1.6, groove_z0-1.2])
-        cube([1.15, 3.2, groove_z1-groove_z0+2.4]);
-}
-module cradles()      { for (sx=[-1,1], sy=[-1,1]) at_dock(sx,sy) cradle_local(); }
-module cradle_bumps() { for (sx=[-1,1], sy=[-1,1]) at_dock(sx,sy) cradle_bumps_local(); }
+/* ============ arm-side snap TABS (« les accroches sont sur les bras ») ====
+   Nothing protrudes from the body: each arm carries a small flexible tab on
+   its nacelle that enters a flush WINDOW in the side wall when folded; a
+   sideways barb hooks the wall's inner face. The slider's release fingers
+   deflect the tabs (+Y), the barbs clear the edge, the springs deploy. */
+win_y0 = 3.2;  win_y1 = 2.4;        // window span rel. dock: [-win_y0, +win_y1]
+                                    // (uniform WORLD layout on all four corners:
+                                    //  barb pokes past the FRONT edge, shank
+                                    //  deflects REARWARD, finger pushes +Y)
 
 /* ================= ejector latch (shared V1/V2) =================
    Slider rails inside the walls; fingers pass through wall slots and end in
@@ -234,48 +222,46 @@ module cradle_bumps() { for (sx=[-1,1], sy=[-1,1]) at_dock(sx,sy) cradle_bumps_l
    the wedges cam the nacelles OUTBOARD past the cradle lips -> torsion
    springs finish the deploy. Fold-in needs no button (cradles just click). */
 rail_x  = 18.1;
-rail_z0 = 3.2; rail_z1 = 7.8;      // ejector band = the groove band height
-module wall_finger_slots() {
+rail_z0 = 8.6; rail_z1 = 11.4;     // rails ride ABOVE the PCB (top 5.8) and the beams
+btn_y   = -19;                     // release button ON TOP, centred on the axis
+                                   // (clear of the battery nose at y -16 and the
+                                   //  ToF window at (0,-3.9) — the pin cannot cross
+                                   //  the PCB, so it is guided by a bridge sleeve)
+module tab_windows() {   // flush wall windows the arm tabs snap into
     for (sx=[-1,1], sy=[-1,1])
-        translate([sx*(pod_x/2 - wall/2), sy*dock_y - sy*1.2, (rail_z0+rail_z1)/2])
-            cube([wall+2.6, 7.4+latch_travel, rail_z1-rail_z0+0.6], center=true);
-}
-module button_boss() {    // TOP button: vertical guide boss on the floor
-    translate([0, -26.6, 0]) cylinder(d=7.6, h=4.2);
-}
-module button_bore() {
-    translate([0, -26.6, -eps]) cylinder(d=2.9, h=4.4);   // pin tip socket
+        translate([sx*(pod_x/2 - wall/2), sy*dock_y - (win_y0-win_y1)/2, (8.4+11.6)/2])
+            cube([wall+2.6, win_y0+win_y1, 11.6-8.4], center=true);
 }
 module latch_guides() {   // ledges the rails ride on — anchored into the walls
     for (sx=[-1,1], gy=[-11, 11])
         translate([sx*18.6 - 1.5, gy-3, rail_z0-0.7]) cube([3.0, 6, 0.7]);
 }
-module latch_u() {        // ONE printed part: rails + ejector wedges + crossbar
+module latch_u() {        // ONE printed part: rails + release fingers + bridge
     for (sx=[-1,1]) {
         translate([sx*rail_x-1.0, -26, rail_z0]) cube([2.0, 52, rail_z1-rail_z0]);
-        for (sy=[-1,1]) hull() {   // 45° ejector wedge (1 mm standoff at rest;
-                                   // slider +4.5 rearward cams the nacelle out)
-            translate([sx*rail_x-1.0,        sy*25.3-1.8, rail_z0]) cube([2.0, 3.6, rail_z1-rail_z0]);
-            translate([sx*21.0-1.0,          sy*28.5-1.8, rail_z0]) cube([2.0, 3.6, rail_z1-rail_z0]);
-        }
+        for (sy=[-1,1])   // straight fingers inside the windows: slider +3.2
+                          // rearward -> they deflect the tab shanks, barbs clear
+            translate([sx*20.3-1.1, sy*dock_y - 2.0, rail_z0+0.2])
+                cube([2.2, 1.4, rail_z1-rail_z0-0.4]);
         translate([sx*rail_x-0.6, 25.4, rail_z0]) cube([1.2, 2.6, 5.2]);   // band hook
     }
-    difference() {   // nose crossbar; the TOP button's cone cams it rearward
-        translate([-rail_x, -28.2, rail_z0]) cube([2*rail_x, 3.0, 8.6]);
-        // front-open cone notch: the descending cone bears on its REAR wall
-        translate([0, -25.9, rail_z0-eps]) cylinder(d1=2.8, d2=5.4, h=6.2);
-        translate([-2.7, -29.6, rail_z0-eps]) cube([5.4, 3.7, 6.2]);
-        translate([0, -26.6, -1]) cylinder(d=8.6, h=4.4+1);   // clears the floor boss
+    difference() {   // centre-front bridge: button sleeve + cam notch
+        union() {
+            translate([-rail_x, btn_y-1.6, rail_z0]) cube([2*rail_x, 3.2, rail_z1-rail_z0]);
+            translate([0, btn_y, rail_z0]) cylinder(d=8.2, h=3.8);          // guide sleeve
+        }
+        translate([0, btn_y+0.8, rail_z0-eps]) cylinder(d1=2.6, d2=5.2, h=4.0);  // cone seat
+        translate([-2.6, btn_y-3.4, rail_z0-eps]) cube([5.2, 3.6, 4.0]);    // open frontward
+        translate([0, btn_y, rail_z0+1.2]) cylinder(d=4.9, h=4);            // shank pass
     }
 }
 module body_band_hooks() {
     for (sx=[-1,1]) translate([sx*rail_x-0.6, 30.5, floor_t-eps]) cube([1.2, 2.6, 5.2]);
 }
-module button() {         // TOP pin (z0 at the tip): tip -> cone -> shank -> head
-    cylinder(d=2.6, h=3.2);                                  // tip, guided in the floor boss
-    translate([0,0,3.2])  cylinder(d1=2.6, d2=4.6, h=4.8);   // cam cone (bears on the bar)
-    translate([0,0,8.0])  cylinder(d=4.6, h=6.6);            // shank, guided by the capot bore
-    translate([0,0,14.6]) cylinder(d=8.4, h=2.0);            // head, proud of the capot
+module button() {         // TOP pin (absolute z): cone -> shank -> head
+    translate([0,0,6.4])  cylinder(d1=2.2, d2=4.6, h=2.4);   // cam cone (on the bridge seat)
+    translate([0,0,8.8])  cylinder(d=4.6, h=10.0);           // shank (sleeve + capot bores)
+    translate([0,0,18.8]) cylinder(d=8.4, h=2.0);            // head, proud of the capot
 }
 module servo_cam() {      // V2 cam disc for a 3.7 g nano-servo horn
     difference() {
@@ -300,7 +286,7 @@ module capot() {
         }
         translate([0, 17, half_h-0.1]) rrect(batt_w+1, 37, 4, 3.4);            // channel hollow
         translate([0, pod_y/2, half_h+2.6]) cube([batt_w+1, 6, 5.2], center=true); // rear opening
-        translate([0, -26.6, half_h-1]) cylinder(d=5.2, h=4);                  // TOP button bore
+        translate([0, btn_y, half_h-1]) cylinder(d=5.2, h=4);   // centred TOP-button bore
     }
 }
 
@@ -320,15 +306,12 @@ module body() {
                     cube([batt_w+1.5, wall+3, 9.2], center=true);             // rear battery slot
             }
             knuckles();
-            cradles();
             latch_guides();
             body_band_hooks();
-            button_boss();
             feet();
         }
         knuckle_voids();
-        wall_finger_slots();
-        button_bore();
+        tab_windows();
     }
     pcb_bosses();
     snap_posts();
@@ -352,11 +335,19 @@ module nacelle_arm(inv) {
             translate([0,0,floor_t]) cylinder(d=motor_d+0.15, h=nacelle_h+1);
             cylinder(d=motor_d-3, h=nacelle_h*3, center=true);
         }
-        // mooring groove at mid-height — the cradle bumps seat here
-        translate([0,0,-zb]) translate([0,0,(groove_z0+groove_z1)/2]) difference() {
-            cylinder(d=nacelle_d+2, h=groove_z1-groove_z0, center=true);
-            cylinder(d=nacelle_d-2*groove_dp, h=groove_z1-groove_z0+2, center=true);
-        }
+    }
+}
+/* the snap TAB — built in FOLDED-local coords so its shank/barb land exactly
+   in the wall window; s flips the layout so all four barbs point FORWARD in
+   world coords (one slider direction releases everything). */
+module snap_tab(s) {
+    rotate([0,0,-FOLD_A]) translate([crank_out, a_beam, 0]) {
+        translate([-nacelle_d/2-2.45, (s>0 ? -0.4 : -1.0), tab_z0])
+            cube([2.95, 1.4, tab_z1-tab_z0]);                  // flexible shank
+        translate([-nacelle_d/2-2.85, (s>0 ? -4.0 : -1.0), tab_z0])
+            cube([0.8, 5.0, 1.6]);                             // barb — fully BEHIND the
+                                                               // wall inner face (hooks it
+                                                               // under load) // TUNE ramp
     }
 }
 module claw() {
@@ -371,18 +362,20 @@ module claw() {
             cylinder(d=leg_d, h=2);                                    // arm-side spring leg
     }
 }
-module beam_arm() {   // sculpted flat PADDLE (thing:1604440 style): wide shoulder
-    u = M_loc / norm(M_loc);          // at the pivot, gentle waist, blends into the cup
-    v = [-u[1], u[0]];                // sideways unit
+module beam_arm() {   // sculpted flat PADDLE (thing:1604440 style) with the
+    ub = (M_loc - D_loc) / norm(M_loc - D_loc);   // slight crank built in
+    vb = [-ub[1], ub[0]];
+    S  = D_loc + 5.5*ub;              // shoulder centre
+    W  = D_loc + 10.5*ub;             // waist centre
     difference() {
         hull() {
             translate([0,0,arm_zc])                 cylinder(d=claw_d, h=arm_h, center=true, $fn=36);
-            translate([7*u[0],  7*u[1],  arm_zc])   cylinder(d=11.0,   h=arm_h, center=true, $fn=48);
+            translate([S[0], S[1], arm_zc])         cylinder(d=11.0,   h=arm_h, center=true, $fn=48);
             translate([M_loc[0], M_loc[1], arm_zc]) cylinder(d=12.4,   h=arm_h, center=true, $fn=48);
         }
         // concave flank scoops -> the elegant waist
         for (s=[-1,1])
-            translate([10.6*u[0] + s*14.6*v[0], 10.6*u[1] + s*14.6*v[1], arm_zc])
+            translate([W[0] + s*14.4*vb[0], W[1] + s*14.4*vb[1], arm_zc])
                 cylinder(r=9.6, h=arm_h+2, center=true, $fn=64);
     }
 }
@@ -390,6 +383,7 @@ module arm_canonical(inv=true) {
     claw();
     beam_arm();
     nacelle_arm(inv);
+    snap_tab(inv ? 1 : -1);   // mirrored corners -> uniform world layout
 }
 module arm_fr() { arm_canonical(true); }
 module arm_rr() { mirror([0,1,0]) arm_canonical(false); }
@@ -416,16 +410,12 @@ module assembly(fold=0) {
     color("#cfd4da") body();
     color("#b9bec6") for (n=["fr","fl","rr","rl"]) arm_at(n, fold);
     color("#23272e") latch_u();
-    color("#2f6fed") translate([0, -26.6, 1.0]) button();
+    color("#2f6fed") translate([0, btn_y, 0]) button();
     ghost_props(fold);
 }
 module marker() { translate([70,70,0]) cube(1); }   // keeps empty exports valid
 module collision_folded() { marker();
-    // the cradle grip bumps SEAT 0.55 into the groove by design (snap-fit),
-    // so exclude just them from the zero-intersection check
-    intersection() {
-        difference() { body(); cradle_bumps(); }
-        union() { for (n=["fr","fl","rr","rl"]) arm_at(n, 1); } } }
+    intersection() { body(); union() { for (n=["fr","fl","rr","rl"]) arm_at(n, 1); } } }
 module collision_arms() { marker();
     for (p=[["fr","rr"],["fl","rl"],["fr","rl"],["fl","rr"],["fr","fl"],["rr","rl"]])
         intersection() { arm_at(p[0],1); arm_at(p[1],1); } }

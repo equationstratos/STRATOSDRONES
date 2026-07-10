@@ -152,10 +152,10 @@ TEMPLATE = r"""<!DOCTYPE html>
   </div>
   <div id="view">
     <div id="tip"><b>Souris :</b> glisser = orbite · molette = zoom · clic-droit = pan.
-      Bras <b>droits</b> (style thing:1604440), avant <b>inversés</b> : pliés, ils ne se
-      croisent jamais et s'amarrent <b>par la nacelle moteur</b> dans les berceaux.
-      <b>Déployer</b> = bouton du dessus → verrou-éjecteur → ressorts
-      (masque le capot pour voir le verrou). <b>Replier</b> = pousser jusqu'au clic.</div>
+      Pivots <b>rentrés</b> dans les coins (cotes du vrai thing:1604440), bras avant
+      <b>inversés</b>, accroches <b>sur les bras</b> (languettes invisibles dans les
+      fenêtres du flanc). <b>Déployer</b> = bouton central du dessus → verrou →
+      ressorts. <b>Replier</b> = bouton maintenu, pousser jusqu'au clic.</div>
   </div>
 </div>
 
@@ -215,21 +215,21 @@ const gCapot = group('capot'); gCapot.add(mesh(STLB64.capot, 0x2f6fed, .35, .45)
 const gMech  = group('mech');
 const latchM = mesh(STLB64.latch,  0x23272e, .3, .5);
 gMech.add(latchM);
-const BTN_Z = 0.001;                     // v1: TOP button, vertical pin
+const BTN_Z = 0;                         // TOP button, CENTRED on the axis
 const btnM = mesh(STLB64.button, 0x2f6fed, .3, .45);
-btnM.position.set(0, -0.0266, BTN_Z);
+btnM.position.set(0, -0.019, BTN_Z);
 gMech.add(btnM);
 
 // ---- the four folding arms — each a group pivoted at its hinge ----
 // FOLD_A and the pivot/motor table come from frame_foldable.scad
-// (v1: STRAIGHT arms on outrigger ears — FOLD_A = 108.73 deg;
-//  pivots (±27.8, ∓37) mm; motors ±13.92, ∓4.72 mm pivot-local).
-const FOLD_A = 1.89769;
+// (v2: INSET pivots like the original thing:1604440 — FOLD_A = 97.89 deg;
+//  pivots (±24.5, ∓36) mm; motors ±17.22, ∓5.72 mm pivot-local).
+const FOLD_A = 1.70859;
 const ARMS = {
-  fr: {stl:'arm_fr', pivot:[ 0.0278,-0.037], sign:+1, motor:[ 0.01392,-0.00472], front:true },
-  fl: {stl:'arm_fl', pivot:[-0.0278,-0.037], sign:-1, motor:[-0.01392,-0.00472], front:true },
-  rr: {stl:'arm_rr', pivot:[ 0.0278, 0.037], sign:-1, motor:[ 0.01392, 0.00472], front:false},
-  rl: {stl:'arm_rl', pivot:[-0.0278, 0.037], sign:+1, motor:[-0.01392, 0.00472], front:false},
+  fr: {stl:'arm_fr', pivot:[ 0.0245,-0.036], sign:+1, motor:[ 0.01722,-0.00572], front:true },
+  fl: {stl:'arm_fl', pivot:[-0.0245,-0.036], sign:-1, motor:[-0.01722,-0.00572], front:true },
+  rr: {stl:'arm_rr', pivot:[ 0.0245, 0.036], sign:-1, motor:[ 0.01722, 0.00572], front:false},
+  rl: {stl:'arm_rl', pivot:[-0.0245, 0.036], sign:+1, motor:[-0.01722, 0.00572], front:false},
 };
 const gArms = group('arms');
 const gProp = group('props');        // toggle proxy — props live inside arm groups
@@ -314,9 +314,9 @@ applyFold(foldT); applyPress(0);
 window.__foldT = () => foldT;
 window.__press = () => press;
 function deploySeq(){ if (foldT<0.02) return; phase='deploy'; pressTarget=1; startLoop(); }
-// v1: folding back needs NO button — push the arms in until the motor-ring
-// cradles click (the button/latch stay put).
-function foldSeq(){ phase='fold'; foldTarget=1; startLoop(); }
+// fold-in: hold the button while the arms rotate in (the tab barbs have no
+// fold-in ramp yet — TUNE), release at the click.
+function foldSeq(){ phase='fold'; pressTarget=1; foldTarget=1; startLoop(); }
 document.getElementById('bDeploy').addEventListener('click', deploySeq);
 document.getElementById('bFold').addEventListener('click',  foldSeq);
 document.getElementById('fold').addEventListener('input', e=>{
@@ -412,7 +412,8 @@ function loop(){
     if (foldT < 0.7 && pressTarget !== 0) pressTarget = 0;        // release the button
     if (foldT <= 0 && press <= 0.02) phase = null;
   } else if (phase==='fold'){
-    if (foldT >= 0.995) phase = null;                             // cradles click in
+    if (foldT >= 0.995 && pressTarget !== 0) pressTarget = 0;     // barbs click in
+    if (press <= 0.02 && foldT >= 0.995) phase = null;
   }
   if (foldT !== foldTarget){
     const dur = (foldTarget === 0) ? 0.55 : 1.4;   // springs snap open; folding is manual

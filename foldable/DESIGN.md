@@ -3,32 +3,32 @@
 ## 1. Fold kinematics (all derived in `cad/frame_foldable.scad`)
 
 Frame coords: origin at pod centre, front = −Y. Motors at (±41.72, ±41.72)
-(118 mm wheelbase). v1 follows thing:1604440's design language: the arms
-are **sculpted flat PADDLES** (wide shoulder at the pivot, gentle waist,
-blending into the motor cup) and each M2 pivot lives inside a rounded
-**corner LOBE** at **(±27.8, ±37)** — two stacked plates flowing out of
-the pod corner, the paddle rotating in the sandwich gap — so the folded
-arm lies flat along the flank with the nacelle just clear of the wall,
-and the whole thing reads as one silhouette.
+(118 mm wheelbase). v2 was dimensioned **against the actual thing:1604440
+STLs** (measured, clean-room): the original pivots are **M3 (Ø3.2) holes
+set 6 mm INSIDE the plate corner** — so ours moved from outrigger ears to
+**inset pivots at (±24.5, ±36)**, housed in compact corner plates that
+blend into both pod faces. The arms are **sculpted flat PADDLES** (wide
+shoulder, gentle waist, blending into the motor cup) with a slight
+built-in **crank** so the folded beam still clears the wall.
 
 Front-right canonical numbers (the other corners are mirrors):
 
 | Quantity | Value |
 |---|---|
-| pivot → motor distance `L` | 14.70 mm |
-| deployed direction `th_dep` | −18.73° |
-| folded direction `th_fold` | +90° (along the flank) |
-| **fold sweep `FOLD_A`** | **108.73°** |
-| folded motor position | (27.8, ∓22.30) |
+| pivot → motor distance `L` | 18.15 mm |
+| crank offset | 3.3 mm (folded beam axis at x = 27.8) |
+| deployed direction `th_dep` | −18.38° |
+| folded direction `th_fold` | +79.5° |
+| **fold sweep `FOLD_A`** | **97.89°** |
+| folded motor position | (27.8, ∓18.16) |
 | folded width (over nacelles) | 68.3 mm (vs 96.1 deployed, **−35 %**) |
+| pivot hardware | **M3 × 14 + nyloc** (as the original) |
 
-`pivot_x = 27.8` is sized so the folded **nacelle** (Ø12.7 centred on the
-pivot line) clears the pod wall (21) by 0.45 mm. Rotation signs: FR +,
-FL −, RR −, RL + (front folds rearward, rear folds forward along the same
-flank). The paddle is born at the claw Ø6.4, swells to an 11 mm shoulder
-7 mm out, then two concave flank scoops give the waist before the Ø12.4
-cup blend — the root rotates inside the lobe sandwich (mouth ±88°, the
-sandwich stays tied by a 75° C-pillar plus both full plates).
+Rotation signs: FR +, FL −, RR −, RL + (front folds rearward, rear folds
+forward along the same flank). The paddle is born at the claw Ø8, swells
+to an 11 mm shoulder, waists, then blends into the Ø12.4 cup — the root
+rotates inside the corner-plate sandwich (mouth −110°/+88°; the plates
+plus a ~64° C-pillar keep the hinge tied).
 
 **Why the arms can never cross (the owner's inverted-front-arm trick):**
 folded, the front beam occupies y ∈ [−37, −22.3] and the rear beam
@@ -65,32 +65,47 @@ toward DEPLOYED.
   the barrel), leaving a ~90° C-sector that ties the jaws — plus the full
   top/bottom bridge webs back to the pod corner.
 
-## 3. Mooring at the MOTOR RING — cradles + ejector latch + TOP button
+## 3. « Les accroches sont sur les bras » — snap tabs + centred TOP button
 
-Per the owner's direction, the folded arm is moored to the body **at the
-motor receptacle**: each nacelle carries a **circumferential groove at
-mid-height** (z 3.5–7.5, 0.7 deep — « l'encoche au milieu du cercle
-récepteur ») and docks against the flank at (±27.8, ∓22.3):
+Per the owner's direction, **nothing protrudes from the body**: the
+retention lives ON the arms. Each nacelle carries a small **flexible tab**
+(shank 1.4 thick, band z 8.6–11.3) that enters a **flush window** in the
+side wall when folded; its **barb sits fully behind the wall's inner
+face** and hooks it under the springs' preload. The four tabs share a
+**uniform world layout** (all barbs point FORWARD), so one slider motion
+releases everything:
 
-- a **far-side flexing lip** (body-centre side — the pivot side is the
-  folded beam's corridor) carries **two grip bumps straddling the
-  equator**: they snap 0.55 into the groove → over-centre retention at the
-  heaviest point of the arm — the best hold;
-- an **inboard stop pad** on the wall takes the spring preload;
-- **fold-in needs NO button**: push the arms in until the cradles click.
+- **Release**: the slider's four straight **fingers** (riding above the
+  PCB, z 8.6–11.4) push the tab shanks **rearward ~1.5 mm** → the barbs
+  clear the window edges → the torsion springs deploy the arms
+  (slider stroke 3.2 mm, return by rubber band, `TUNE`).
+- **Fold-in**: hold the button while rotating the arms until the barbs
+  click into their windows (a moulded fold-in ramp on the barb is the
+  planned upgrade, `TUNE`).
+- **V1 button — ON TOP, CENTRED**: a vertical pin **on the axis at
+  (0, −19)** (clear of the battery nose at y −16 and the ToF window; the
+  PCB is uncut, so the pin is guided by the bridge's printed **sleeve** +
+  the capot bore). Its **cone cams the slider's centre bridge** rearward —
+  press down, arms pop open.
+- **V2 servo**: a 3.7 g nano-servo drives `servo_cam` against the same
+  bridge. The V1 button stays as a manual backup.
 
-**Release — the sliding ejector latch (shared V1/V2):** two rails inside
-the side walls end in **45° wedges** behind each docked nacelle (through
-wall windows, 1 mm standoff at rest). Slider pushed **rearward 4.5 mm** →
-the wedges cam the nacelles **outboard past the lips** → the torsion
-springs finish the deploy. Return: small rubber band to the floor hooks
-(printed-flex spring is the planned upgrade, `TUNE`).
+## 3bis. Alternative mechanisms — printable demo kits (`cad/mechanisms.scad`)
 
-- **V1 button — ON TOP**: a vertical pin (head proud of the capot at
-  (0, −26.6); tip guided in a floor boss) whose **cone cams the slider's
-  crossbar rearward** — press down, arms pop open, umbrella style.
-- **V2 servo**: a 3.7 g nano-servo drives `servo_cam` (Ø9 disc + lobe)
-  against the same crossbar. The V1 button stays as a manual backup.
+Per the owner's window-operator reference (crank + worm + toothed sector +
+scissor arms), three PRINTABLE mechanism families are provided as
+self-contained demo kits (assembled preview + flat `_kit` plates):
+
+| PART | Principle | Why it's interesting |
+|---|---|---|
+| `worm_crank` | crank → printed single-start worm → toothed sector → pin drives the slider | huge reduction, **self-locking** (the window-operator, miniaturised) |
+| `scissor` | central slider → two links → twin sweeping arms | the operator's dual-arm extension, prints flat |
+| `iris_cam` | rotating disc with 4 Archimedean slots → 4 radial pins | **one twist releases all four corners** (servo horn or thumb wheel) — DJI-style |
+
+All coarse-pitch, printed pins, generous clearances — M0 concept demos;
+integration into the airframe (replacing the linear slider) is the next
+step. The uploaded original STLs were used as **measurement reference
+only** and are not committed (Thingiverse licence).
 
 ## 4. The `deploy` SDK verb — **SPECIFIED, NOT YET IMPLEMENTED**
 
