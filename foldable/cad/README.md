@@ -11,7 +11,7 @@ CAD. Fold math and mechanism rationale: [`../DESIGN.md`](../DESIGN.md).
 | `arm_rear` | 2× (1 mirrored) | paddle + snap tab, v2-style pod — prop on top |
 | `latch` | 1× | rails above the PCB + 4 release fingers + centre bridge/sleeve |
 | `button` | 1× (V1) | vertical CENTRED pin, cone cams the bridge |
-| `mechanisms.scad` | demos | `worm_crank` / `scissor` / `iris_cam` (+ `_kit` flat plates) — printable alternative mechanisms |
+| `mechanisms.scad` | demos | 6 printable mechanisms: `worm_crank` / `scissor` / `iris_cam` / `rack_pinion` / `cam_lever` / `toggle_clamp` (+ `_kit` plates, + `stl/mech/p_*` per-part exports) — **see them animated in [`../viz/mechanisms_viewer.html`](../viz/)** |
 | `servo_cam` | 1× (V2) | cam disc for a 3.7 g nano-servo horn |
 | `arm_fr/fl/rr/rl` | — | pivot-local exports for the viewer (pre-mirrored) |
 | `assembly` / `assembly_folded` | — | previews (ghost prop discs) |

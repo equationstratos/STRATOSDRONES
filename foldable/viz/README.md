@@ -36,10 +36,22 @@ slider, `postMessage {type:'colors', body/capot/arms/mech/props}` recolour
 offscreen pause, and the `window.__vizRendering/__lastColors/__foldT`
 test hooks.
 
+## Mechanisms viewer (`mechanisms_viewer.html`)
+
+A second self-contained viewer to **compare the six printable deploy
+mechanisms before printing** (`gen_mech_viewer.py`): worm+crank, scissor,
+iris cam, rack+pinion, eccentric cam lever, toggle over-centre. Each is
+built from its real per-part STLs (`../cad/stl/mech/p_*.stl`) and animated
+with its true 2-D kinematics (worm ratio, scissor linkage solve,
+Archimedean slots, over-centre pass); a card explains the principle, the
+printability points and how it would mount on the drone. Hooks:
+`window.__mech`, `__t()`, `__vizRendering()`.
+
 ## Regenerate
 
 ```bash
 # 1. export the part STLs (see ../cad/README.md, incl. the 684-byte gates)
 # 2. inline them + vendored Three.js into the single HTML:
-python3 foldable/viz/gen_viewer.py    # -> foldable/viz/drone_viewer.html
+python3 foldable/viz/gen_viewer.py        # -> foldable/viz/drone_viewer.html
+python3 foldable/viz/gen_mech_viewer.py   # -> foldable/viz/mechanisms_viewer.html
 ```
