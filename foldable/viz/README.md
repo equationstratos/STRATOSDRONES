@@ -38,14 +38,17 @@ test hooks.
 
 ## Mechanisms viewer (`mechanisms_viewer.html`)
 
-A second self-contained viewer to **compare the six printable deploy
+A second self-contained viewer to **compare the seven printable deploy
 mechanisms before printing** (`gen_mech_viewer.py`): worm+crank, scissor,
-iris cam, rack+pinion, eccentric cam lever, toggle over-centre. Each is
-built from its real per-part STLs (`../cad/stl/mech/p_*.stl`) and animated
-with its true 2-D kinematics (worm ratio, scissor linkage solve,
-Archimedean slots, over-centre pass); a card explains the principle, the
-printability points and how it would mount on the drone. Hooks:
-`window.__mech`, `__t()`, `__vizRendering()`.
+iris cam, rack+pinion, eccentric cam lever, toggle over-centre, and the
+windscreen-wiper four-bar. Each is built from its real per-part STLs
+(`../cad/stl/mech/p_*.stl`) and animated with its true 2-D kinematics —
+with the parts in real CONTACT (worm on the sector teeth, pinion meshed
+with the rack, cam rim riding its follower). A card explains the
+principle, the printability points and how it would mount on the drone.
+The **« Vue drone »** button adds the folded Fr4n7-F at true scale and
+syncs the stroke with the full opening (button → latch → springs → arms).
+Hooks: `window.__mech`, `__t()`, `__droneOn()`, `__vizRendering()`.
 
 ## Regenerate
 

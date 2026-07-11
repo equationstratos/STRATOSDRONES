@@ -104,13 +104,18 @@ self-contained demo kits (assembled preview + flat `_kit` plates):
 | `rack_pinion` | 8-tooth pinion walks a straight rack | the simplest rotation→translation; direct servo drive |
 | `cam_lever` | quarter-turn lever swings an ECCENTRIC disc against a flat follower | 2 moving parts, force grows toward end-of-travel, self-holding |
 | `toggle_clamp` | handle + link snap PAST the dead centre (genouillère) | **positive over-centre lock** with zero holding force — transport-safe |
+| `wiper` | knob → gear pair (13:8) → crank pin → rod → rocking sweep arm | the windscreen-wiper four-bar (crank-rocker); continuous rotation → alternating sweep |
 
 All coarse-pitch, printed pins, generous clearances — M0 concept demos;
 integration into the airframe (replacing the linear slider) is the next
 step. **Compare them animated before printing**: open
 [`../viz/mechanisms_viewer.html`](../viz/) — every part is the real
 exported STL, driven by its true 2-D kinematics (worm ratio, scissor
-linkage solve, Archimedean slots, over-centre pass). The uploaded original
+linkage solve, Archimedean slots, over-centre pass, wiper crank-rocker),
+with the parts in real CONTACT (worm on the sector teeth, pinion meshed,
+cam rim on its follower…). The **« Vue drone »** toggle drops the folded
+Fr4n7-F beside the mechanism at true scale and syncs the stroke with the
+full opening sequence (button → latch → springs → arms). The uploaded original
 STLs were used as **measurement reference only** and are not committed
 (Thingiverse licence).
 

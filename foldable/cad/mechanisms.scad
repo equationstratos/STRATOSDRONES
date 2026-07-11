@@ -48,22 +48,22 @@ module wc_base() {
     difference() {
         union() {
             translate([-14, -20, 0]) cube([44, 40, 3]);
-            translate([22, -6.5, 0]) cube([14, 13, 8]);          // worm saddle
-        }
-        translate([26, 0, 8]) rotate([-90, 0, 0]) cylinder(d = 4.6, h = 30, center = true); // worm axle
+            translate([16.6, -6.5, 0]) cube([14, 13, 8]);        // worm saddle — the worm
+        }                                                        // MESHES the sector teeth
+        translate([20.8, 0, 8]) rotate([-90, 0, 0]) cylinder(d = 4.6, h = 30, center = true);
         translate([0, 0, -eps]) cylinder(d = 3.4, h = 4);        // sector pivot
-        translate([-11, 8.4, -eps]) cube([18, 3.6, 3.2]);        // slider guide slot
-    }
+        translate([6.7, -8, -eps]) cube([3.6, 16, 3.2]);         // slider slot (along Y —
+    }                                                            // the pin sweeps in Y)
 }
 module wc_slider() {
-    translate([0, 0, 0]) cube([20, 3.2, 2.8]);
-    translate([3, -2.2, 2.8]) cube([8, 7.6, 2.6]);               // pin window
+    translate([0, 0, 0]) cube([3.2, 16, 2.8]);
+    translate([-2.2, 6, 2.8]) cube([7.6, 8, 2.6]);               // pin window
 }
 module worm_crank() {
     color("#cfd4da") wc_base();
-    color("#b9bec6") translate([0, 0, 3.2]) rotate([0, 0, 14]) sector();
-    color("#2f6fed") translate([26, -11, 8]) rotate([-90, 0, 0]) worm();
-    color("#23272e") translate([-11, 8.6, 3.4]) wc_slider();
+    color("#b9bec6") translate([0, 0, 3.2]) rotate([0, 0, -14]) sector();
+    color("#2f6fed") translate([20.8, -11, 8]) rotate([-90, 0, 0]) worm();
+    color("#23272e") translate([6.9, -7.6, 3.4]) wc_slider();
 }
 module worm_crank_kit() {   // laid out flat for the plate
     wc_base();
@@ -196,14 +196,14 @@ module rp_base() {
     difference() {
         translate([-4, -12, 0]) cube([56, 34, 3]);
         translate([1.6, -9.2, -eps]) cube([46, 3.8, 3.3]);          // rib channel
-        translate([24, 12.4, -eps]) cylinder(d = 3.4, h = 3.4);     // pinion post bore
-    }
-    translate([24, 12.4, 0]) cylinder(d = 3.2, h = 8);              // pinion post
+        translate([24, 8.6, -eps]) cylinder(d = 3.4, h = 3.4);      // pinion post bore —
+    }                                                               // teeth MESH the rack
+    translate([24, 8.6, 0]) cylinder(d = 3.2, h = 8);               // pinion post
 }
 module rack_pinion() {
     color("#cfd4da") rp_base();
     color("#23272e") translate([2, -6, 3.2]) rp_rack();
-    color("#2f6fed") translate([24, 12.4, 3.6]) rp_pinion();
+    color("#2f6fed") translate([24, 8.6, 3.6]) rp_pinion();
 }
 module rack_pinion_kit() {
     rp_base();
@@ -237,9 +237,9 @@ module cl_follower() {
 module cl_base() {
     difference() {
         translate([-30, -14, 0]) cube([56, 30, 3]);
-        translate([12.6, -3.8, -eps]) cube([5.6, 17, 3.3]);         // follower channel
-        translate([0, 0, -eps]) cylinder(d = 3.4, h = 3.4);         // cam post bore
-    }
+        translate([5.2, -3.8, -eps]) cube([10.8, 17, 3.3]);         // follower channel —
+        translate([0, 0, -eps]) cylinder(d = 3.4, h = 3.4);         // the cam rim RIDES the
+    }                                                               // follower face
     translate([0, 0, 0]) cylinder(d = 3.2, h = 8);                  // cam post
 }
 module cam_lever() {
@@ -305,6 +305,88 @@ module toggle_clamp_kit() {
     translate([44, 20, 0]) tg_pad();
 }
 
+/* =====================================================================
+   7) WIPER LINKAGE  (« pare-brise » — the desk-clearing mechanism photo)
+   A knob spins a small gear meshing a big gear; the big gear's crank pin
+   drives a connecting rod that ROCKS a long wiper arm back and forth —
+   crank-rocker four-bar, the windscreen classic. */
+wp_rs = 6;  wp_ns = 8;      // small gear pitch r / teeth
+wp_rb = 9.75; wp_nb = 13;   // big gear (module-matched: 2πr/n equal)
+wp_rc = 6.5;                // crank pin radius on the big gear
+wp_ra = 8;                  // arm crank radius
+wp_L  = 28;                 // connecting rod length
+wp_B  = [-26, -12];         // arm pivot
+module wp_gear(r, n, h = 4) {
+    cylinder(r = r - 1.5, h = h);
+    for (a = [0 : 360/n : 359]) rotate([0, 0, a])
+        translate([r - 2.2, -1.55, 0]) cube([3.2, 3.1, h]);
+}
+module wp_gear_small() {
+    difference() {
+        union() {
+            wp_gear(wp_rs, wp_ns);
+            translate([0, 0, 4 - eps]) cylinder(d = 7, h = 3);          // hub
+            for (a = [0:90:270]) rotate([0, 0, a])                      // crank knob
+                translate([2.2, 0, 7 - eps]) cylinder(d = 2.4, h = 3);
+        }
+        translate([0, 0, -eps]) cylinder(d = 3.4, h = 11);
+    }
+}
+module wp_gear_big() {
+    difference() {
+        wp_gear(wp_rb, wp_nb);
+        translate([0, 0, -eps]) cylinder(d = 3.4, h = 4.4);
+    }
+    translate([wp_rc, 0, 4 - eps]) cylinder(d = 3.2, h = 4.4);          // crank pin
+}
+module wp_rod() {
+    difference() {
+        hull() { cylinder(d = 6.4, h = 3);
+                 translate([wp_L, 0, 0]) cylinder(d = 6.4, h = 3); }
+        for (x = [0, wp_L]) translate([x, 0, -eps]) cylinder(d = 3.4, h = 3.4);
+    }
+}
+module wp_arm() {
+    difference() {
+        union() {
+            cylinder(d = 9, h = 3.6);                                   // pivot boss
+            hull() { cylinder(d = 7, h = 3.6);                          // crank side
+                     translate([wp_ra, 0, 0]) cylinder(d = 6.4, h = 3.6); }
+            hull() { cylinder(d = 8, h = 3.6);                          // WIPER blade side
+                     translate([-46, 0, 0]) cylinder(d = 7, h = 3.6); }
+            hull() { translate([-46, 0, 0]) cylinder(d = 7, h = 3.6);   // blade paddle
+                     translate([-58, 0, 0]) cylinder(d = 10, h = 3.6); }
+        }
+        translate([0, 0, -eps]) cylinder(d = 3.4, h = 4);               // pivot bore
+        translate([wp_ra, 0, -eps]) cylinder(d = 3.4, h = 4);           // rod pin bore
+    }
+}
+module wp_base() {
+    difference() {
+        translate([-70, -26, 0]) cube([94, 48, 3]);
+        translate([0, 0, -eps]) cylinder(d = 3.4, h = 3.4);
+        translate([-14.5, 6.15, -eps]) cylinder(d = 3.4, h = 3.4);
+        translate([wp_B[0], wp_B[1], -eps]) cylinder(d = 3.4, h = 3.4);
+    }
+    translate([0, 0, 0]) cylinder(d = 3.2, h = 8);                      // big-gear post
+    translate([-14.5, 6.15, 0]) cylinder(d = 3.2, h = 12);              // small-gear post
+    translate([wp_B[0], wp_B[1], 0]) cylinder(d = 3.2, h = 8);          // arm post
+}
+module wiper() {
+    color("#cfd4da") wp_base();
+    color("#2f6fed") translate([-14.5, 6.15, 3.4]) rotate([0, 0, 10]) wp_gear_small();
+    color("#b9bec6") translate([0, 0, 3.4]) wp_gear_big();
+    color("#8b929c") translate([wp_rc, 0, 8.2]) rotate([0, 0, 155]) wp_rod();
+    color("#23272e") translate([wp_B[0], wp_B[1], 3.6]) rotate([0, 0, 55]) wp_arm();
+}
+module wiper_kit() {
+    wp_base();
+    translate([34, 32, 0]) wp_gear_small();
+    translate([8, 34, 0]) wp_gear_big();
+    translate([-30, 30, 0]) wp_rod();
+    translate([-64, 42, 0]) wp_arm();
+}
+
 /* ================= dispatch ================= */
 if      (PART == "worm_crank")       worm_crank();
 else if (PART == "worm_crank_kit")   worm_crank_kit();
@@ -318,6 +400,8 @@ else if (PART == "cam_lever")        cam_lever();
 else if (PART == "cam_lever_kit")    cam_lever_kit();
 else if (PART == "toggle_clamp")     toggle_clamp();
 else if (PART == "toggle_clamp_kit") toggle_clamp_kit();
+else if (PART == "wiper")            wiper();
+else if (PART == "wiper_kit")        wiper_kit();
 // ---- per-part exports for the mechanisms VIEWER (animated) ----
 else if (PART == "p_wc_base")   wc_base();
 else if (PART == "p_wc_worm")   worm();
@@ -340,4 +424,9 @@ else if (PART == "p_tg_base")   tg_base();
 else if (PART == "p_tg_handle") tg_handle();
 else if (PART == "p_tg_link")   tg_link();
 else if (PART == "p_tg_pad")    tg_pad();
+else if (PART == "p_wp_base")   wp_base();
+else if (PART == "p_wp_gs")     wp_gear_small();
+else if (PART == "p_wp_gb")     wp_gear_big();
+else if (PART == "p_wp_rod")    wp_rod();
+else if (PART == "p_wp_arm")    wp_arm();
 else                             worm_crank();

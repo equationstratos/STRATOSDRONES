@@ -25,7 +25,10 @@ PARTS = ["p_wc_base","p_wc_worm","p_wc_sector","p_wc_slider",
          "p_ir_base","p_ir_disc","p_ir_pin",
          "p_rp_base","p_rp_pinion","p_rp_rack",
          "p_cl_base","p_cl_cam","p_cl_follower",
-         "p_tg_base","p_tg_handle","p_tg_link","p_tg_pad"]
+         "p_tg_base","p_tg_handle","p_tg_link","p_tg_pad",
+         "p_wp_base","p_wp_gs","p_wp_gb","p_wp_rod","p_wp_arm"]
+DRONE_STL = os.path.join(REPO, "foldable", "cad", "stl")
+DRONE_PARTS = ["body", "arm_fr", "arm_fl", "arm_rr", "arm_rl", "latch", "button"]
 
 
 def data_url(path):
@@ -113,6 +116,13 @@ TEMPLATE = r"""<!DOCTYPE html>
       <div style="display:flex;justify-content:space-between;margin-top:10px">
         <span>Course</span><span class="val" id="tV">0%</span></div>
       <input type="range" id="t" min="0" max="100" value="0"/>
+      <div class="btns" style="margin-top:10px">
+        <button id="bDrone" class="big" style="grid-column:1/3">🛩 Vue drone : voir l'OUVERTURE</button>
+      </div>
+      <p id="droneNote" style="display:none;margin:8px 0 0;color:var(--mut);font-size:11px">
+        Le Fr4n7-F plié est posé à côté, à l'échelle : la course anime
+        <b style="color:var(--ink)">bouton → verrou → ressorts → bras</b> —
+        l'ouverture que le mécanisme choisi devra produire.</p>
     </div>
     <div class="sec" id="desc"></div>
     <div class="sec">
@@ -176,18 +186,18 @@ function reg(key, label, build, kin, desc){ MECHS[key] = {label, build, kin, des
 reg('worm_crank', 'Vis sans fin + manivelle',
   (g,P)=>{
     P.base = mesh('p_wc_base', COL.base); g.add(P.base);
-    P.sector = mesh('p_wc_sector', COL.mid); P.sector.position.z = 3.2; g.add(P.sector);
-    P.wormG = new THREE.Group(); P.wormG.position.set(26,-11,8); P.wormG.rotation.x = -Math.PI/2;
+    P.sector = mesh('p_wc_sector', COL.mid); P.sector.position.z = 3.2;
+    P.sector.rotation.z = -14*D2R; g.add(P.sector);      // teeth engaged on the worm
+    P.wormG = new THREE.Group(); P.wormG.position.set(20.8,-11,8); P.wormG.rotation.x = -Math.PI/2;
     P.worm = mesh('p_wc_worm', COL.drive); P.wormG.add(P.worm); g.add(P.wormG);
-    P.slider = mesh('p_wc_slider', COL.out); P.slider.position.set(-11,8.6,3.4); g.add(P.slider);
+    P.slider = mesh('p_wc_slider', COL.out); P.slider.position.set(6.9,-7.6,3.4); g.add(P.slider);
   },
   (P,t)=>{
-    const turns = 2.2, lead = 6, rs = 16, th0 = 14*D2R;
-    P.worm.rotation.z = -t*turns*2*Math.PI;
-    const ths = th0 + t*turns*lead/rs;
-    P.sector.rotation.z = ths - th0;      // sector pivots at origin
-    const px0 = 9*Math.cos(th0);
-    P.slider.position.x = -11 + (9*Math.cos(ths) - px0);
+    const lead = 6, rs = 16, th0 = -14*D2R, sweep = 36*D2R;   // 1.6 worm turns
+    const ths = th0 + t*sweep;
+    P.worm.rotation.z = -t*sweep*rs/lead;                 // exact worm/sector ratio
+    P.sector.rotation.z = ths;
+    P.slider.position.y = -7.6 + (9*Math.sin(ths) - 9*Math.sin(th0));  // pin drives Y
   },
   {p:"Une manivelle tourne une vis sans fin imprimée (1 filet, pas 6 mm) qui fait avancer un secteur denté ; le pion du secteur pousse le coulisseau.",
    pts:["énorme réduction : effort du bout du doigt","AUTOBLOQUANT (le verrou ne peut pas se rouvrir seul)","l'opérateur de fenêtre, miniaturisé"],
@@ -214,7 +224,7 @@ reg('scissor', 'Bras ciseaux',
       const th = al + s*Math.acos(c);         // arm pin angle (radius 12)
       P['arm'+s].rotation.z = th;
       const ax = s*22 + 12*Math.cos(th), ay = 12*Math.sin(th);
-      P['link'+s].position.set(ax, ay, 4.2);
+      P['link'+s].position.set(ax, ay, 9.8);              // seated ON the pins
       P['link'+s].rotation.z = Math.atan2(py-ay, 0-ax);
     }
   },
@@ -226,7 +236,7 @@ reg('scissor', 'Bras ciseaux',
 reg('iris_cam', 'Came iris (rotative)',
   (g,P)=>{
     P.base = mesh('p_ir_base', COL.base); g.add(P.base);
-    P.disc = mesh('p_ir_disc', COL.drive); P.disc.position.z = 7.4; g.add(P.disc);
+    P.disc = mesh('p_ir_disc', COL.drive); P.disc.position.z = 6.8; g.add(P.disc);  // pins IN the slots
     for (let q=0;q<4;q++){
       const pg = new THREE.Group(); pg.rotation.z = q*Math.PI/2;
       const pin = mesh('p_ir_pin', COL.out); pin.position.set(7,-1.8,3.2);
@@ -235,7 +245,7 @@ reg('iris_cam', 'Came iris (rotative)',
   },
   (P,t)=>{
     P.disc.rotation.z = t*70*D2R;
-    for (let q=0;q<4;q++) P['pin'+q].position.x = 5.2 + 8*t;
+    for (let q=0;q<4;q++) P['pin'+q].position.x = 4.2 + 8*t;   // follower tracks the spiral
   },
   {p:"Un disque à 4 rainures en spirale d'Archimède traduit sa rotation en 4 translations radiales simultanées.",
    pts:["UN quart de tour libère les 4 coins d'un coup","zéro pièce métallique","se pilote au pouce (molette) ou au palonnier du servo"],
@@ -246,7 +256,7 @@ reg('rack_pinion', 'Pignon + crémaillère',
   (g,P)=>{
     P.base = mesh('p_rp_base', COL.base); g.add(P.base);
     P.rack = mesh('p_rp_rack', COL.out); P.rack.position.set(2,-6,3.2); g.add(P.rack);
-    P.pin = mesh('p_rp_pinion', COL.drive); P.pin.position.set(24,12.4,3.6); g.add(P.pin);
+    P.pin = mesh('p_rp_pinion', COL.drive); P.pin.position.set(24,8.6,3.6); g.add(P.pin);  // teeth meshed
   },
   (P,t)=>{
     P.rack.position.x = 2 + t*14;
@@ -261,12 +271,12 @@ reg('cam_lever', 'Came excentrique + levier',
   (g,P)=>{
     P.base = mesh('p_cl_base', COL.base); g.add(P.base);
     P.cam = mesh('p_cl_cam', COL.drive); P.cam.position.z = 3.4; g.add(P.cam);
-    P.fol = mesh('p_cl_follower', COL.out); P.fol.position.set(13,-3.5,3.2); g.add(P.fol);
+    P.fol = mesh('p_cl_follower', COL.out); P.fol.position.set(5.56,-3.5,3.2); g.add(P.fol);
   },
   (P,t)=>{
     const th = (160 - 160*t)*D2R;
     P.cam.rotation.z = th;
-    P.fol.position.x = 13 + 2.6*(Math.cos(th) - Math.cos(160*D2R));
+    P.fol.position.x = 2.6*Math.cos(th) + 8;   // face exactly on the eccentric rim
   },
   {p:"Un levier quart-de-tour porte un disque EXCENTRIQUE : son bord pousse un poussoir plat dans un canal — force qui croît vers la fin de course.",
    pts:["2 pièces mobiles seulement","démultiplication progressive (serrage type came de vélo)","auto-maintien près du point mort"],
@@ -292,6 +302,34 @@ reg('toggle_clamp', 'Genouillère (over-center)',
   {p:"Poignée + biellette qui passent le POINT MORT : au-delà, la charge verrouille le mécanisme au lieu de l'ouvrir (pinces de bridage d'atelier).",
    pts:["verrouillage POSITIF sans ressort de maintien","claquement franc, état lisible d'un coup d'œil","imprime à plat, 4 pièces"],
    drone:"Candidat pour tenir les bras PLIÉS avec un vrai verrou mécanique (transport en sac)."}
+);
+
+reg('wiper', 'Essuie-glace (4 barres)',
+  (g,P)=>{
+    P.base = mesh('p_wp_base', COL.base); g.add(P.base);
+    P.gs = mesh('p_wp_gs', COL.drive); P.gs.position.set(-14.5,6.15,3.4); g.add(P.gs);
+    P.gb = mesh('p_wp_gb', COL.mid); P.gb.position.z = 3.4; g.add(P.gb);
+    P.rod = mesh('p_wp_rod', COL.mid); P.rod.position.z = 8.2; g.add(P.rod);
+    P.arm = mesh('p_wp_arm', COL.out); P.arm.position.set(-26,-12,3.6); g.add(P.arm);
+  },
+  (P,t)=>{
+    const rc=6.5, ra=8, L=28, B=[-26,-12];
+    const thb = t*2*Math.PI;                         // one crank revolution
+    P.gb.rotation.z = thb;
+    P.gs.rotation.z = 10*D2R - thb*13/8;             // exact gear ratio 13:8
+    const px = rc*Math.cos(thb), py = rc*Math.sin(thb);
+    const dx = px-B[0], dy = py-B[1];
+    const d = Math.hypot(dx,dy), al = Math.atan2(dy,dx);
+    const c = Math.min(1, Math.max(-1,(ra*ra + d*d - L*L)/(2*ra*d)));
+    const ph = al - Math.acos(c);                    // rocker angle
+    P.arm.rotation.z = ph;
+    const qx = B[0]+ra*Math.cos(ph), qy = B[1]+ra*Math.sin(ph);
+    P.rod.position.set(qx, qy, 8.2);
+    P.rod.rotation.z = Math.atan2(py-qy, px-qx);
+  },
+  {p:"La photo « desk clearing » : une molette entraîne deux engrenages ; le maneton du grand pignon tire une bielle qui fait OSCILLER un long bras balayeur — la barre d'essuie-glace, en 4 barres (manivelle-balancier).",
+   pts:["rotation continue → balayage alternatif automatique","engrenages module commun (13:8), pions imprimés","le bras démultiplie la course : petit maneton, grand balayage"],
+   drone:"Un servo à rotation continue balaierait les 4 languettes l'une après l'autre — ou anime un « radar » de démo sur le capot."}
 );
 
 /* ---------- scene management ---------- */
@@ -329,6 +367,45 @@ for (const k of Object.keys(MECHS)){
   btns.appendChild(b);
 }
 
+/* ---------- the drone, folded, at true scale — to SEE the opening ---------- */
+const FOLD_A = 1.70859, BTN_Y = -19;
+const DSIGN = {fr:+1, fl:-1, rr:-1, rl:+1};
+const DPIV  = {fr:[ 24.5,-36], fl:[-24.5,-36], rr:[ 24.5, 36], rl:[-24.5, 36]};
+const droneG = new THREE.Group(); droneG.visible = false;
+droneG.position.set(105, 0, 8);            // beside the mechanism, feet on the grid
+scene.add(droneG);
+const dBody = mesh('d_body', COL.base); droneG.add(dBody);
+const dLatch = mesh('d_latch', COL.out); droneG.add(dLatch);
+const dBtn = mesh('d_button', COL.drive); dBtn.position.set(0, BTN_Y, 0); droneG.add(dBtn);
+const dArms = {};
+for (const k of Object.keys(DPIV)){
+  const ag = new THREE.Group();
+  ag.position.set(DPIV[k][0], DPIV[k][1], 0);
+  ag.add(mesh('d_arm_'+k, COL.mid));
+  ag.rotation.z = DSIGN[k]*FOLD_A;         // starts FOLDED
+  droneG.add(ag); dArms[k] = ag;
+}
+let droneOn = false;
+function droneKin(t){
+  // t 0..1 = press the button -> latch slides -> springs open the arms -> release
+  const press = Math.min(t/0.3, 1) * (t < 0.85 ? 1 : Math.max(0, 1-(t-0.85)/0.15));
+  const foldT = Math.min(1, Math.max(0, 1 - (t-0.30)/0.55));
+  dBtn.position.z = -press*3.5;
+  dLatch.position.y = press*3.2;
+  for (const k of Object.keys(dArms)) dArms[k].rotation.z = DSIGN[k]*FOLD_A*foldT;
+}
+document.getElementById('bDrone').addEventListener('click', e=>{
+  droneOn = !droneOn; droneG.visible = droneOn;
+  e.target.classList.toggle('on', droneOn);
+  document.getElementById('droneNote').style.display = droneOn ? 'block' : 'none';
+  if (droneOn){ controls.target.set(55, 0, 10);
+    camera.position.set(80, -180, 120); controls.maxDistance = 420; }
+  else { controls.target.set(0, 0, 6);
+    camera.position.set(70, -95, 75); }
+  controls.update(); startLoop();
+});
+window.__droneOn = () => droneOn;
+
 /* ---------- animation ---------- */
 let tV = 0, playing = true, dir = 1;
 function applyT(t){
@@ -336,6 +413,7 @@ function applyT(t){
   document.getElementById('t').value = Math.round(t*100);
   document.getElementById('tV').textContent = Math.round(t*100)+'%';
   if (current) MECHS[current].kin(MECHS[current].parts, t);
+  if (droneOn) droneKin(t);
 }
 window.__t = () => tV;
 document.getElementById('t').addEventListener('input', e=>{
@@ -389,11 +467,12 @@ startLoop();
 
 
 def main():
+    stls = {p: b64(os.path.join(STL, p + ".stl")) for p in PARTS}
+    for p in DRONE_PARTS:
+        stls["d_" + p] = b64(os.path.join(DRONE_STL, p + ".stl"))
     html = (TEMPLATE
             .replace("__IMPORTMAP__", importmap())
-            .replace("__STLS__", json.dumps(
-                {p: b64(os.path.join(STL, p + ".stl")) for p in PARTS},
-                separators=(",", ":"))))
+            .replace("__STLS__", json.dumps(stls, separators=(",", ":"))))
     with open(OUT, "w") as f:
         f.write(html)
     print("== Fr4n7-F mechanisms viewer ==")
