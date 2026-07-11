@@ -54,7 +54,7 @@ nor anywhere in the deploy swing fan (checked against all four pivots).
 Each corner is a printed **clevis (C-clamp)**: bottom jaw 2.4 (nyloc pocket
 underneath), 6.0 slot, top jaw 2.6 with a **torsion-spring pocket**
 (Ø7.4 × 2.2, 0.5 mm wire, ~4 turns — 2 left-hand + 2 right-hand, mirrored
-corners). The arm's Ø6.4 claw rides an **M2 × 12** screw. Springs preload
+corners). The arm's Ø8 claw rides an **M3 × 14** screw. Springs preload
 toward DEPLOYED.
 
 - **Deployed stop + detent**: the claw carries a small dome that rides a
@@ -87,8 +87,21 @@ releases everything:
   PCB is uncut, so the pin is guided by the bridge's printed **sleeve** +
   the capot bore). Its **cone cams the slider's centre bridge** rearward —
   press down, arms pop open.
-- **V2 servo**: a 3.7 g nano-servo drives `servo_cam` against the same
-  bridge. The V1 button stays as a manual backup.
+- **V2 servo — RETAINED mechanism = worm + toothed sector**: of the seven
+  candidates in [`../viz/mechanisms_viewer.html`](../viz/), the owner's own
+  window-operator (crank → single-start worm → toothed sector) was chosen and
+  integrated (`servo_worm` + `servo_sector` in `cad/frame_foldable.scad`). A
+  3.7 g nano-servo spins the worm; the sector's pin shoves the **same ejector
+  slider** the V1 button does (drive tab + X-slot on `latch_u`). Why this one:
+  it is **self-locking** — the worm can't be back-driven, so the weak servo
+  holds all four spring-loaded arms folded at **zero holding torque** (no
+  stall, no heat, nothing pops open under vibration) — and its huge reduction
+  lets that tiny servo overcome the four torsion springs. It lives entirely in
+  the release z-band (8.6–11.4), where the battery (z ≥ 13) and the ToF/flow
+  windows (floor level) are in other layers. Machine-checked:
+  `PART=collision_drive` (worm + swept sector + servo body vs. the walls, the
+  slider rails and the V1 button) exports **exactly 684 bytes**. The V1 button
+  stays as a manual backup on the same corps.
 
 ## 3bis. Alternative mechanisms — printable demo kits (`cad/mechanisms.scad`)
 
@@ -98,7 +111,7 @@ self-contained demo kits (assembled preview + flat `_kit` plates):
 
 | PART | Principle | Why it's interesting |
 |---|---|---|
-| `worm_crank` | crank → printed single-start worm → toothed sector → pin drives the slider | huge reduction, **self-locking** (the window-operator, miniaturised) |
+| `worm_crank` ★ | crank → printed single-start worm → toothed sector → pin drives the slider | **RETAINED as the V2 drive** — huge reduction, **self-locking** (the window-operator, miniaturised) |
 | `scissor` | central slider → two links → twin sweeping arms | the operator's dual-arm extension, prints flat |
 | `iris_cam` | rotating disc with 4 Archimedean slots → 4 radial pins | **one twist releases all four corners** (servo horn or thumb wheel) — DJI-style |
 | `rack_pinion` | 8-tooth pinion walks a straight rack | the simplest rotation→translation; direct servo drive |
@@ -106,9 +119,10 @@ self-contained demo kits (assembled preview + flat `_kit` plates):
 | `toggle_clamp` | handle + link snap PAST the dead centre (genouillère) | **positive over-centre lock** with zero holding force — transport-safe |
 | `wiper` | knob → gear pair (13:8) → crank pin → rod → rocking sweep arm | the windscreen-wiper four-bar (crank-rocker); continuous rotation → alternating sweep |
 
-All coarse-pitch, printed pins, generous clearances — M0 concept demos;
-integration into the airframe (replacing the linear slider) is the next
-step. **Compare them animated before printing**: open
+All coarse-pitch, printed pins, generous clearances — M0 concept demos.
+**Chosen after comparing all seven: `worm_crank`** — now integrated into the
+airframe as the V2 servo drive (§3 above; the linear slider is kept and driven
+by the sector's pin). **Compare them animated before printing**: open
 [`../viz/mechanisms_viewer.html`](../viz/) — every part is the real
 exported STL, driven by its true 2-D kinematics (worm ratio, scissor
 linkage solve, Archimedean slots, over-centre pass, wiper crank-rocker),
@@ -124,7 +138,7 @@ STLs were used as **measurement reference only** and are not committed
 Wire behaviour (Tello-SDK style, additive extension):
 
 ```
-deploy        →  releases the fold latch (V2 servo cam cycle ≈ 1 s), "ok"
+deploy        →  releases the fold latch (V2 servo worm cycle ≈ 1 s), "ok"
 deploy 0      →  (reserved) re-arm/fold assist if a bidirectional cam is fitted
 ```
 
@@ -153,8 +167,9 @@ Future implementation map (verified against the current tree — one sitting):
 |---|---|---|
 | `body`, `capot`, `latch` | 1 each | PETG; capot is foldable-specific (the tello_style top's skirt would hit the knuckles) |
 | `arm_front` / `arm_rear` | 2 + 2 | print one of each mirrored (left side) |
-| `button` (V1) *or* `servo_cam` (V2) | 1 | V2 adds a 3.7 g nano servo |
-| M2 × 12 + nyloc | 4 | pivot axes |
+| `button` (V1) | 1 | manual TOP button (kept as backup on V2) |
+| `servo_worm` + `servo_sector` (V2) | 1 each | the retained worm+sector drive; V2 adds a 3.7 g nano servo |
+| M3 × 14 + nyloc | 4 | pivot axes (as the original thing:1604440) |
 | torsion springs, 0.5 mm wire, Øi 4 | 2 LH + 2 RH | preload = deployed |
 | small rubber band | 1 | latch return (printed-flex spring planned) |
 

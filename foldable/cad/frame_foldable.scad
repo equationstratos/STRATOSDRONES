@@ -23,7 +23,7 @@
 //                   verb (spec in ../DESIGN.md — NOT yet in firmware).
 // Folding back needs NO button: push the arms in until the cradles click.
 //
-//   for P in body capot arm_front arm_rear arm_fr arm_fl arm_rr arm_rl latch button servo_cam; do
+//   for P in body capot arm_front arm_rear arm_fr arm_fl arm_rr arm_rl latch button servo_worm servo_sector; do
 //     xvfb-run -a openscad -o stl/$P.stl --export-format binstl \
 //       -D "PART=\"$P\"" frame_foldable.scad; done
 //
@@ -32,8 +32,9 @@ $fn = 64;
 eps = 0.01;
 
 PART = "assembly";   // body|capot|arm_front|arm_rear|arm_fr|arm_fl|arm_rr|arm_rl|
-                     // latch|button|servo_cam|assembly|assembly_folded|
-                     // collision_deployed|collision_folded|collision_arms
+                     // latch|button|servo_worm|servo_sector|servo_drive|servo_cam|
+                     // assembly|assembly_folded|assembly_v2|
+                     // collision_deployed|collision_folded|collision_arms|collision_drive
 
 /* ---- shared geometry — keep in sync with tello_style/body_bottom_v2.scad ---- */
 wheelbase   = 118;
@@ -245,14 +246,18 @@ module latch_u() {        // ONE printed part: rails + release fingers + bridge
                 cube([2.2, 1.4, rail_z1-rail_z0-0.4]);
         translate([sx*rail_x-0.6, 25.4, rail_z0]) cube([1.2, 2.6, 5.2]);   // band hook
     }
-    difference() {   // centre-front bridge: button sleeve + cam notch
+    difference() {   // centre-front bridge: button sleeve + cam notch + V2 drive tab
         union() {
             translate([-rail_x, btn_y-1.6, rail_z0]) cube([2*rail_x, 3.2, rail_z1-rail_z0]);
             translate([0, btn_y, rail_z0]) cylinder(d=8.2, h=3.8);          // guide sleeve
+            translate([sv_pin[0]-1.5, btn_y-1.6, rail_z0])                  // V2 sector-drive tab
+                cube([3.0, (sv_pin[1]+2.4)-(btn_y-1.6), rail_z1-rail_z0]);  //  (right of button)
         }
         translate([0, btn_y+0.8, rail_z0-eps]) cylinder(d1=2.6, d2=5.2, h=4.0);  // cone seat
         translate([-2.6, btn_y-3.4, rail_z0-eps]) cube([5.2, 3.6, 4.0]);    // open frontward
-        translate([0, btn_y, rail_z0+1.2]) cylinder(d=4.9, h=4);            // shank pass
+        translate([0, btn_y, rail_z0+1.2]) cylinder(d=4.9, h=4);           // shank pass
+        translate([sv_pin[0]-3.2, sv_pin[1]-2.4, rail_z0-eps])              // sector-pin slot
+            cube([6.4, 4.8, rail_z1-rail_z0+2*eps]);                        //  (X-elongated)
     }
 }
 module body_band_hooks() {
@@ -263,13 +268,67 @@ module button() {         // TOP pin (absolute z): cone -> shank -> head
     translate([0,0,8.8])  cylinder(d=4.6, h=10.0);           // shank (sleeve + capot bores)
     translate([0,0,18.8]) cylinder(d=8.4, h=2.0);            // head, proud of the capot
 }
-module servo_cam() {      // V2 cam disc for a 3.7 g nano-servo horn
-    difference() {
-        union() { cylinder(d=9, h=3); translate([2.6,0,0]) cylinder(d=6, h=3); }
-        translate([0,0,-eps]) cylinder(d=4.7, h=3.4);
-        for (a=[0:90:270]) rotate([0,0,a]) translate([3.4,0,-eps]) cylinder(d=1.2, h=3.4);
+/* ---- V2 servo drive = WORM + TOOTHED SECTOR (the RETAINED mechanism) --------
+   Chosen from the seven demos in ../viz/mechanisms_viewer.html: the owner's own
+   window-operator, miniaturised. A 3.7 g nano-servo spins a single-start printed
+   WORM; the worm walks a toothed SECTOR; the sector's pin shoves the SAME ejector
+   slider the V1 button does. Why this one:
+     • self-locking — the worm can't be back-driven, so the weak servo holds all
+       four spring-loaded arms folded with ZERO holding torque (no stall, no heat,
+       no current sitting armed) and vibration can't pop them open;
+     • huge reduction — the tiny servo still overcomes the four torsion springs;
+     • it drives the PROVEN slider, so the fold/arm collision gates are untouched;
+     • it lives entirely in the release z-band (8.6..11.4) — the battery (z>=13)
+       and the ToF/flow windows (floor level, z<1.4) are in other layers.
+   The V1 manual button is unchanged (same corps); only this drive is added.  */
+sv_piv = [10.9, -12];              // sector pivot (front-right open bay)         // TUNE
+sv_sr  = 5.8;                      // sector pitch radius (compact; swept teeth clear the rail)
+sv_pin = [4.5, -12];               // drive-pin xy (radius along -X -> pushes slider +Y)
+sv_z0  = rail_z0;                  // coplanar with the slider band
+sv_zt  = rail_z1 - rail_z0;        // 2.8 thick
+sv_a   = 30;                       // working sweep (deg) -> ~3.3 mm at the pin    // TUNE
+
+module sv_sector_local(a=0) {      // toothed sector, pivot at origin, teeth face +Y
+    rotate([0,0,a]) {
+        difference() {
+            union() {
+                cylinder(r=sv_sr-1.6, h=sv_zt);
+                for (t=[-1:1:1]) rotate([0,0, 90 + t*13])          // coarse teeth, mesh side
+                    translate([sv_sr-2.4, -1.5, 0]) cube([3.2, 3.0, sv_zt]);
+                hull() {                                            // spoke out to the drive pin
+                    cylinder(d=4.4, h=sv_zt);
+                    translate([sv_pin[0]-sv_piv[0], sv_pin[1]-sv_piv[1], 0]) cylinder(d=3.4, h=sv_zt);
+                }
+            }
+            translate([0,0,-eps]) cylinder(d=3.2, h=sv_zt+2);       // bore rides the body post
+        }
+        translate([sv_pin[0]-sv_piv[0], sv_pin[1]-sv_piv[1], 0])
+            cylinder(d=2.8, h=sv_zt+1.4);                           // drive pin -> slider slot
     }
 }
+module servo_sector() { translate([sv_piv[0], sv_piv[1], sv_z0]) sv_sector_local(0); }
+
+module sv_worm_local() {            // single-start worm on the servo spline, +X axis
+    rotate([0,90,0]) {
+        linear_extrude(13, twist=-360*13/6, convexity=10)          // lead 6 (self-locking)
+            translate([1.4,0]) circle(d=6.0-2.2);
+        cylinder(d=3.6, h=13);                                     // spline core (thread length)
+        cylinder(d=6, h=1.6);                                      // servo-horn face (drive/-X end)
+    }
+}
+module servo_worm() {               // meshes the sector teeth from the +Y side
+    translate([2.5, sv_piv[1]+sv_sr+1.4, sv_z0+sv_zt/2]) sv_worm_local();
+}
+module servo_ghost() {              // purchased 3.7 g nano-servo — PROXY (buy, not print)
+    color([0.12,0.12,0.14,0.5])
+        translate([-9.5, sv_piv[1]+sv_sr-2.6, 3.2]) cube([12.5, 6.5, 11.0]);
+}
+module servo_drive(a=0) {           // the whole V2 assembly (preview)
+    color("#b9bec6") translate([sv_piv[0], sv_piv[1], sv_z0]) sv_sector_local(a);
+    color("#2f6fed") servo_worm();
+    servo_ghost();
+}
+module servo_cam() { servo_drive(0); }   // back-compat alias (was the old placeholder)
 
 /* ================= capot (foldable-specific lid) ================= */
 module capot() {
@@ -308,6 +367,7 @@ module body() {
             knuckles();
             latch_guides();
             body_band_hooks();
+            servo_mounts();
             feet();
         }
         knuckle_voids();
@@ -315,6 +375,12 @@ module body() {
     }
     pcb_bosses();
     snap_posts();
+}
+module servo_mounts() {   // V2 drive mounts (present in both versions; unused by V1)
+    translate([sv_piv[0], sv_piv[1], floor_t-eps])                      // sector pivot post
+        cylinder(d=3.0, h=rail_z1+0.6-floor_t);
+    for (rx=[-9.5, 2.6])                                                // servo cradle ribs
+        translate([rx, sv_piv[1]+sv_sr-3.0, floor_t-eps]) cube([1.8, 7.0, 3.2]);
 }
 
 /* ============ arms — STRAIGHT Thingiverse-style flat bars ============
@@ -406,11 +472,12 @@ module ghost_props(fold) {   // preview only — NEVER in part exports
             %cylinder(d=prop_d, h=0.8, center=true);
     }
 }
-module assembly(fold=0) {
+module assembly(fold=0, v2=false) {
     color("#cfd4da") body();
     color("#b9bec6") for (n=["fr","fl","rr","rl"]) arm_at(n, fold);
     color("#23272e") latch_u();
-    color("#2f6fed") translate([0, btn_y, 0]) button();
+    if (v2) servo_drive(0);
+    else    color("#2f6fed") translate([0, btn_y, 0]) button();
     ghost_props(fold);
 }
 module marker() { translate([70,70,0]) cube(1); }   // keeps empty exports valid
@@ -421,6 +488,22 @@ module collision_arms() { marker();
         intersection() { arm_at(p[0],1); arm_at(p[1],1); } }
 module collision_deployed() { marker();
     intersection() { body(); union() { for (n=["fr","fl","rr","rl"]) arm_at(n, 0); } } }
+// V2 drive clearance: the worm + swept sector + servo body must miss the pod
+// walls, the two slider rails and the V1 button (pin-in-slot contact excluded).
+module collision_drive() { marker();
+    intersection() {
+        union() {
+            servo_worm(); servo_ghost();
+            translate([sv_piv[0], sv_piv[1], sv_z0]) sv_sector_local(0);
+            translate([sv_piv[0], sv_piv[1], sv_z0]) sv_sector_local(-sv_a);
+        }
+        union() {
+            difference() { pod_outer(); inner_cavity(); }          // walls + floor
+            for (sx=[-1,1]) translate([sx*rail_x-1.0, -26, rail_z0]) cube([2.0, 52, rail_z1-rail_z0]);
+            translate([0, btn_y, 0]) button();
+        }
+    }
+}
 
 /* ================= dispatch ================= */
 if      (PART=="body")       body();
@@ -433,9 +516,14 @@ else if (PART=="arm_rr")     arm_rr();
 else if (PART=="arm_rl")     arm_rl();
 else if (PART=="latch")      latch_u();
 else if (PART=="button")     button();
+else if (PART=="servo_worm")   servo_worm();
+else if (PART=="servo_sector") servo_sector();
+else if (PART=="servo_drive")  servo_drive(0);
 else if (PART=="servo_cam")  servo_cam();
 else if (PART=="assembly_folded")   assembly(1);
+else if (PART=="assembly_v2")        assembly(0, true);
 else if (PART=="collision_folded")  collision_folded();
 else if (PART=="collision_arms")    collision_arms();
 else if (PART=="collision_deployed") collision_deployed();
+else if (PART=="collision_drive")   collision_drive();
 else                          assembly(0);

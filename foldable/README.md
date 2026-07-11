@@ -10,7 +10,8 @@ half a second:
 
 - **V1 « manuelle »** — a **centred TOP push-button** (umbrella style)
   releases the latch. Zero electronics added.
-- **V2 « commande »** — a 3.7 g nano-servo cam releases the *same* latch,
+- **V2 « commande »** — a 3.7 g nano-servo turns a **self-locking worm +
+  toothed sector** (the retained mechanism) that releases the *same* latch,
   triggered by a new **`deploy`** SDK verb (and the BOOT button as a physical
   fallback). The verb is **specified, not yet implemented** — see
   [`DESIGN.md`](DESIGN.md) §4 for the wire spec and the exact future
@@ -39,7 +40,7 @@ half a second:
 | Wheelbase (deployed) | 118 mm | **same** |
 | Footprint | 96 × 92.5 mm fixed | **≈ 68 × 83 mm folded** (−35 % width, blades aligned) |
 | Arms | printed into the shell | **4 sculpted paddle arms on INSET corner hinges (M3 + torsion springs), snap tabs ON THE ARMS into flush wall windows** |
-| Deploy | — | **spring-loaded; centred TOP button (V1) or servo + `deploy` (V2); alt mechanisms: worm-crank / scissor / iris (printable demos)** |
+| Deploy | — | **spring-loaded; centred TOP button (V1) or servo + `deploy` (V2, retained drive = self-locking worm+sector); 7 printable mechanisms compared in the viewer** |
 | Props | one plane | **two planes** (front low / rear high — inverted front pods) |
 | Landing | belly | **4 feet** in the blade-free "dead diamond" |
 | Electronics / firmware | Fr4n7 board + fc_core | **identical** (servo on J9's EXP_IO for V2) |

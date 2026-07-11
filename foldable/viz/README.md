@@ -41,7 +41,9 @@ test hooks.
 A second self-contained viewer to **compare the seven printable deploy
 mechanisms before printing** (`gen_mech_viewer.py`): worm+crank, scissor,
 iris cam, rack+pinion, eccentric cam lever, toggle over-centre, and the
-windscreen-wiper four-bar. Each is built from its real per-part STLs
+windscreen-wiper four-bar. It opens on **worm+crank, flagged ★ MÉCANISME
+RETENU** — the one picked and integrated into the airframe as the V2 servo
+drive (self-locking; see [`../DESIGN.md`](../DESIGN.md) §3). Each is built from its real per-part STLs
 (`../cad/stl/mech/p_*.stl`) and animated with its true 2-D kinematics —
 with the parts in real CONTACT (worm on the sector teeth, pinion meshed
 with the rack, cam rim riding its follower). A card explains the

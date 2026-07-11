@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """Fr4n7-F — mechanisms viewer generator (all printable deploy mechanisms).
 
-One self-contained ``mechanisms_viewer.html``: the six candidate mechanisms
-(worm+crank, scissor, iris cam, rack+pinion, eccentric cam lever, toggle
-over-centre) rendered from their real per-part STLs
+One self-contained ``mechanisms_viewer.html``: the seven candidate mechanisms
+(worm+crank [★ RETAINED as the V2 drive], scissor, iris cam, rack+pinion,
+eccentric cam lever, toggle over-centre, wiper) rendered from their real STLs
 (``foldable/cad/stl/mech/p_*.stl``) and ANIMATED with their actual 2-D
 kinematics — inspect and compare before printing. Same offline recipe as
 the other viewers (Three.js inlined from ``sim/viz/vendor``).
@@ -101,7 +101,7 @@ TEMPLATE = r"""<!DOCTYPE html>
   <div id="side">
     <header>
       <h1><b>MÉCANISMES</b> — Fr4n7-F</h1>
-      <p>6 familles imprimables · cinématique réelle · à comparer avant impression</p>
+      <p>7 familles imprimables · ★ vis-sans-fin retenue pour la V2 · à comparer avant impression</p>
     </header>
     <div class="sec">
       <h2>Mécanisme</h2>
@@ -179,7 +179,7 @@ function mesh(name, color){ return new THREE.Mesh(geo(STLB64[name]),
   new THREE.MeshStandardMaterial({color, metalness:.3, roughness:.5})); }
 const D2R = Math.PI/180;
 
-/* ---------- build the six mechanisms (mm coordinates, like the SCAD) ------ */
+/* ---------- build the seven mechanisms (mm coordinates, like the SCAD) ---- */
 const MECHS = {};
 function reg(key, label, build, kin, desc){ MECHS[key] = {label, build, kin, desc, group:null, parts:{}}; }
 
@@ -199,9 +199,9 @@ reg('worm_crank', 'Vis sans fin + manivelle',
     P.sector.rotation.z = ths;
     P.slider.position.y = -7.6 + (9*Math.sin(ths) - 9*Math.sin(th0));  // pin drives Y
   },
-  {p:"Une manivelle tourne une vis sans fin imprimée (1 filet, pas 6 mm) qui fait avancer un secteur denté ; le pion du secteur pousse le coulisseau.",
-   pts:["énorme réduction : effort du bout du doigt","AUTOBLOQUANT (le verrou ne peut pas se rouvrir seul)","l'opérateur de fenêtre, miniaturisé"],
-   drone:"Visse la course du verrou (3,2 mm) sans aucun ressort de retenue — le plus sûr en transport."}
+  {p:"Une manivelle (ou le nano-servo) tourne une vis sans fin imprimée (1 filet, pas 6 mm) qui fait avancer un secteur denté ; le pion du secteur pousse le MÊME coulisseau que le bouton V1.",
+   pts:["énorme réduction : le petit servo 3,7 g force les 4 ressorts","AUTOBLOQUANT — tient les bras repliés à couple ZÉRO, rien ne se rouvre aux vibrations","c'est l'opérateur de fenêtre de ta photo, miniaturisé"],
+   drone:"MÉCANISME RETENU pour la V2 « deploy ». Intégré dans frame_foldable.scad (servo_worm + servo_sector) : le servo visse la course du verrou (3,2 mm) via le pion dans le coulisseau, l'autoblocage tient le paquet plié sans courant. Gate collision_drive = 684 (n'entre pas dans les rails/parois/bouton)."}
 );
 
 reg('scissor', 'Bras ciseaux',
@@ -345,13 +345,19 @@ for (const k of Object.keys(MECHS)){
   m.group.position.set(-c.x, -c.y, 0);
   root.add(m.group);
 }
+const RETAINED = 'worm_crank';   // the mechanism integrated into the airframe (V2 drive)
 function show(k){
   current = k;
   for (const kk of Object.keys(MECHS)) MECHS[kk].group.visible = (kk===k);
   document.querySelectorAll('#mechBtns button').forEach(b=>
     b.classList.toggle('on', b.dataset.k===k));
   const d = MECHS[k].desc;
+  const retBadge = (k===RETAINED)
+    ? `<div style="display:inline-block;margin:0 0 6px;padding:3px 9px;border-radius:12px;`
+      + `background:#f5b301;color:#1a1a1a;font-weight:700;font-size:12px">★ MÉCANISME RETENU`
+      + `</div>` : '';
   document.getElementById('desc').innerHTML =
+    retBadge +
     `<h3>${MECHS[k].label}</h3><p>${d.p}</p>` +
     `<ul>${d.pts.map(x=>`<li>${x}</li>`).join('')}</ul>` +
     `<div class="drone">🛩 Sur le drone : ${d.drone}</div>`;
@@ -362,7 +368,8 @@ function show(k){
 const btns = document.getElementById('mechBtns');
 for (const k of Object.keys(MECHS)){
   const b = document.createElement('button');
-  b.textContent = MECHS[k].label; b.dataset.k = k;
+  b.textContent = (k===RETAINED ? '★ ' : '') + MECHS[k].label; b.dataset.k = k;
+  if (k===RETAINED){ b.style.borderColor = '#f5b301'; b.style.fontWeight = '700'; }
   b.addEventListener('click', ()=>show(k));
   btns.appendChild(b);
 }
