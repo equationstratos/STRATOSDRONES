@@ -29,7 +29,7 @@
 | `Package_TO_SOT_SMD:SOT-23` | KiCad standard | Q1, Q2, Q3, Q4 |
 | `Package_TO_SOT_SMD:SOT-23-5` | KiCad standard | U10, U5 |
 | `Package_TO_SOT_SMD:SOT-23-6` | KiCad standard | D1 |
-| `Resistor_SMD:R_0402_1005Metric` | KiCad standard | R1, R10, R11, R12, R13, R14, R15, R16, R17, R18, R19, R2, R20, R21, R22, R23, R24, R25, R26, R27, R28, R29, R3, R30, R31, R4, R5, R6, R7, R8, R9 |
+| `Resistor_SMD:R_0402_1005Metric` | KiCad standard | R1, R10, R11, R12, R13, R14, R15, R16, R17, R18, R19, R2, R20, R21, R22, R23, R24, R25, R26, R27, R28, R29, R3, R30, R31, R32, R4, R5, R6, R7, R8, R9 |
 | `Sensor_Distance:ST_VL53L1x` | KiCad standard | U8 |
 | `strat:ESP32-C6-MINI-1` | Vendored — `lib/Espressif.pretty/ESP32-C6-MINI-1.kicad_mod` (nickname `Espressif`) | U3 |
 | `strat:ESP32-P4` | Vendored — fichier dans `lib/Espressif.pretty/ESP32-P4.kicad_mod` (nickname KiCad conseillé : `Espressif`) | U1 |

@@ -1,4 +1,4 @@
-# 03 — Schéma : MCU ESP32-P4 + flash (38 composants)
+# 03 — Schéma : MCU ESP32-P4 + flash (39 composants)
 
 Le cœur de la carte. Grosse puce (100 broches + pad exposé), donc on prend son
 temps.
@@ -62,12 +62,19 @@ familles :
 ## 3. Quartz / reset / boot / REXT
 
 - **Y1 = 40 MHz** (4 broches) : 1 `XTAL_P`, 2 `GND`, 3 `XTAL_N`, 4 `GND`.
+  > ⚠️ **Fréquence critique** : le P4 exige **40 MHz**. Le part LCSC a été corrigé
+  > (l'ancien **C9002 était un 12 MHz** → carte morte) vers **C2831465** (40 MHz).
+  > Voir `../VERIFY_RESOLVED.md` §11.
 - **C8 = C9 = 10 pF** : charges du quartz (sur XTAL_P / XTAL_N vers GND).
-  > Ajuste-les selon la CL réelle du quartz choisi (`KNOWN_GAPS.md` §11).
+  > Règle-les selon la **CL réelle** du cristal commandé : `C = 2·(CL − Cstray)`,
+  > Cstray ≈ 2–3 pF (`../VERIFY_RESOLVED.md` §11).
 - **Reset** : **R9 = 10 kΩ** (3V3→`CHIP_PU`), **C10 = 1 µF** (`CHIP_PU`→GND),
   **SW1 = bouton** (`CHIP_PU`→GND).
-- **Boot** : **SW2 = bouton** (`BOOT`→GND), **R10 = 10 kΩ** (3V3→`BOOT`).
-  > ⚠️ On suppose que le strap de boot = GPIO35 → à **vérifier** (`KNOWN_GAPS.md` §5).
+- **Boot** : **SW2 = bouton** (`BOOT`=GPIO35→GND), **R10 = 10 kΩ** (3V3→`BOOT`).
+  **R32 = 10 kΩ** (3V3→`GPIO36_STRAP`, broche 68 du P4).
+  > ✅ **Vérifié** (`../VERIFY_RESOLVED.md` §5) : GPIO35 = strap download (bas =
+  > bootloader, pull-up interne → boot flash au repos). **R32 ajoutée** car GPIO36
+  > doit être **haut** pour un download fiable (GPIO36=0 & GPIO35=0 est invalide).
 - **REXT** : **R11 = 4.02 kΩ** (`CSI_REXT`→GND), **R12 = 4.02 kΩ** (`DSI_REXT`→GND)
   — valeurs imposées par le checklist Espressif (`KNOWN_GAPS.md` §12).
 
@@ -87,7 +94,9 @@ familles :
 
 ## Vérification du bloc
 
-- 38 composants posés (fiche blocs.md).
+- 39 composants posés (fiche blocs.md). Dont **R32** = pull-up 10 k sur GPIO36
+  (broche 68 du P4) : strap de boot ajouté pour un mode download fiable
+  (voir `../VERIFY_RESOLVED.md` §5).
 - Les nets `VDD_CORE`, `EN_DCDC`, `FB_DCDC`, `VDD_MIPI`, `VDD_FLASHIO`,
   `VDD_PSRAM` doivent maintenant apparaître **des deux côtés** (alim ch.02 ↔ P4).
 

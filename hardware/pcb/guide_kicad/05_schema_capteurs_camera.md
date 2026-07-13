@@ -49,12 +49,13 @@ déjà été corrigés ici, voir `KNOWN_GAPS.md` §6, §8, §9).
 ## 5. Caméra MIPI-CSI (J4) — FFC 15 broches
 
 - Empreinte : `Connector_FFC-FPC:Hirose_FH12-15S-0.5SH_1x15-1MP_P0.50mm_Horizontal`.
-- Câblage (pinout **Raspberry-Pi 15 broches supposé**, à **VÉRIFIER**,
-  `KNOWN_GAPS.md` §6) : paires CSI `CSI_D0N/D0P`, `CSI_D1N/D1P`, `CSI_CKN/CKP`
-  intercalées de `GND`, plus `CAM_PWDN`, `CAM_GPIO`, `I2C_SCL`, `I2C_SDA`, `3V3`.
-  > ⚠️ Une paire inversée ou une mauvaise polarité = pas d'image. Recroise avec
-  > le brochage du connecteur caméra **et** les exigences CSI du P4 avant de
-  > fabriquer.
+- Câblage : paires CSI `CSI_D0N/D0P`, `CSI_D1N/D1P`, `CSI_CKN/CKP` intercalées de
+  `GND`, plus `CAM_PWDN`, `CAM_GPIO`, `I2C_SCL`, `I2C_SDA`, `3V3`.
+  > ✅ **Vérifié conforme OV5647** (`../VERIFY_RESOLVED.md` §6) : le firmware cible
+  > la caméra **OV5647** (= Raspberry Pi Camera v1.3) et le brochage FFC de J4
+  > **correspond** au standard OV5647/RPi v1.3 (lanes, GND, alims, I²C).
+  > Résidu faible : la **polarité P/N** côté pads du P4 n'est pas re-vérifiée
+  > contre l'EVK P4 — en général rattrapable **côté firmware** (config lanes MIPI).
 - **C33 = 1 µF** (3V3/GND).
 
 ## Vérification du bloc

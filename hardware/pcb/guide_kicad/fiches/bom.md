@@ -2,13 +2,13 @@
 
 # Fiche — BOM (nomenclature)
 
-102 composants posés avec code LCSC, regroupés en 37 lignes d'achat. (Les composants DNP — non posés — sont exclus, comme dans `jlcpcb/bom.csv`.)
+103 composants posés avec code LCSC, regroupés en 37 lignes d'achat. (Les composants DNP — non posés — sont exclus, comme dans `jlcpcb/bom.csv`.)
 
 | Qté | Valeur | Empreinte | LCSC | Références |
 |-----|--------|-----------|------|------------|
 | 26 | 100nF | `Capacitor_SMD:C_0402_1005Metric` | C1525 | C11, C12, C13, C14, C15, C16, C17, C18, C19, C20, C21, C22, C23, C24, C25, C28, C29, C30, C31, C32, C34, C35, C39, C41, C42, C6 |
 | 8 | 100k | `Resistor_SMD:R_0402_1005Metric` | C25741 | R26, R27, R28, R29, R5, R6, R7, R8 |
-| 6 | 10k | `Resistor_SMD:R_0402_1005Metric` | C25744 | R10, R13, R14, R15, R21, R9 |
+| 7 | 10k | `Resistor_SMD:R_0402_1005Metric` | C25744 | R10, R13, R14, R15, R21, R32, R9 |
 | 5 | 1uF | `Capacitor_SMD:C_0402_1005Metric` | C52923 | C10, C33, C38, C40, C7 |
 | 5 | 51k | `Resistor_SMD:R_0402_1005Metric` | C25905 | R16, R17, R18, R19, R20 |
 | 4 | 10uF | `Capacitor_SMD:C_0805_2012Metric` | C15850 | C1, C2, C3, C36 |
@@ -35,7 +35,7 @@
 | 1 | TLV62569DBVR | `Package_TO_SOT_SMD:SOT-23-5` | C141836 | U10 |
 | 1 | 2.2uH | `Inductor_SMD:L_Cenker_CKCS3015` | C43389 | L2 |
 | 1 | 20pF | `Capacitor_SMD:C_0402_1005Metric` | C1554 | C37 |
-| 1 | 40MHz | `Crystal:Crystal_SMD_3225-4Pin_3.2x2.5mm` | C9002 | Y1 |
+| 1 | 40MHz | `Crystal:Crystal_SMD_3225-4Pin_3.2x2.5mm` | C2831465 | Y1 |
 | 1 | RESET | `Button_Switch_SMD:SW_SPST_CK_RS282G05A3` | C720477 | SW1 |
 | 1 | BOOT | `Button_Switch_SMD:SW_SPST_CK_RS282G05A3` | C720477 | SW2 |
 | 1 | ICM-42688-P | `Package_DFN_QFN:DHVQFN-14-1EP_2.5x3mm_P0.5mm_EP1x1.5mm` | C2840095 | U6 |

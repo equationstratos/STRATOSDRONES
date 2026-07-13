@@ -89,20 +89,20 @@ Chapitre du guide : `02_schema_alimentation.md`
 - **C41** — 100nF · `Capacitor_SMD:C_0402_1005Metric` · LCSC C1525
   - Câblage : 1→`VDD_PSRAM` · 2→`GND`
 
-## Bloc 03 — MCU ESP32-P4 + FLASH  (38 composants)
+## Bloc 03 — MCU ESP32-P4 + FLASH  (39 composants)
 
 Chapitre du guide : `03_schema_mcu_p4_flash.md`
 
 ### MCU ESP32-P4 (U1) + flash QSPI (U2)
 
 - **U1** — ESP32-P4NRW32 · `strat:ESP32-P4` · LCSC C22387510
-  - Câblage : 7→`I2C_SDA` · 8→`I2C_SCL` · 9→`3V3` · 10→`SPI_SCLK` · 11→`SPI_MOSI` · 12→`SPI_MISO` · 13→`CS_IMU` · 14→`CS_FLOW` · 15→`SDIO_D0` · 16→`SDIO_D1` · 17→`SDIO_D2` · 18→`SDIO_D3` · 19→`SDIO_CLK` · 20→`SDIO_CMD` · 21→`3V3` · 22→`VBAT_SENSE` · 23→`IMU_INT` · 24→`EXP_IO` · 25→`VL53_XSHUT` · 26→`VDD_CORE` · 27→`FLASH_CS` · 28→`FLASH_IO1` · 29→`FLASH_IO2` · 30→`VDD_FLASHIO` · 31→`FLASH_IO3` · 32→`FLASH_CK` · 33→`FLASH_IO0` · 34→`DSI_REXT` · 41→`VDD_MIPI` · 42→`CSI_D0N` · 43→`CSI_D0P` · 44→`CSI_CKP` · 45→`CSI_CKN` · 46→`CSI_D1N` · 47→`CSI_D1P` · 48→`CSI_REXT` · 49→`USB_DM_MCU` · 50→`USB_DP_MCU` · 51→`3V3` · 52→`LED_DIN` · 53→`CAM_PWDN` · 59→`VDD_PSRAM` · 62→`3V3` · 66→`BOOT` · 67→`VDD_PSRAM` · 69→`U0TXD` · 70→`U0RXD` · 71→`VDD_FLASHIO` · 72→`VDD_PSRAM` · 73→`VDD_MIPI` · 75→`3V3` · 76→`VDD_CORE` · 77→`3V3` · 78→`FB_DCDC` · 79→`EN_DCDC` · 85→`3V3` · 87→`M1_G` · 88→`M2_G` · 89→`M3_G` · 90→`M4_G` · 91→`VDD_CORE` · 96→`3V3` · 98→`C6_EN` · 99→`XTAL_N` · 100→`XTAL_P` · 101→`3V3` · 102→`3V3` · 103→`CHIP_PU` · 104→`GPIO0` · 105→`GND`
+  - Câblage : 7→`I2C_SDA` · 8→`I2C_SCL` · 9→`3V3` · 10→`SPI_SCLK` · 11→`SPI_MOSI` · 12→`SPI_MISO` · 13→`CS_IMU` · 14→`CS_FLOW` · 15→`SDIO_D0` · 16→`SDIO_D1` · 17→`SDIO_D2` · 18→`SDIO_D3` · 19→`SDIO_CLK` · 20→`SDIO_CMD` · 21→`3V3` · 22→`VBAT_SENSE` · 23→`IMU_INT` · 24→`EXP_IO` · 25→`VL53_XSHUT` · 26→`VDD_CORE` · 27→`FLASH_CS` · 28→`FLASH_IO1` · 29→`FLASH_IO2` · 30→`VDD_FLASHIO` · 31→`FLASH_IO3` · 32→`FLASH_CK` · 33→`FLASH_IO0` · 34→`DSI_REXT` · 41→`VDD_MIPI` · 42→`CSI_D0N` · 43→`CSI_D0P` · 44→`CSI_CKP` · 45→`CSI_CKN` · 46→`CSI_D1N` · 47→`CSI_D1P` · 48→`CSI_REXT` · 49→`USB_DM_MCU` · 50→`USB_DP_MCU` · 51→`3V3` · 52→`LED_DIN` · 53→`CAM_PWDN` · 59→`VDD_PSRAM` · 62→`3V3` · 66→`BOOT` · 67→`VDD_PSRAM` · 68→`GPIO36_STRAP` · 69→`U0TXD` · 70→`U0RXD` · 71→`VDD_FLASHIO` · 72→`VDD_PSRAM` · 73→`VDD_MIPI` · 75→`3V3` · 76→`VDD_CORE` · 77→`3V3` · 78→`FB_DCDC` · 79→`EN_DCDC` · 85→`3V3` · 87→`M1_G` · 88→`M2_G` · 89→`M3_G` · 90→`M4_G` · 91→`VDD_CORE` · 96→`3V3` · 98→`C6_EN` · 99→`XTAL_N` · 100→`XTAL_P` · 101→`3V3` · 102→`3V3` · 103→`CHIP_PU` · 104→`GPIO0` · 105→`GND`
 - **U2** — W25Q128JVSIQ · `Package_SO:SOIC-8_3.9x4.9mm_P1.27mm` · LCSC C97521
   - Câblage : 1→`FLASH_CS` · 2→`FLASH_IO1` · 3→`FLASH_IO2` · 4→`GND` · 5→`FLASH_IO0` · 6→`FLASH_CK` · 7→`FLASH_IO3` · 8→`VDD_FLASHIO`
 
 ### Quartz 40 MHz / reset / boot / REXT
 
-- **Y1** — 40MHz · `Crystal:Crystal_SMD_3225-4Pin_3.2x2.5mm` · LCSC C9002
+- **Y1** — 40MHz · `Crystal:Crystal_SMD_3225-4Pin_3.2x2.5mm` · LCSC C2831465
   - Câblage : 1→`XTAL_P` · 2→`GND` · 3→`XTAL_N` · 4→`GND`
 - **C8** — 10pF · `Capacitor_SMD:C_0402_1005Metric` · LCSC C1555
   - Câblage : 1→`XTAL_P` · 2→`GND`
@@ -118,6 +118,8 @@ Chapitre du guide : `03_schema_mcu_p4_flash.md`
   - Câblage : 1→`BOOT` · 2→`GND`
 - **R10** — 10k · `Resistor_SMD:R_0402_1005Metric` · LCSC C25744
   - Câblage : 1→`3V3` · 2→`BOOT`
+- **R32** — 10k · `Resistor_SMD:R_0402_1005Metric` · LCSC C25744
+  - Câblage : 1→`3V3` · 2→`GPIO36_STRAP`
 - **R11** — 4.02k · `Resistor_SMD:R_0402_1005Metric` · LCSC C25752
   - Câblage : 1→`CSI_REXT` · 2→`GND`
 - **R12** — 4.02k · `Resistor_SMD:R_0402_1005Metric` · LCSC C25752

@@ -55,7 +55,7 @@ BLOCKS = [
         ("MCU ESP32-P4 (U1) + flash QSPI (U2)",
          ["U1", "U2"]),
         ("Quartz 40 MHz / reset / boot / REXT",
-         ["Y1", "C8", "C9", "R9", "C10", "SW1", "SW2", "R10", "R11", "R12"]),
+         ["Y1", "C8", "C9", "R9", "C10", "SW1", "SW2", "R10", "R32", "R11", "R12"]),
         ("Pull-ups flash QSPI",
          ["R13", "R14", "R15"]),
         ("Pull-ups SDIO (bus vers le C6)",

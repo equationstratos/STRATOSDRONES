@@ -68,7 +68,7 @@ On procède comme un vrai design KiCad : **schéma d'abord, PCB ensuite.**
 - **KiCad 9** (installé). Le chapitre 01 détaille l'installation si besoin.
 - Ce dossier `guide_kicad/` (le guide + les fiches).
 - Le dossier `../lib/` du repo (symboles + empreintes vendored).
-- De la patience : ~111 composants. Fais-le **par bloc**, sauvegarde souvent,
+- De la patience : ~112 composants. Fais-le **par bloc**, sauvegarde souvent,
   lance l'ERC régulièrement.
 
 ## Règle d'or : les noms de nets

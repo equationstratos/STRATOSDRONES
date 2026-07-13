@@ -5,7 +5,7 @@ dans **KiCad 9**, la carte contrôleur du STRATOSDRONE, à l'identique de celle 
 repo (`../stratosdrone.kicad_pcb`).
 
 La carte du repo est aujourd'hui **générée par code** : la source de vérité est
-`../scripts/design.py` (111 composants, 83 nets). Il n'existe pas de vrai schéma
+`../scripts/design.py` (112 composants, 84 nets). Il n'existe pas de vrai schéma
 câblé à la main. Ce guide te fait donc dessiner toi-même le schéma puis le PCB,
 en respectant exactement le même netlist — pour que tu comprennes et maîtrises
 chaque bloc.
@@ -37,6 +37,7 @@ chaque bloc.
 | 10 | [10_pcb_zones](10_pcb_zones.md) | Plans de masse/alim + ouverture capteurs |
 | 11 | [11_pcb_routage](11_pcb_routage.md) | Paires différentielles, alim, signaux |
 | 12 | [12_drc_fab_et_commande](12_drc_fab_et_commande.md) | DRC, export gerbers/BOM/CPL, commande JLCPCB |
+| 13 | [13_mcp_et_finition](13_mcp_et_finition.md) | MCP KiCad + finition locale (routage, DRC=0) vers le prêt-à-commander |
 
 ## Fiches de référence (générées)
 
@@ -58,6 +59,8 @@ python3 fiches/gen_reference.py
 
 ## ⚠️ Avant de commander la carte
 
-Ce design a des points à vérifier (pinouts caméra, straps de boot, etc.) :
-lis **[`../KNOWN_GAPS.md`](../KNOWN_GAPS.md)** avant toute fabrication. Le
-chapitre 12 rappelle la checklist.
+Lis, dans l'ordre : **[`../VERIFY_RESOLVED.md`](../VERIFY_RESOLVED.md)**
+(vérification approfondie récente — dont un **bug fatal de quartz corrigé**),
+puis **[`../ORDER_CHECKLIST.md`](../ORDER_CHECKLIST.md)** (checklist finale
+bloquante), et **[`../KNOWN_GAPS.md`](../KNOWN_GAPS.md)**. La finition (routage +
+DRC = 0) se fait sur ta machine — voir le **[chapitre 13](13_mcp_et_finition.md)**.

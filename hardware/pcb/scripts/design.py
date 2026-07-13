@@ -223,6 +223,15 @@ _p4_pins[p4("XTAL_P")] = "XTAL_P"
 _p4_pins[p4("XTAL_N")] = "XTAL_N"
 _p4_pins[p4("CHIP_PU")] = "CHIP_PU"
 _p4_pins[p4("GPIO0")] = "GPIO0"
+# Boot strap GPIO36 -> external pull-up (R32).  Per the Espressif ESP32-P4 boot-
+# mode doc, GPIO35 selects download(0)/flash(1) (has an internal weak pull-up, so
+# it boots from flash when idle), but **GPIO36 must be driven HIGH to enter the
+# serial bootloader reliably**, and the combination GPIO36=0 & GPIO35=0 is invalid.
+# GPIO36 defaults to floating, so it needs an external pull-up; without it, holding
+# the BOOT button (GPIO35 low) may not reliably enter download mode.  (GPIO34/37/38
+# are the other straps: 37/38 are the UART0 console here, 34 left floating per its
+# default.)
+_p4_pins[p4("GPIO36")] = "GPIO36_STRAP"
 # REXT precision resistors to GND (VERIFY value)
 _p4_pins[p4("CSI_REXT")] = "CSI_REXT"
 _p4_pins[p4("DSI_REXT")] = "DSI_REXT"
@@ -392,11 +401,25 @@ part("C41", "100nF", "Capacitor_SMD:C_0402_1005Metric", {"1": "VDD_PSRAM", "2": 
 # ==========================================================================
 # P4 SUPPORT: crystal, reset, boot, REXT, decoupling
 # ==========================================================================
+# FIXED (was chip-fatal): the previous LCSC part C9002 = YXC X322512MSB4SI is a
+# **12 MHz** crystal (verified: JLCPCB/LCSC list C9002 as 12 MHz / 20 pF, SMD3225-4P;
+# the "12" in X3225-**12**-MSB4SI is the frequency, cf. siblings X3225-**8**=8 MHz,
+# -**24**=24 MHz, -**25**=25 MHz).  The value field said "40 MHz" but JLC assembles
+# whatever the LCSC code resolves to -> the board would have shipped with a 12 MHz
+# crystal, and the ESP32-P4 REQUIRES a 40 MHz crystal on XTAL_P/XTAL_N (main xtal,
+# per the ESP32-P4 HW Design Guidelines) -> the chip would not clock/boot.
+# Replaced with a real 40 MHz SMD3225-4P part: JWT YF4040M00033T8188097 = LCSC
+# C2831465 (40.000 MHz, ±20 ppm, 3.2x2.5 mm 4-pad).  Footprint unchanged (same
+# 3225-4Pin land).  VERIFY-still: set C8/C9 to the ORDERED crystal's real load
+# capacitance CL (C = 2*(CL - Cstray), Cstray ~= 2-3 pF); confirm C2831465's CL on
+# JLC's live catalogue before ordering (see VERIFY_RESOLVED.md).
 part("Y1", "40MHz", "Crystal:Crystal_SMD_3225-4Pin_3.2x2.5mm",
-     {"1": "XTAL_P", "2": "GND", "3": "XTAL_N", "4": "GND"}, lcsc="C9002",
-     comment="VERIFY load caps for chosen xtal")
-part("C8", "10pF", "Capacitor_SMD:C_0402_1005Metric", {"1": "XTAL_P", "2": "GND"}, lcsc="C1555")
-part("C9", "10pF", "Capacitor_SMD:C_0402_1005Metric", {"1": "XTAL_N", "2": "GND"}, lcsc="C1555")
+     {"1": "XTAL_P", "2": "GND", "3": "XTAL_N", "4": "GND"}, lcsc="C2831465",
+     comment="40 MHz SMD3225-4P (JWT YF4040M/C2831465); was C9002=12MHz (chip-fatal), fixed")
+part("C8", "10pF", "Capacitor_SMD:C_0402_1005Metric", {"1": "XTAL_P", "2": "GND"}, lcsc="C1555",
+     comment="xtal load cap - set to 2*(CL-Cstray) for the ordered 40MHz crystal's CL")
+part("C9", "10pF", "Capacitor_SMD:C_0402_1005Metric", {"1": "XTAL_N", "2": "GND"}, lcsc="C1555",
+     comment="xtal load cap - set to 2*(CL-Cstray) for the ordered 40MHz crystal's CL")
 part("R9", "10k", "Resistor_SMD:R_0402_1005Metric", {"1": "3V3", "2": "CHIP_PU"}, lcsc="C25744")
 part("C10", "1uF", "Capacitor_SMD:C_0402_1005Metric", {"1": "CHIP_PU", "2": "GND"}, lcsc="C52923")
 part("SW1", "RESET", "Button_Switch_SMD:SW_SPST_CK_RS282G05A3",
@@ -404,6 +427,11 @@ part("SW1", "RESET", "Button_Switch_SMD:SW_SPST_CK_RS282G05A3",
 part("SW2", "BOOT", "Button_Switch_SMD:SW_SPST_CK_RS282G05A3",
      {"1": "BOOT", "2": "GND"}, lcsc="C720477", comment="VERIFY P4 boot strap = GPIO35")
 part("R10", "10k", "Resistor_SMD:R_0402_1005Metric", {"1": "3V3", "2": "BOOT"}, lcsc="C25744")
+# GPIO36 boot strap pull-up (see the GPIO36 note above): keeps GPIO36 high so the
+# download-mode strap combination stays valid and entering the serial bootloader
+# is reliable.
+part("R32", "10k", "Resistor_SMD:R_0402_1005Metric", {"1": "3V3", "2": "GPIO36_STRAP"}, lcsc="C25744",
+     comment="ESP32-P4 GPIO36 boot strap pull-up (reliable download mode)")
 part("R11", "4.02k", "Resistor_SMD:R_0402_1005Metric", {"1": "CSI_REXT", "2": "GND"}, lcsc="C25752",
      comment="CSI termination resistor per esp32p4-schematic-checklist.rst (4.02k required)")
 part("R12", "4.02k", "Resistor_SMD:R_0402_1005Metric", {"1": "DSI_REXT", "2": "GND"}, lcsc="C25752",

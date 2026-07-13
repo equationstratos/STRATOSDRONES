@@ -2,7 +2,7 @@
 
 # Fiche — Liste des composants
 
-111 composants (source : `scripts/design.py`).
+112 composants (source : `scripts/design.py`).
 
 | Ref | Valeur | Empreinte | LCSC | Face | Pose | Rôle |
 |-----|--------|-----------|------|------|------|------|
@@ -13,8 +13,8 @@
 | C5 | 22uF | `Capacitor_SMD:C_0805_2012Metric` | C45783 | Dessus (T) | posé | core DC-DC output cap (22uF per ref) |
 | C6 | 100nF | `Capacitor_SMD:C_0402_1005Metric` | C1525 | Dessus (T) | posé | 100nF |
 | C7 | 1uF | `Capacitor_SMD:C_0402_1005Metric` | C52923 | Dessus (T) | posé | 1uF |
-| C8 | 10pF | `Capacitor_SMD:C_0402_1005Metric` | C1555 | Dessus (T) | posé | 10pF |
-| C9 | 10pF | `Capacitor_SMD:C_0402_1005Metric` | C1555 | Dessus (T) | posé | 10pF |
+| C8 | 10pF | `Capacitor_SMD:C_0402_1005Metric` | C1555 | Dessus (T) | posé | xtal load cap - set to 2*(CL-Cstray) for the ordered 40MHz crystal's CL |
+| C9 | 10pF | `Capacitor_SMD:C_0402_1005Metric` | C1555 | Dessus (T) | posé | xtal load cap - set to 2*(CL-Cstray) for the ordered 40MHz crystal's CL |
 | C10 | 1uF | `Capacitor_SMD:C_0402_1005Metric` | C52923 | Dessus (T) | posé | 1uF |
 | C11 | 100nF | `Capacitor_SMD:C_0402_1005Metric` | C1525 | Dessus (T) | posé | 100nF |
 | C12 | 100nF | `Capacitor_SMD:C_0402_1005Metric` | C1525 | Dessus (T) | posé | P4 rail decoupling |
@@ -104,6 +104,7 @@
 | R29 | 100k | `Resistor_SMD:R_0402_1005Metric` | C25741 | Dessus (T) | posé | gate pulldown (props off at boot) |
 | R30 | 453k | `Resistor_SMD:R_0402_1005Metric` | C123734 | Dessus (T) | posé | core DC-DC FB divider top (453k; ref calls 499k, ratio is what matters) |
 | R31 | 453k | `Resistor_SMD:R_0402_1005Metric` | C123734 | Dessus (T) | posé | core DC-DC FB divider bottom (453k, matched to R30) |
+| R32 | 10k | `Resistor_SMD:R_0402_1005Metric` | C25744 | Dessus (T) | posé | ESP32-P4 GPIO36 boot strap pull-up (reliable download mode) |
 | SW1 | RESET | `Button_Switch_SMD:SW_SPST_CK_RS282G05A3` | C720477 | Dessus (T) | posé | RESET |
 | SW2 | BOOT | `Button_Switch_SMD:SW_SPST_CK_RS282G05A3` | C720477 | Dessus (T) | posé | VERIFY P4 boot strap = GPIO35 |
 | U1 | ESP32-P4NRW32 | `strat:ESP32-P4` | C22387510 | Dessus (T) | posé | ESP32-P4 dual RISC-V, 32MB in-pkg PSRAM, H.264 HW enc |
@@ -116,4 +117,4 @@
 | U8 | VL53L1X | `Sensor_Distance:ST_VL53L1x` | C2970716 | Dessous (B) | posé | VL53L1x LGA-12 verified vs ST datasheet; pin8 DNC left floating |
 | U9 | PMW3901MB | `strat:PMW3901MB-TXQT` | C2920328 | Dessous (B) | posé | VERIFY COB-28 pinout; reflow-on-JLC unverified -> fallback J3 |
 | U10 | TLV62569DBVR | `Package_TO_SOT_SMD:SOT-23-5` | C141836 | Dessus (T) | posé | ESP32-P4 core DC-DC (Espressif-verified TLV62569 ref design) |
-| Y1 | 40MHz | `Crystal:Crystal_SMD_3225-4Pin_3.2x2.5mm` | C9002 | Dessus (T) | posé | VERIFY load caps for chosen xtal |
+| Y1 | 40MHz | `Crystal:Crystal_SMD_3225-4Pin_3.2x2.5mm` | C2831465 | Dessus (T) | posé | 40 MHz SMD3225-4P (JWT YF4040M/C2831465); was C9002=12MHz (chip-fatal), fixed |

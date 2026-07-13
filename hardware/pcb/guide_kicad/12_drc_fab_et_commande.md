@@ -62,17 +62,20 @@ D'après le `README.md` du repo :
 
 ## 6. ⚠️ Checklist AVANT de payer
 
-**Lis intégralement [`../KNOWN_GAPS.md`](../KNOWN_GAPS.md)** et ferme les points
-**VERIFY** encore ouverts, notamment :
+**Lis [`../VERIFY_RESOLVED.md`](../VERIFY_RESOLVED.md)** (vérification approfondie
+récente) puis **[`../ORDER_CHECKLIST.md`](../ORDER_CHECKLIST.md)** (checklist
+finale bloquante), et enfin `../KNOWN_GAPS.md`. État des points VERIFY :
 
-- §5 **straps de boot** du P4 (GPIO35 supposé).
-- §6 **pinout caméra FFC + ordre/polarité des paires CSI** (une erreur = pas
-  d'image).
-- §11 **charges du quartz** (C8/C9 selon la CL réelle).
-- §14 **empreinte USB-C** conforme à la référence LCSC commandée.
+- §11 **quartz** : 🔴→🟢 **bug fatal corrigé** — l'ancien C9002 était un **12 MHz**
+  (le P4 exige 40 MHz) ; remplacé par **C2831465** (40 MHz). Reste : régler C8/C9
+  selon la **CL** du cristal commandé.
+- §5 **straps de boot** : 🟢 GPIO35 confirmé + **R32** (pull-up GPIO36) ajoutée.
+- §6 **caméra CSI** : 🟢 brochage FFC **conforme OV5647** (cible firmware) ; résidu
+  faible = polarité P/N côté P4 (rattrapable firmware).
+- §14 **empreinte USB-C** : 🟢 land KiCad = part HRO commandé, conforme.
 - Densité / chevauchements autour du P4 (acceptable en proto, pas en série).
 
-Les points §3, §4, §7, §8, §10, §12, §13 sont **déjà résolus** dans `design.py`
+Les points §3, §4, §7, §8, §10, §12, §13 étaient **déjà résolus** dans `design.py`
 (alim cœur, rails LDO, chargeur, capteurs, buck, REXT, fenêtre capteurs).
 
 ## 7. Comparer à la carte du repo

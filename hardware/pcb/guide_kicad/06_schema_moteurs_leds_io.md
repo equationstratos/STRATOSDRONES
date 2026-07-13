@@ -51,7 +51,7 @@ Correspondance indice → composants (fiche) :
 
 ## Schéma terminé — auto-contrôle
 
-Tu as posé les 5 blocs (02→06). Total attendu : **111 composants**. Vérifie vite :
+Tu as posé les 5 blocs (02→06). Total attendu : **112 composants**. Vérifie vite :
 
 - Nets « sources » d'alim (`VBAT`, `VBUS`, `3V3`, `GND`, `VDD_CORE`, `VDD_MIPI`)
   ont bien un **PWR_FLAG**.
