@@ -297,9 +297,13 @@ root.position.set(-c.x, -c.y, -box.min.z);
 // Fold   = hold the button pressed while the arms rotate in, release at the
 // end (the pins click into the keyholes) — as on the real V1.
 let foldT = PARAMS.get('fold') ? 1 : 0, foldTarget = foldT;
+let foldVis = foldT, foldVisVel = 0;            // spring-smoothed VISUAL fold (le ressort)
 let press = 0, pressTarget = 0, phase = null;   // 'deploy' | 'fold' | null
+function setArmAngles(v){
+  for (const k of Object.keys(A)) A[k].rotation.z = ARMS[k].sign * FOLD_A * v;
+}
 function applyFold(t){
-  for (const k of Object.keys(A)) A[k].rotation.z = ARMS[k].sign * FOLD_A * t;
+  setArmAngles(t);
   document.getElementById('fold').value = Math.round(t*100);
   document.getElementById('foldV').textContent =
     t < 0.02 ? 'déployé' : t > 0.98 ? 'replié' : Math.round(t*100)+'%';
@@ -312,6 +316,7 @@ function applyPress(p){
 }
 applyFold(foldT); applyPress(0);
 window.__foldT = () => foldT;
+window.__foldVis = () => foldVis;
 window.__press = () => press;
 function deploySeq(){ if (foldT<0.02) return; phase='deploy'; pressTarget=1; startLoop(); }
 // fold-in: hold the button while the arms rotate in (the tab barbs have no
@@ -321,6 +326,7 @@ document.getElementById('bDeploy').addEventListener('click', deploySeq);
 document.getElementById('bFold').addEventListener('click',  foldSeq);
 document.getElementById('fold').addEventListener('input', e=>{
   foldT = foldTarget = e.target.value/100; phase=null; pressTarget=0;
+  foldVis = foldT; foldVisVel = 0;             // manual scrub: track rigidly, no bounce
   applyFold(foldT); startLoop(); });
 
 // ---- part toggles ----
@@ -416,9 +422,25 @@ function loop(){
     if (press <= 0.02 && foldT >= 0.995) phase = null;
   }
   if (foldT !== foldTarget){
-    const dur = (foldTarget === 0) ? 0.55 : 1.4;   // springs snap open; folding is manual
+    // deploy: the latch just released, so the LOGICAL target reaches open almost
+    // at once (0.10 s) and the spring below plays the actual snap; folding is manual.
+    const dur = (foldTarget === 0) ? 0.10 : 1.4;
     foldT += Math.sign(foldTarget-foldT)*Math.min(dt/dur, Math.abs(foldTarget-foldT));
     applyFold(foldT);
+  }
+  // sober torsion-spring snap: foldVis chases foldT as a LIGHTLY under-damped spring
+  // (one small overshoot ~9°) on deploy; folding is critically damped (no bounce).
+  // Overshoot only on the OPEN side ([-0.10 .. 1]) so the arms never swing PAST folded.
+  {
+    const OM = (foldTarget === 0) ? 14.0 : 12.0;   // rad/s
+    const ZE = (foldTarget === 0) ? 0.6  : 1.0;    // deploy ~1 gentle bounce; fold = critical
+    let rem = dt;                                   // sub-stepped for integrator stability
+    while (rem > 1e-4){ const h = Math.min(rem, 0.016);
+      foldVisVel += (-OM*OM*(foldVis - foldT) - 2*ZE*OM*foldVisVel)*h;
+      foldVis += foldVisVel*h; rem -= h; }
+    if (foldVis < -0.10){ foldVis = -0.10; foldVisVel = 0; }
+    if (foldVis >  1.00){ foldVis =  1.00; foldVisVel = 0; }
+    setArmAngles(foldVis);
   }
   if(spinRate) for(const pm of propMeshes) pm.rotation.z += spinRate*dt*pm.userData.dir;
   else if (foldT > 0.55) for(const pm of propMeshes){     // transport pose: blades along the arms
