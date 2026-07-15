@@ -11,6 +11,15 @@ four corner brushed-motor drivers. It drops into the printed body pod
 
 ![component map](preview/component_map.png)
 
+**See the board populated in 3-D** — open [`viz/pcb3d_viewer.html`](viz/) (one
+offline file, double-click). It synthesises a clean 3-D body for every one of the
+115 components straight from the placement data, so the board renders fully
+populated **without needing KiCad's 3-D models** (which aren't installed here).
+Top / bottom / copper / silkscreen / logo, hover to inspect any part. See
+[`viz/README.md`](viz/README.md).
+
+![PCB 3D](viz/preview.png)
+
 > **Read [`KNOWN_GAPS.md`](KNOWN_GAPS.md) before ordering.** This design is
 > generated as a reviewable starting point: the netlist, BOM and placement are
 > complete and self-consistent, but signal routing and several datasheet-level

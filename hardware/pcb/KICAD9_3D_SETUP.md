@@ -1,5 +1,11 @@
 # KiCad 9 — Configuration des modèles 3D
 
+> **Pas envie de vous battre avec les modèles 3D KiCad ?** Ouvrez plutôt
+> [`viz/pcb3d_viewer.html`](viz/) : un visualisateur 3D navigateur autonome qui
+> **synthétise un corps propre pour chacun des 115 composants** et affiche la
+> carte entièrement peuplée (dessus/dessous, cuivre, sérigraphie, logo) **sans
+> aucun modèle 3D KiCad**. Régénérable par `python3 viz/gen_pcb3d.py`.
+
 ## Problème
 Les composants 3D n'apparaissent pas dans KiCad 9, alors qu'ils étaient visibles précédemment.
 
