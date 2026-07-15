@@ -20,9 +20,11 @@ Run:  python3 hardware/pcb/viz/gen_pcb3d.py
 """
 import base64
 import json
+import math
 import os
 import re
 import sys
+from collections import defaultdict
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 PCB = os.path.dirname(HERE)                        # hardware/pcb
@@ -166,8 +168,9 @@ def parse_footprints(text):
 
 _SEG = re.compile(
     r'\(segment\s+\(start\s+(-?[\d.]+)\s+(-?[\d.]+)\)\s+\(end\s+(-?[\d.]+)\s+(-?[\d.]+)\)'
-    r'\s+\(width\s+(-?[\d.]+)\)\s+\(layer\s+"([^"]+)"\)')
-_VIA = re.compile(r'\(via\s+\(at\s+(-?[\d.]+)\s+(-?[\d.]+)\)\s+\(size\s+(-?[\d.]+)\)')
+    r'\s+\(width\s+(-?[\d.]+)\)\s+\(layer\s+"([^"]+)"\)\s+\(net\s+(\d+)\)')
+_VIA = re.compile(r'\(via\s+\(at\s+(-?[\d.]+)\s+(-?[\d.]+)\)\s+\(size\s+(-?[\d.]+)\)'
+                  r'(?:\s+\(drill\s+[\d.]+\))?\s+\(layers[^)]*\)\s+\(net\s+(\d+)\)')
 _GRTXT = re.compile(
     r'\(gr_text\s+"([^"]*)"\s+\(at\s+(-?[\d.]+)\s+(-?[\d.]+)(?:\s+(-?[\d.]+))?\)'
     r'[^\n]*?\(layer\s+"(F\.SilkS|B\.SilkS)"')
@@ -178,9 +181,151 @@ _GRLINE = re.compile(
 
 def parse_tracks(text):
     segs = [dict(x1=float(a), y1=float(b), x2=float(c), y2=float(d),
-                 w=float(w), layer=L) for a, b, c, d, w, L in _SEG.findall(text)]
-    vias = [dict(x=float(a), y=float(b), d=float(s)) for a, b, s in _VIA.findall(text)]
+                 w=float(w), layer=L, net=int(n)) for a, b, c, d, w, L, n in _SEG.findall(text)]
+    vias = [dict(x=float(a), y=float(b), d=float(s), net=int(n)) for a, b, s, n in _VIA.findall(text)]
     return segs, vias
+
+
+_NETDEF = re.compile(r'\(net\s+(\d+)\s+"([^"]*)"\)')
+
+
+def parse_nets(text):
+    """The net table near the top: number -> name (pads reference the same)."""
+    return {int(n): name for n, name in _NETDEF.findall(text)}
+
+
+def _xf(fx, fy, frot, lx, ly):
+    """Footprint-local pad (lx,ly) -> board world (mm). KiCad Y-down; a positive
+    footprint orientation rotates the pad clockwise on screen."""
+    a = math.radians(-frot)                       # KiCad screen-CW positive
+    ca, sa = math.cos(a), math.sin(a)
+    return fx + lx * ca - ly * sa, fy + lx * sa + ly * ca
+
+
+_PADFRAG = re.compile(
+    r'^\s*"[^"]*"\s+(\S+)'                          # pad type (smd / thru_hole / np_thru_hole)
+    r'[\s\S]*?\(at\s+(-?[\d.]+)\s+(-?[\d.]+)(?:\s+-?[\d.]+)?\)'   # pad local (at)
+    r'[\s\S]*?\(layers\s+([^)]*)\)')
+_PADNET = re.compile(r'\(net\s+(\d+)\s+"[^"]*"\)')
+
+
+def parse_all_pads(text):
+    """Every electrically-netted pad, in board-world mm, with its copper layers."""
+    pads = []
+    for blk in _footprint_blocks(text):
+        at = _AT.search(blk)
+        if not at:
+            continue
+        fx, fy = float(at.group(1)), float(at.group(2))
+        frot = float(at.group(3)) if at.group(3) else 0.0
+        for frag in blk.split("(pad ")[1:]:
+            m = _PADFRAG.match(frag)
+            if not m:
+                continue
+            ptype, lx, ly, laytxt = m.group(1), float(m.group(2)), float(m.group(3)), m.group(4)
+            nm = _PADNET.search(frag[:400])
+            if not nm or ptype == "np_thru_hole":     # mechanical / no net
+                continue
+            wx, wy = _xf(fx, fy, frot, lx, ly)
+            if "*.Cu" in laytxt or ptype.endswith("thru_hole"):
+                layers = ["F", "B", "I1", "I2"]
+            elif "B.Cu" in laytxt:
+                layers = ["B"]
+            else:
+                layers = ["F"]
+            pads.append(dict(x=wx, y=wy, net=int(nm.group(1)), layers=layers))
+    return pads
+
+
+_LC = {"F.Cu": "F", "B.Cu": "B", "In1.Cu": "I1", "In2.Cu": "I2"}
+# poured / stitched power rails — routed by copper zones, not hand-traces: hide them
+POWER_NETS = {"GND", "3V3", "VBAT", "VBUS", "VDD_CORE", "VDD_MIPI", "VDD_FLASHIO", "VDD_PSRAM"}
+
+
+def build_ratsnest(pads, segs, vias, netnames):
+    """Layer-aware union-find over copper -> per-net unconnected airwires.
+    Returns (airwires, stats). Only SIGNAL nets (power planes excluded)."""
+    parent = {}
+
+    def find(k):
+        parent.setdefault(k, k)
+        root = k
+        while parent[root] != root:
+            root = parent[root]
+        while parent[k] != root:
+            parent[k], k = root, parent[k]
+        return root
+
+    def union(a, b):
+        ra, rb = find(a), find(b)
+        if ra != rb:
+            parent[ra] = rb
+
+    def nd(net, x, y, layer):
+        return (net, round(x * 10), round(y * 10), layer)
+
+    for s in segs:
+        L = _LC.get(s["layer"], "F")
+        union(nd(s["net"], s["x1"], s["y1"], L), nd(s["net"], s["x2"], s["y2"], L))
+    for v in vias:
+        base = nd(v["net"], v["x"], v["y"], "F")
+        for L in ("B", "I1", "I2"):
+            union(base, nd(v["net"], v["x"], v["y"], L))
+    for p in pads:
+        nodes = [nd(p["net"], p["x"], p["y"], L) for L in p["layers"]]
+        for n in nodes[1:]:
+            union(nodes[0], n)
+        p["root"] = find(nodes[0])
+
+    # sanity: fraction of pads that actually touch copper (validates _xf + grid)
+    seg_cells = set()
+    for s in segs:
+        L = _LC.get(s["layer"], "F")
+        seg_cells.add((round(s["x1"] * 10), round(s["y1"] * 10), L))
+        seg_cells.add((round(s["x2"] * 10), round(s["y2"] * 10), L))
+    touch = sum(1 for p in pads if any(
+        (round(p["x"] * 10), round(p["y"] * 10), L) in seg_cells for L in p["layers"]))
+
+    by_net = defaultdict(list)
+    for p in pads:
+        if p["net"]:
+            by_net[p["net"]].append(p)
+
+    airwires, unrouted = [], []
+    for net, ps in by_net.items():
+        name = netnames.get(net, "")
+        if name in POWER_NETS or len(ps) < 2:
+            continue
+        comps = defaultdict(list)
+        for p in ps:
+            comps[p["root"]].append(p)
+        if len(comps) <= 1:
+            continue
+        unrouted.append((name, len(comps) - 1))
+        groups = list(comps.values())
+        inmst = [False] * len(groups)
+        inmst[0] = True
+        for _ in range(len(groups) - 1):
+            best = (1e18, None, None)
+            for i, gi in enumerate(groups):
+                if not inmst[i]:
+                    continue
+                for j, gj in enumerate(groups):
+                    if inmst[j]:
+                        continue
+                    for a in gi:
+                        for b in gj:
+                            dd = (a["x"] - b["x"]) ** 2 + (a["y"] - b["y"]) ** 2
+                            if dd < best[0]:
+                                best = (dd, j, (a, b))
+            _, j, (a, b) = best
+            inmst[j] = True
+            airwires.append(dict(x1=round(a["x"], 3), y1=round(a["y"], 3),
+                                 x2=round(b["x"], 3), y2=round(b["y"], 3), net=name))
+    stats = dict(pads=len(pads), touch=touch,
+                 nets=len(unrouted), wires=len(airwires),
+                 names=sorted(n for n, _ in unrouted))
+    return airwires, stats
 
 
 def parse_silk(text):
@@ -289,6 +434,9 @@ def build_data():
     fps = parse_footprints(text)
     segs, vias = parse_tracks(text)
     silk_t, silk_l = parse_silk(text)
+    netnames = parse_nets(text)
+    pads = parse_all_pads(text)
+    airwires, RAT = build_ratsnest(pads, segs, vias, netnames)
 
     dsn = {c["ref"]: c for c in design.all_components()}
     parts = []
@@ -316,7 +464,8 @@ def build_data():
                         [b["mount_pitch_x"] + 6, b["mount_pitch_y"] + 6]],
                  hole_d=b["mount_d"])
     return dict(board=board, parts=parts, segs=segs, vias=vias,
-                silk=silk_t, silk_lines=silk_l, logo=logo_polys())
+                silk=silk_t, silk_lines=silk_l, logo=logo_polys(),
+                ratsnest=airwires, rat_stats=RAT)
 
 
 # --------------------------------------------------------------------------
@@ -520,9 +669,10 @@ function buildPart(p, dir){
     for (const s of [-1,1]){ const c = box(horiz?cap:w, horiz?h:cap, ht*0.9, SILVER());
       c.position.set(horiz?s*(w/2-cap/2):0, horiz?0:s*(h/2-cap/2), dir*ht/2); G.add(c); }
   } else if (A==='soic'||A==='qfn'||A==='box'||A==='diode'){
+    if (A==='qfn'){ const lf=box(w+0.5,h+0.5,ht*0.22,GOLD()); lf.position.z=dir*ht*0.11; G.add(lf); }  // exposed lead-frame
     const b = put(rbox(w,h,ht, BLK(p.col), 0.05), ht/2); b.userData.body=1; bodyMeshes.push(b);
     if (A==='diode'){ const st=box(w*0.16,h,ht*1.02,SILVER()); st.position.set(w*0.34,0,dir*ht/2); G.add(st); }
-    if (A==='qfn'||A==='soic'){ const d=new THREE.Mesh(new THREE.CylinderGeometry(Math.min(w,h)*0.07,Math.min(w,h)*0.07,ht*0.2,10),mat('#3a3f46',0.2,0.6));
+    if (A==='qfn'||A==='soic'){ const d=new THREE.Mesh(new THREE.CylinderGeometry(Math.min(w,h)*0.07,Math.min(w,h)*0.07,ht*0.2,10),mat('#4a5058',0.2,0.6));
       d.rotation.x=Math.PI/2; d.position.set(-w/2+w*0.15,-h/2+h*0.15,dir*ht*1.05); G.add(d); }
     if (A==='soic'){ for(const s of [-1,1]) for(let i=0;i<4;i++){ const pin=box(w*0.14,h*0.16,ht*0.3,GOLD());
       pin.position.set(s*(w/2+w*0.06), -h*0.3+i*(h*0.2), dir*ht*0.2); G.add(pin);} }
@@ -583,6 +733,20 @@ for (const p of PARTS){
   lab.position.set(tx(p.x), ty(p.y), (p.side==='T'?TT:-TT) + dir*(Math.max(p.ht,0.5)+0.9));
   lab.userData.isLabel = 1; (p.side==='T'?topG:botG).add(lab);
 }
+// ---------- unrouted-signal airwires (ratsnest, RED) ----------
+const ratsG = new THREE.Group(); world.add(ratsG);
+{
+  const pts=[];
+  for (const a of DATA.ratsnest){ pts.push(tx(a.x1),ty(a.y1),TT+0.7, tx(a.x2),ty(a.y2),TT+0.7); }
+  if (pts.length){
+    const g=new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pts,3));
+    ratsG.add(new THREE.LineSegments(g, new THREE.LineBasicMaterial({color:0xff3b30, transparent:true, opacity:0.92})));
+    // little end dots so short airwires stay visible
+    const dg=new THREE.SphereGeometry(0.35,8,6), dm=mat('#ff3b30',0.1,0.5);
+    for (const a of DATA.ratsnest){ for (const e of [[a.x1,a.y1],[a.x2,a.y2]]){
+      const d=new THREE.Mesh(dg,dm); d.position.set(tx(e[0]),ty(e[1]),TT+0.7); ratsG.add(d); } }
+  }
+}
 function makeLabel(txt){
   const cv=document.createElement('canvas'); cv.width=128; cv.height=48;
   const g=cv.getContext('2d'); g.fillStyle='rgba(12,18,28,0.82)';
@@ -623,6 +787,7 @@ function applyColMode(){
 const TOGS=[
   ['top','Composants dessus',()=>topG,true],['bot','Composants dessous',()=>botG,true],
   ['lab','Étiquettes réf',null,true],['trace','Pistes cuivre',null,true],
+  ['rats','Non routé (signaux) 🔴',()=>ratsG,true],
   ['silk','Sérigraphie + logo',null,true],['grid','Grille',()=>grid,true],
 ];
 const togsEl=document.getElementById('togs'); const state={};
@@ -633,7 +798,7 @@ for (const [k,label,,def] of TOGS){ state[k]=def;
   togsEl.appendChild(l);
 }
 function applyState(){
-  topG.visible=state.top; botG.visible=state.bot; grid.visible=state.grid;
+  topG.visible=state.top; botG.visible=state.bot; grid.visible=state.grid; ratsG.visible=state.rats;
   for (const g of [topG,botG]) g.children.forEach(c=>{ if(c.userData.isLabel)
     c.visible = (g===topG?state.top:state.bot)&&state.lab; });
   for (const side of ['T','B']){ const f=facePlanes[side];
@@ -661,6 +826,8 @@ for (const [name,col] of SUB){ const d=document.createElement('div'); d.classNam
 const nT=PARTS.filter(p=>p.side==='T').length, nB=PARTS.length-nT;
 document.getElementById('info').innerHTML =
   `${PARTS.length} composants · ${nT} dessus / ${nB} dessous<br>${DATA.segs.length} pistes · ${DATA.vias.length} vias`+
+  `<br><span style="color:#ff6b63">🔴 ${DATA.ratsnest.length} liaisons de signal non routées</span>`+
+  ` <span style="color:#6b7789">(hors plans d'alim)</span>`+
   `<br><span style="color:#6b7789">corps synthétisés — contourne les modèles 3D KiCad manquants</span>`;
 
 // ---------- loop ----------
@@ -675,7 +842,7 @@ addEventListener('resize',resize); resize();
 applyState(); applyColMode(); frame(120,42,18); startLoop();
 
 window.__vizRendering = ()=>looping;
-window.__pcbInfo = ()=>({parts:PARTS.length, top:nT, bottom:nB, segs:DATA.segs.length, vias:DATA.vias.length});
+window.__pcbInfo = ()=>({parts:PARTS.length, top:nT, bottom:nB, segs:DATA.segs.length, vias:DATA.vias.length, ratsnest:DATA.ratsnest.length});
 window.__cam = frame;
 addEventListener('message',e=>{ const m=e.data; if(m&&m.type==='viz'){ hostControlled=true; ioVisible=!!m.visible; if(active())startLoop(); }});
 new IntersectionObserver(es=>{ if(hostControlled)return; ioVisible=es[0].isIntersecting; if(active())startLoop(); },{threshold:0.01}).observe(view);
@@ -695,8 +862,13 @@ def main():
         f.write(html)
     p = data["parts"]
     nt = sum(1 for x in p if x["side"] == "T")
+    r = data["rat_stats"]
     print(f"== STRATOSDRONE PCB 3D viewer ==")
     print(f"  parts {len(p)} (top {nt}, bottom {len(p)-nt})  segs {len(data['segs'])}  vias {len(data['vias'])}")
+    print(f"  pads {r['pads']}  pad-touch-copper {r['touch']}/{r['pads']} "
+          f"({100*r['touch']//max(r['pads'],1)}%)")
+    print(f"  unrouted SIGNAL nets {r['nets']} -> {r['wires']} airwires")
+    print(f"  nets: {', '.join(r['names'])}")
     print(f"  wrote {OUT} ({os.path.getsize(OUT)} B)")
 
 

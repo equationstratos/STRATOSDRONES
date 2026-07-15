@@ -30,6 +30,12 @@ nous-mêmes, la notion de « modèle manquant » disparaît — la carte est tou
   couche — on voit l'avancement du routage.
 - **Sérigraphie** (STRATOSDRONE, FRONT^, CAM/RF/CPU, M1-M4, FLOW+ToF) + le **logo
   hélice** sur le dos.
+- **Liaisons non routées en ROUGE** (le « chevelu ») : les nets de **SIGNAL** dont
+  les pads ne sont pas encore reliés par du cuivre — exactement ce qui reste à
+  router à la main. Calculé sans KiCad par **reconstruction de connectivité**
+  (union-find couche par couche sur pistes + vias + pads). Les **plans d'alim**
+  (GND/3V3/VBAT/VDD*) sont exclus (remplis par des zones). Toggle dédié + compteur
+  (~68 liaisons — la liste recoupe la section signaux de `../KNOWN_GAPS.md`).
 - **Étiquettes** de référence flottantes, **survol** = réf + valeur + rôle +
   sous-système, deux modes couleur (**réaliste** ↔ **par sous-système**), vues
   Dessus / Iso / **Dessous** (la carte se retourne physiquement), et les bascules
