@@ -25,6 +25,7 @@
       <a href="#swarm">Swarm</a>
       <a href="#build">How it's built</a>
       <a href="#pcb">PCB</a>
+      <a href="#pcb3d">PCB 3-D</a>
       <a href="#gallery">Gallery</a>
       <a href="#configurator">Configure</a>
       <a href="#order">Build one</a>
@@ -342,6 +343,26 @@ swarm.land()</code></pre>
       signal routing is done too (AI-assisted, then hand-finished), with ~106
       connections left — see <code>hardware/pcb/KNOWN_GAPS.md</code> for the exact list
       before you order.</p>
+  </div>
+</section>
+
+<!-- ─────────────────── PCB 3-D viewer ─────────────────── -->
+<section id="pcb3d">
+  <div class="wrap">
+    <h2>See the board in 3-D — fully populated</h2>
+    <p class="sub">The whole mainboard, all 115 components in 3-D right in your browser —
+      no install, no KiCad. Every part body is synthesised from the placement data, so
+      the board shows fully populated even though the stock 3-D models aren't shipped.
+      Orbit it, flip to the underside, switch realistic ↔ colour-by-subsystem, and toggle
+      the <b style="color:#ff6b63">red airwires</b> that mark the signal nets still left
+      to route.</p>
+    <div class="viewer-bar">
+      <a class="btn p" href="pcb3d_viewer.html" target="_blank" rel="noopener">⛶ Open full-screen</a>
+    </div>
+    <div style="border:1px solid var(--line);border-radius:var(--r);overflow:hidden">
+      <iframe id="pcbViewer" data-cfg class="vframe tall" src="pcb3d_viewer.html"
+        title="STRATOSDRONE mainboard interactive 3-D viewer" loading="lazy"></iframe>
+    </div>
   </div>
 </section>
 

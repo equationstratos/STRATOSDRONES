@@ -14,17 +14,19 @@ Plain HTML/CSS/JS — **no build step**, no frameworks, no tracking.
 | `index.html` | the page |
 | `style.css` | dark, minimal theme |
 | `viewer.html` | the interactive 3-D viewer, embedded live via `<iframe>` in the "Spin it around yourself" section — a straight copy of `sim/viz/drone_viewer.html` (self-contained, ~5 MB, no external requests) |
+| `pcb3d_viewer.html` | the 3-D **PCB** viewer (populated board, red unrouted airwires), embedded in the "See the board in 3-D" section — a straight copy of `hardware/pcb/viz/pcb3d_viewer.html` (self-contained, ~1.9 MB) |
 | `assets/concept/*.jpg` | the original concept brief (resized from `/g`) |
 | `assets/cad/*.jpg` | OpenSCAD renders of the `tello_style` v2 airframe (hero, arms, battery, guards, iso/front/side/underside/section) |
 | `assets/pcb/*.jpg` | the PCB component map and routed top/bottom renders |
 
 ## Refreshing the embedded viewer
 
-`viewer.html` is a plain copy — after regenerating the real one, just copy it over:
+`viewer.html` and `pcb3d_viewer.html` are plain copies — after regenerating the
+real ones, just copy them over:
 
 ```bash
-python3 sim/viz/gen_viewer.py
-cp sim/viz/drone_viewer.html site/viewer.html
+python3 sim/viz/gen_viewer.py       && cp sim/viz/drone_viewer.html      site/viewer.html
+python3 hardware/pcb/viz/gen_pcb3d.py && cp hardware/pcb/viz/pcb3d_viewer.html site/pcb3d_viewer.html
 ```
 
 ## View locally
