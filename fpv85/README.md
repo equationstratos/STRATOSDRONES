@@ -10,12 +10,16 @@ AIO board**, two sizes.
 ## Inspirations (credit where due)
 
 - The **Walle FPV Eagle2** (https://wallefpv.com/products/eagle2-hd-o4-pro-3s-brushless-fpv-drone)
-  and the owner's photos of it — the 84 × 83 × 32 mm footprint, the **twin
-  parallel white rails** forming an open tunnel (camera unit upright at the
-  nose, XT30 + antennas out the tail), the trussed arms and diamond plate
-  cutouts. Used as *visual/measurement references only*; every line of
-  geometry here is our own parametric OpenSCAD (clean-room, like the
-  Avata/Fr4n6 case).
+  and the owner's photos of it — the 84 × 83 × 32 mm *body* footprint, the
+  **twin parallel white rails** forming an open tunnel (camera unit upright
+  at the nose, XT30 + antennas out the tail), the trussed arms and diamond
+  plate cutouts. Its published frame-kit numbers (manual:
+  https://fr.manuals.plus/wallefpv/eagle2-frame-kit-base-plate-manual)
+  confirm our v3.2 re-proportion: **wheelbase 91 mm** with 35/40 mm props
+  (the 84 × 83 is the body alone), 25.5 × 25.5 M2 stack, 2.0 mm carbon
+  plate, 13.3 g kit. Used as *visual/measurement references only*; every
+  line of geometry here is our own parametric OpenSCAD (clean-room, like
+  the Avata/Fr4n6 case).
 - The **whoop-AIO stack convention** (25.5 × 25.5 M2 pattern, canopy screwed
   on the same stack) and the open **BLHeli_S / Bluejay + ExpressLRS + analog
   VTX** ecosystem — the "meilleure solution optimum existante" for a

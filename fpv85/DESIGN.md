@@ -87,6 +87,9 @@ in `viz/` is a kinematic browser sim, not a dynamics model.
 
 ## Sources
 
+- https://fr.manuals.plus/wallefpv/eagle2-frame-kit-base-plate-manual (Eagle2
+  frame-kit reference numbers: wheelbase 91, props 35/40, 25.5×25.5 M2 stack,
+  2.0 mm carbon plate, 13.3 g — measurement reference only, clean-room)
 - https://www.expresslrs.org/ (CRSF wiring, 420 kbaud, channel packing)
 - https://github.com/bird-sanctuary/bluejay (BLHeli_S-compatible ESC firmware, EFM8)
 - https://www.espressif.com/sites/default/files/documentation/esp32-p4_datasheet_en.pdf (RMT, UART, GPIO matrix)

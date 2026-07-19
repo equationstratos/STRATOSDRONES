@@ -7,9 +7,6 @@
 // : TWO LONG PARALLEL RAILS the full body length (open flat tunnel, camera
 // unit upright at the nose INSIDE the rails, XT30 + antennas out the tail),
 // trussed arms, diamond plate cutouts. Our own parametric OpenSCAD.
-// v4 (newer owner refs): tall faceted NOSE PLATES with kidney cutouts
-// flanking a big O4-style lens, slender TOP SPAR to a faceted tail tip,
-// ELRS T-bar across the tunnel, screw rows split nose/spar.
 //
 // Architecture: one printed UNIBODY bottom plate (X arms to four 0802-class
 // motor pods + whoop-standard 25.5x25.5 AIO mount + battery strap slots +
@@ -121,30 +118,16 @@ module frame() {
 }
 
 /* ---------------- canopy (side plates + spine, camera + VTX + RX) -------- */
-module plate_profile() {   // v4 RAIL silhouette (owner's newer refs): tall
-    L = canopy_l/2; H = canopy_h;   // faceted NOSE PLATE flanking the camera,
-    difference() {                  // slender TOP SPAR aft, faceted tail tip
-        union() {
-            polygon([[-L+3, 0], [-L, 3], [-L, H-3], [-L+3, H],
-                     [-L+12, H], [-L+12, 0]]);                   // nose block
-            polygon([[-L+11, H], [L-2, H], [L, H-2.5],
-                     [L, H-5.6], [L-3, H-3.2], [-L+11, H-3.2]]); // spar + tail tip
-        }
-        // kidney + oval lightening on the nose plate (photo pattern)
-        hull() { translate([-L+3.2, 0.65*H]) circle(d=3.6);
-                 translate([-L+6.4, 0.73*H]) circle(d=3.6); }
-        hull() { translate([-L+4.2, 0.28*H]) circle(d=3.2);
-                 translate([-L+7.0, 0.25*H]) circle(d=3.2); }
-        translate([-L+8.8, 0.48*H]) circle(d=2.2);               // cam clamp screw
-    }
-}
-module screwhead() {   // Ø3 domed button head + hex socket (viewer detail)
-    difference() { $fn = 24;   // 64 facets would x4 the STL for Ø3 heads
-        union() {
-            cylinder(d=3.0, h=1.2);
-            translate([0,0,1.2]) scale([1,1,0.5]) sphere(d=3.0);
-        }
-        translate([0,0,1.5]) cylinder(d=1.5, h=1.4, $fn=6);
+module plate_profile() {   // RAIL silhouette (2D): long, low, flat top,
+    L = canopy_l/2; H = canopy_h;  // chamfered ends, trussed cutouts
+    difference() {
+        polygon([[-L, 0], [L, 0], [L, H-3], [L-5, H], [-L+8, H], [-L, H-3.5]]);
+        polygon([[-L+6, 2.5], [-L+16, 2.5], [-L+13, H-3]]);              // nose triangle
+        polygon([[-2, 2.5], [8, 2.5], [9.5, H-3.6], [0, H-3.6]]);        // mid slot
+        polygon([[L-10, 2.5], [L-5.5, 2.5], [L-4.5, H-3.6], [L-9, H-3.6]]); // tail slot
+        // (v3.2: slots re-spaced — with the shorter rails the old tail slot
+        //  collided with the mid slot into a zero-width cusp = broken mesh)
+        translate([-L+3.2, H/2]) circle(d=2.2);                          // cam clamp screw
     }
 }
 module canopy() {
@@ -162,16 +145,21 @@ module canopy() {
     // open tunnel: braces over the two centreline columns
     translate([0, -aio_r, 2.6+H-wall]) rrect(canopy_w-2, 5, 1.4, wall);
     translate([0, aio_r, 2.6+H-wall]) rrect(canopy_w-2, 5, 1.4, wall);
-    // exposed screw heads (photo look), WELDED 0.6 into the plates:
-    // 2 low on the nose block + 3 along the top spar
-    for (sx=[-1,1], yy=[-18,-12.5])
-        translate([sx*(canopy_w/2-wall+0.4), yy, 2.6+1.6])
-            rotate([0,sx*90,0]) screwhead();
-    for (sx=[-1,1], yy=[0,8,16])
-        translate([sx*(canopy_w/2-wall+0.4), yy, 2.6+H-1.7])
-            rotate([0,sx*90,0]) screwhead();
-    // raked antenna seats at the tail (welded under the spar)
-    translate([0, L-3, 2.6+H-6.6]) difference() {
+    // exposed screw heads along the rails (photo look): a row of 5 domed
+    // button heads + hex socket per side, WELDED 0.6 into the rail on the
+    // always-solid lower band of the profile (v3.1 floated them 1.35 mm
+    // off the outer face = unprintable islands)
+    for (sx=[-1,1], yy=[-16,-8,0,8,16])
+        translate([sx*(canopy_w/2-wall+0.4), yy, 2.6+1.6]) rotate([0,sx*90,0])
+            difference() { $fn = 24;   // Ø3 heads: 64 facets would x4 the STL
+                union() {
+                    cylinder(d=3.0, h=1.2);
+                    translate([0,0,1.2]) scale([1,1,0.5]) sphere(d=3.0);
+                }
+                translate([0,0,1.5]) cylinder(d=1.5, h=1.4, $fn=6);
+            }
+    // raked antenna seats at the tail (tubes exit between the rails)
+    translate([0, L-3, 2.6+H/2-1]) difference() {
         rrect(canopy_w-5, 4.5, 1.4, 4);
         for (sx=[-1,1]) translate([sx*5, 0, -eps]) rotate([-40,0,0]) cylinder(d=2.1, h=10);
     }
@@ -190,16 +178,13 @@ module airunit() {         // finned video/air-unit box (photo look)
     }
     translate([0, 9.5, 4]) rotate([-90,0,0]) cylinder(d=3.2, h=2.4);   // rear plug
 }
-module fpvcam() {          // upright HD unit at the nose (O4 style, big lens)
-    rrect(15, 12.5, 2, 16);                                // vertical body in the tunnel
-    for (i=[0:4]) translate([-6.6, -2+i*2.0, 15.2]) cube([13.2, 1.1, 1.6]);  // top fins
-    for (sx=[-1,1]) translate([sx*7.5, 0.8, 11.4]) rotate([0,sx*90,0])
-        cylinder(d=4.2, h=1.0, $fn=24);   // clamp bosses, aligned on the nose screw
-    translate([0, -6.1, 9]) rotate([90-cam_tilt,0,0]) {
-        cylinder(d=13.5, h=4.6);                           // lens barrel forward
-        translate([0,0,4.6]) cylinder(d=15, h=1.6);        // bezel plate
-        translate([0,0,6.2]) cylinder(d=10.6, h=1.0);      // hood
-        color("#0b1e3a") translate([0,0,6.8]) sphere(d=8.6);   // glass
+module fpvcam() {          // upright HD unit at the nose (Eagle2/O4 style)
+    rrect(13.5, 11, 1.6, 15);                              // vertical body in the tunnel
+    for (i=[0:4]) translate([-6.2, -2+i*2.0, 14.2]) cube([12.4, 1.1, 1.6]);  // top fins
+    translate([0, -5.4, 9]) rotate([90-cam_tilt,0,0]) {
+        cylinder(d=11.6, h=4.6);                           // lens barrel forward
+        translate([0,0,4.6]) cylinder(d=9.2, h=1.6);       // ring
+        color("#0b1e3a") translate([0,0,6.0]) sphere(d=7.4);   // glass
     }
 }
 module rxmod() {           // ELRS RX + wire antenna
@@ -212,18 +197,12 @@ module battery_pack() {    // 2S pack strapped UNDER the plate + XT30 pigtail
     translate([0, 16.5, batt_t/2+4]) cylinder(d=3.4, h=9);                        // leads up the tail
     color("#f5b301") translate([0, 19.5, batt_t/2+14]) cube([7, 11, 6.4], center=true);  // XT30 at the tunnel tail
 }
-module antennas() {        // two rear antennas, raked back + ELRS T-bar (photo)
+module antennas() {        // two rear antennas, raked back (photo)
     for (sx=[-1,1]) translate([sx*5, 0.78*canopy_l/2, 0.43*canopy_h+1])
         rotate([-35,0,0]) {
             cylinder(d=1.7, h=34);                          // tube
             translate([0,0,34]) cylinder(d=2.6, h=8);       // sleeve tip
         }
-    // ELRS T dipole across the tunnel just aft of the nose plates — this y
-    // sits outside every prop disc in plan (audited), any z is safe
-    translate([0, -0.38*canopy_l/2, canopy_h-0.8]) rotate([0,90,0]) {
-        cylinder(d=1.6, h=33, center=true);
-        for (s=[-1,1]) translate([0,0,s*15.2]) cylinder(d=2.4, h=2.6, center=true);
-    }
 }
 
 module oct(w, l) {   // octagon: square with 45-deg corner cuts (prop clearance)
