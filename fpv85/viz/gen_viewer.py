@@ -6,7 +6,7 @@ from ``sim/viz/vendor``, part STLs embedded, opens by double-click) — PLUS
 the full in-browser flight simulator ported from the Fr4n7 viewer
 (``sim/viz/gen_viewer.py`` PG closure): Tello-SDK script runner, presets,
 swarm, and 🎮 keyboard flight (T/L/F + arrows + Z/W/Q/D), rebound on the
-fpv85 airframe (65 mm wheelbase, 40 mm props).
+fpv85 airframe (85 mm wheelbase, 40 mm props).
 
     python3 fpv85/viz/gen_viewer.py            # -> fpv85/viz/drone_viewer.html
     open drone_viewer.html?playground=1        #    the simulator
@@ -22,14 +22,14 @@ STL = os.path.join(REPO, "fpv85", "cad", "stl")
 OUT = os.path.join(HERE, "drone_viewer.html")
 
 MODEL = dict(name="FR4N8", sub="micro FPV extérieur · 85 mm · 2S", wb=65,
-             posxy=0.022981, prop_z=0.0202, motor_z=0.010, canopy_z=0.0148,
+             posxy=0.030052, prop_z=0.0202, motor_z=0.010, canopy_z=0.0148,
              frame_z=0.007,
-             elec=dict(board=[0,0,6.2], airunit=[0,3,11.2], fpvcam=[0,-15,4.8], rxmod=[0,5,16.6], antennas=[0,0,10.4], battery=[0,2,-4.0]),
-             specs=[("Entraxe", "65 mm"), ("Hélices", "40 mm tri-pales"),
+             elec=dict(board=[0,0,6.2], airunit=[0,3,11.2], fpvcam=[0,-13,4.8], rxmod=[0,5,16.6], antennas=[0,0,10.4], battery=[0,2,-4.0]),
+             specs=[("Entraxe", "85 mm"), ("Hélices", "40 mm tri-pales"),
                     ("Moteurs", "0802 ~14000KV 2S"),
                     ("ESC", "AIO BLHeli_S/Bluejay"),
                     ("Radio", "ELRS (CRSF)"), ("Vidéo", "5,8 GHz analogique"),
-                    ("Batterie", "2S 450 mAh"), ("Batterie (pose)", "sous la plaque (sangle)"), ("AUW cible", "65-78 g")])
+                    ("Batterie", "2S 450 mAh"), ("Batterie (pose)", "sous la plaque (sangle)"), ("AUW cible", "67-80 g")])
 
 
 def data_url(path):
@@ -362,7 +362,7 @@ const PG = (function(){
   if (!PLAY) return null;
   const DEG = Math.PI/180, SPEED0 = 1.0, YAW_RATE = 96*DEG;
   const CLIMB = 0.42, DESC = 0.45, TAKEOFF_Z = 0.8;
-  const SPACING = 0.6, MAXD = 6;      // tighter formation: 65 mm micros
+  const SPACING = 0.6, MAXD = 6;      // tighter formation: 85 mm micros
   const $ = id => document.getElementById(id);
   const logEl = $('pgLog');
   function log(msg, cls){ const d=document.createElement('div');
@@ -675,6 +675,9 @@ const PG = (function(){
 // ---- render only while visible (offscreen-pause, host-controlled) ----
 let ioVisible=true, looping=false, hostControlled=false;
 window.__vizRendering=()=>looping;
+window.__propState=()=>({ n:propMeshes.length,
+  posxy:+Math.abs(propMeshes[0].position.x).toFixed(6),
+  ang:+propMeshes[0].rotation.z.toFixed(4), spin:spinRate>0 });
 function activeR(){ return ioVisible && !document.hidden; }
 function startLoop(){ if(!looping){ looping=true; clock.getDelta(); requestAnimationFrame(loop); } }
 addEventListener('message', e=>{ const m=e.data;

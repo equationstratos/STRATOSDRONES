@@ -19,11 +19,11 @@ answer (free UART + I2C remain); out of scope at M0.
 
 | Quantity | Value |
 |---|---|
-| wheelbase | **65 mm** (X layout, motors at ±22.98/±22.98) |
-| props | **40 mm (1.6") tri-blade** |
-| overall footprint | 0.707·65 + 40 ≈ **86 mm** (ref photo: 84 × 83) |
+| wheelbase | **85 mm** (X layout, motors at ±30.05/±30.05). v3.2: was 65 — at 65 the Ø40 discs swept the rail ends (motor→rail-corner ≈ 12 mm < 20 mm radius); the class is *named* by wheelbase anyway (Meteor85 convention) |
+| props | **40 mm (1.6") tri-blade** — blade tip capped at Ø/2 − 0.4 (v3.2; the v3.1 scimitar overshot by ~3 mm) |
+| overall footprint | 0.707·85 + 40 ≈ **100 mm** (the ref's 84 × 83 reads as its body-only footprint) |
 | height | plate 3 + posts 3.2 + board 1.6 + canopy 17 ≈ 25, **~32 with antenna** (ref: 32) |
-| prop plane | z ≈ 13 above plate — clears arms/board/canopy legs; canopy shell is octagonal so its corners stay inside the prop-free centre zone (diagonal half-width ≤ 12.5) |
+| prop clearance | swept radius 19.6 mm; nearest chassis point inside the blade z-band = **21.8 mm** from a motor axis (a canopy rail), camera/antennas/RX ≥ 25 mm, disc-to-disc gap 21 mm — measured on the exported STLs at the viewer placements (v3.2 audit) |
 | motor mount | 3× M1.4 on Ø6.6 (0802 class) `TUNE` |
 | AIO mount | 25.5 × 25.5 M2 posts; **canopy legs screw on the same stack** (classic whoop sandwich: screw → canopy leg → board → post) |
 
@@ -31,13 +31,13 @@ answer (free UART + I2C remain); out of scope at M0.
 
 | Item | g |
 |---|---|
-| frame plate + canopy (printed) | 14-18 |
+| frame plate + canopy (printed) | 16-20 |
 | 4× 0802 14000KV + 40 mm props | 14-16 |
 | STRATOS FPV AIO (32×32, populated) | 6-8 |
 | ELRS RX + antenna | 1-2 |
 | nano cam + VTX (25-400 mW) + antenna | 6-9 |
 | 2S 450 mAh + XT30 | 24-28 |
-| **AUW** | **65-78** |
+| **AUW** | **67-80** |
 
 0802@2S on 40 mm tri-blades ≈ 35-45 g/motor → **T/W ≈ 2.0-2.6**. Enough for
 brisk outdoor cruising; the 2" (fpv2) is the freestyle one.

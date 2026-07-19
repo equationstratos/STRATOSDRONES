@@ -27,7 +27,10 @@ eps = 0.01;
 PART = "assembly";   // frame | canopy | assembly
 
 /* ---------------- master parameters (fpv85; keep fpv2/cad in sync) -------- */
-wheelbase = 65;        // motor-to-motor diagonal — overall ≈ 0.707*wb + prop ≈ 86
+wheelbase = 85;        // motor-to-motor diagonal — overall ≈ 0.707*wb + prop ≈ 100.
+                       // v3.2: 65 -> 85. The class NAME is the wheelbase (Meteor85
+                       // convention); at 65 the Ø40 discs swept the rail ends
+                       // (motor->rail-corner ≈ 12 mm < 20 mm radius = collision).
 prop_d    = 40;        // 1.6" tri-blade                                  // TUNE
 motor_bc  = 6.6;       // 0802-class mount: 3x M1.4 on a 6.6 mm circle    // TUNE
 motor_hole = 1.5;      // M1.4 clearance
@@ -46,13 +49,13 @@ cam_w     = 14.4;      // nano cam side-screw width (14 mm cams + clr)     // TU
 cam_tilt  = 15;        // uptilt (deg)                                     // TUNE
 foot_h    = 7;         // pod feet (the pack under the plate lands first — toothpick way)
 batt_t    = 8;         // 2S pack thickness (strapped UNDER the plate)      // TUNE
-canopy_l  = 46;        // RAIL length — full body, nose at the front motor line
+canopy_l  = 42;        // RAIL length — v3.2: ends pulled clear of the prop discs
 canopy_w  = 22;        // outside width across the two side plates
 canopy_h  = 12;        // rail height — low flat tunnel            // TUNE
 pinch     = 0;         // Eagle2 rails are PARALLEL (kept as a param)
 wall      = 2.0;       // side-plate / deck thickness
 
-posXY = wheelbase/2/sqrt(2);          // 22.98 — motor centres (X layout)
+posXY = wheelbase/2/sqrt(2);          // 30.05 — motor centres (X layout)
 echo(str("ASSERT wheelbase=", wheelbase,
          "  overall=", 0.707*wheelbase + prop_d, "  posXY=", posXY));
 
@@ -120,8 +123,10 @@ module plate_profile() {   // RAIL silhouette (2D): long, low, flat top,
     difference() {
         polygon([[-L, 0], [L, 0], [L, H-3], [L-5, H], [-L+8, H], [-L, H-3.5]]);
         polygon([[-L+6, 2.5], [-L+16, 2.5], [-L+13, H-3]]);              // nose triangle
-        polygon([[-2, 2.5], [9, 2.5], [11, H-3.6], [0, H-3.6]]);         // mid slot
-        polygon([[L-12, 2.5], [L-6, 2.5], [L-5, H-3.6], [L-11, H-3.6]]); // tail slot
+        polygon([[-2, 2.5], [8, 2.5], [9.5, H-3.6], [0, H-3.6]]);        // mid slot
+        polygon([[L-10, 2.5], [L-5.5, 2.5], [L-4.5, H-3.6], [L-9, H-3.6]]); // tail slot
+        // (v3.2: slots re-spaced — with the shorter rails the old tail slot
+        //  collided with the mid slot into a zero-width cusp = broken mesh)
         translate([-L+3.2, H/2]) circle(d=2.2);                          // cam clamp screw
     }
 }
@@ -197,7 +202,12 @@ module oct(w, l) {   // octagon: square with 45-deg corner cuts (prop clearance)
 
 /* ------- viewer parts: one prop + one motor bell, centred at origin ------- */
 module blade2d() {   // curved scimitar plan-form (Gemfan look): lens of two
-    R = prop_d/2 - 2.2;                       // offset discs, swept + pointed tip
+    // offset discs. The lens TIP sits at 1.172*R from the blade origin, and
+    // prop() roots the blade 2.2 mm out -> swept radius = 2.2 + 1.172*R.
+    // R is sized so that equals prop_d/2 - 0.4: the disc never exceeds the
+    // rated Ø (v3.1 used R = prop_d/2-2.2 and overshot by ~3 mm -> the
+    // spinning blades clipped the rails and the neighbouring discs).
+    R = (prop_d/2 - 2.6) / 1.172;
     intersection() {
         translate([R*0.52, -R*0.34]) circle(r=R*0.78, $fn=48);
         translate([R*0.46,  R*0.42]) circle(r=R*0.78, $fn=48);

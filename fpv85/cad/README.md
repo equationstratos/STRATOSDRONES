@@ -12,8 +12,9 @@ One parametric file, `frame.scad`, `PART`-selected like every Stratos model.
 | `board/airunit/fpvcam/rxmod/battery/antennas` | — | electronics + pack + antennas — viewer meshes (buy, don't print) |
 | `assembly` | — | full preview: frame + canopy + ELECTRONICS + battery + antennas + motors (ghost props) |
 
-Key parameters (top of the file, all `TUNE` until first print): wheelbase 65,
-prop 40, motor_bc 6.6, aio 25.5, cam_w 14.4, cam_tilt 15°, foot 7.
+Key parameters (top of the file, all `TUNE` until first print): wheelbase 85
+(v3.2 — the class is named by wheelbase; 65 could not swing Ø40 props past
+the rails), prop 40, motor_bc 6.6, aio 25.5, cam_w 14.4, cam_tilt 15°, foot 7.
 
 ## Regenerate
 
@@ -26,6 +27,8 @@ xvfb-run -a openscad -o preview/assembly_iso.png --imgsize=1100,820 \
   --colorscheme=Tomorrow --camera=0,0,4,55,0,35,240 -D 'PART="assembly"' frame.scad
 ```
 
-v0 status: dry-fit dimensions from catalogue values — the prop plane (z≈13)
-clears arms/board/canopy by construction (octagonal shell inside the
-prop-free centre zone), but **print & iterate before trusting any TUNE dim**.
+Status: dry-fit dimensions from catalogue values. v3.2 prop-clearance audit
+(measured on the exported STLs at the viewer placements): blade tip 19.57 mm
+≤ Ø/2; nearest chassis point in the blade z-band 21.8 mm from a motor axis
+(canopy rail), everything else ≥ 25 mm; disc-to-disc gap 21 mm. Still
+**print & iterate before trusting any TUNE dim**.

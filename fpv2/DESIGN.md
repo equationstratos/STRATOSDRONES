@@ -12,7 +12,7 @@ single source, not duplicated.
 | props | **51 mm (2") tri-blade** |
 | overall | 0.707·98 + 51 ≈ **120 mm** |
 | motor mount | 3× M2 on Ø9 (1102 class) `TUNE` |
-| prop plane | z ≈ 16 above plate (taller 1102 bells) |
+| prop clearance | z ≈ 16 above plate (taller 1102 bells); v3.2 audit: swept radius 25.1 mm ≤ Ø/2, rails shortened 56 → 44 (the old rail corners sat inside the sweep), nearest chassis point in the blade z-band 27.7 mm from a motor axis, disc gap 19 mm |
 | plate | 3.4 mm (bigger spans), feet 8 mm |
 
 ## Weight budget (targets, `TUNE`)

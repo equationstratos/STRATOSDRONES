@@ -24,7 +24,7 @@ OUT = os.path.join(HERE, "drone_viewer.html")
 MODEL = dict(name="FR4N9", sub="FPV extérieur 2\" · 98 mm · 2S", wb=98,
              posxy=0.034648, prop_z=0.024, motor_z=0.0114, canopy_z=0.0162,
              frame_z=0.008,
-             elec=dict(board=[0,0,6.6], airunit=[0,3,11.6], fpvcam=[0,-20,5.2], rxmod=[0,5,17.0], antennas=[0,0,10.8], battery=[0,2,-4.5]),
+             elec=dict(board=[0,0,6.6], airunit=[0,3,11.6], fpvcam=[0,-14,5.2], rxmod=[0,5,17.0], antennas=[0,0,10.8], battery=[0,2,-4.5]),
              specs=[("Entraxe", "98 mm"), ("Hélices", "2\" (51 mm) tri-pales"),
                     ("Moteurs", "1102 ~10000KV 2S"),
                     ("ESC", "AIO BLHeli_S/Bluejay"),
@@ -675,6 +675,9 @@ const PG = (function(){
 // ---- render only while visible (offscreen-pause, host-controlled) ----
 let ioVisible=true, looping=false, hostControlled=false;
 window.__vizRendering=()=>looping;
+window.__propState=()=>({ n:propMeshes.length,
+  posxy:+Math.abs(propMeshes[0].position.x).toFixed(6),
+  ang:+propMeshes[0].rotation.z.toFixed(4), spin:spinRate>0 });
 function activeR(){ return ioVisible && !document.hidden; }
 function startLoop(){ if(!looping){ looping=true; clock.getDelta(); requestAnimationFrame(loop); } }
 addEventListener('message', e=>{ const m=e.data;
