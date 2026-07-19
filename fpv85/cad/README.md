@@ -8,6 +8,8 @@ One parametric file, `frame.scad`, `PART`-selected like every Stratos model.
 |---|---|---|
 | `frame` | 1× | unibody plate: X arms → 0802 pods (3×M1.4 Ø6.6) + whoop 25.5 AIO posts + battery strap slots + feet |
 | `canopy` | 1× | v1 TOOTHPICK: two side plates + top deck on the AIO stack, camera ring 15°, rear antenna clamp |
+| `prop` / `motor` | — | viewer/playground meshes (buy real ones) |
+| `board/airunit/fpvcam/rxmod/battery/antennas` | — | electronics + pack + antennas — viewer meshes (buy, don't print) |
 | `assembly` | — | full preview: frame + canopy + ELECTRONICS + battery + antennas + motors (ghost props) |
 
 Key parameters (top of the file, all `TUNE` until first print): wheelbase 65,
