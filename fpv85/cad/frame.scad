@@ -88,12 +88,15 @@ module arm(ang) {   // TRUSSED arm (Eagle2 style): tapered blade + lengthwise sl
 module centre_pad() {
     difference() {
         linear_extrude(plate_t) offset(3) oct(centre_w-6, centre_w-2);  // diamond-cut waist
-        // DIAMOND-CROSS cutouts (Eagle2 bottom-plate look): centre + 4 around
+        // DIAMOND-LATTICE cutouts (Eagle2 bottom-plate look): centre diamond,
+        // Y-axis lozenges, X diamonds + 4 small corner diamonds
         translate([0, 0, -eps]) rotate([0,0,45]) rrect(7.2, 7.2, 1.2, plate_t+2*eps);
-        for (sy=[-1,1]) translate([0, sy*11, -eps]) rotate([0,0,45])
-            rrect(6.2, 6.2, 1.2, plate_t+2*eps);
+        for (sy=[-1,1]) translate([0, sy*11.5, -eps]) linear_extrude(plate_t+2*eps)
+            polygon([[0,-5.6],[3.2,0],[0,5.6],[-3.2,0]]);
         for (sx=[-1,1]) translate([sx*10.5, 0, -eps]) rotate([0,0,45])
             rrect(5.6, 5.6, 1.2, plate_t+2*eps);
+        for (sx=[-1,1], sy=[-1,1]) translate([sx*7.5, sy*13.5, -eps]) rotate([0,0,45])
+            rrect(3.0, 3.0, 0.9, plate_t+2*eps);
         // battery strap slots (pack lies along Y, strapped to the plate)
         for (sx=[-1,1], sy=[-1,1])
             translate([sx*(batt_w/2+2.6), sy*7.5, -eps])
@@ -145,10 +148,19 @@ module canopy() {
     // open tunnel: braces over the two centreline columns
     translate([0, -aio_r, 2.6+H-wall]) rrect(canopy_w-2, 5, 1.4, wall);
     translate([0, aio_r, 2.6+H-wall]) rrect(canopy_w-2, 5, 1.4, wall);
-    // exposed screw heads along the rails (photo look)
-    for (sx=[-1,1], yy=[-16,-6,6,16])
-        translate([sx*(canopy_w/2+0.35), yy, 2.6+2.6]) rotate([0,sx*90,0])
-            cylinder(d=2.6, h=1.0);
+    // exposed screw heads along the rails (photo look): a row of 5 domed
+    // button heads + hex socket per side, WELDED 0.6 into the rail on the
+    // always-solid lower band of the profile (v3.1 floated them 1.35 mm
+    // off the outer face = unprintable islands)
+    for (sx=[-1,1], yy=[-16,-8,0,8,16])
+        translate([sx*(canopy_w/2-wall+0.4), yy, 2.6+1.6]) rotate([0,sx*90,0])
+            difference() { $fn = 24;   // Ø3 heads: 64 facets would x4 the STL
+                union() {
+                    cylinder(d=3.0, h=1.2);
+                    translate([0,0,1.2]) scale([1,1,0.5]) sphere(d=3.0);
+                }
+                translate([0,0,1.5]) cylinder(d=1.5, h=1.4, $fn=6);
+            }
     // raked antenna seats at the tail (tubes exit between the rails)
     translate([0, L-3, 2.6+H/2-1]) difference() {
         rrect(canopy_w-5, 4.5, 1.4, 4);
@@ -208,9 +220,15 @@ module blade2d() {   // curved scimitar plan-form (Gemfan look): lens of two
     // rated Ø (v3.1 used R = prop_d/2-2.2 and overshot by ~3 mm -> the
     // spinning blades clipped the rails and the neighbouring discs).
     R = (prop_d/2 - 2.6) / 1.172;
-    intersection() {
-        translate([R*0.52, -R*0.34]) circle(r=R*0.78, $fn=48);
-        translate([R*0.46,  R*0.42]) circle(r=R*0.78, $fn=48);
+    difference() {
+        intersection() {
+            translate([R*0.52, -R*0.34]) circle(r=R*0.78, $fn=48);
+            translate([R*0.46,  R*0.42]) circle(r=R*0.78, $fn=48);
+        }
+        // concave trailing-edge scallop (Gemfan crescent): bites ~0.17R at
+        // mid-root, fades before the tip — subtraction only, so the v3.2
+        // swept-radius bound still holds
+        translate([R*0.34, -R*0.72]) circle(r=R*0.55, $fn=48);
     }
 }
 module prop() {   // 40 mm CURVED tri-blade (viewer/playground mesh)

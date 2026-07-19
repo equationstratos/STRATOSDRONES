@@ -27,8 +27,8 @@ xvfb-run -a openscad -o preview/assembly_iso.png --imgsize=1100,820 \
   --colorscheme=Tomorrow --camera=0,0,4,55,0,35,240 -D 'PART="assembly"' frame.scad
 ```
 
-Status: dry-fit dimensions from catalogue values. v3.2 prop-clearance audit
-(measured on the exported STLs at the viewer placements): blade tip 19.57 mm
-≤ Ø/2; nearest chassis point in the blade z-band 21.8 mm from a motor axis
-(canopy rail), everything else ≥ 25 mm; disc-to-disc gap 21 mm. Still
-**print & iterate before trusting any TUNE dim**.
+Status: dry-fit dimensions from catalogue values. v3.2/v3.3 prop-clearance
+audit (measured on the exported STLs at the viewer placements): blade tip
+19.57 mm ≤ Ø/2; nearest chassis point in the blade z-band 22.0 mm from a
+motor axis (canopy rail), everything else ≥ 25 mm; disc-to-disc gap 21 mm.
+Still **print & iterate before trusting any TUNE dim**.

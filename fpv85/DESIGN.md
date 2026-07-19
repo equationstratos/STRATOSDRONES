@@ -23,7 +23,7 @@ answer (free UART + I2C remain); out of scope at M0.
 | props | **40 mm (1.6") tri-blade** — blade tip capped at Ø/2 − 0.4 (v3.2; the v3.1 scimitar overshot by ~3 mm) |
 | overall footprint | 0.707·85 + 40 ≈ **100 mm** (the ref's 84 × 83 reads as its body-only footprint) |
 | height | plate 3 + posts 3.2 + board 1.6 + canopy 17 ≈ 25, **~32 with antenna** (ref: 32) |
-| prop clearance | swept radius 19.6 mm; nearest chassis point inside the blade z-band = **21.8 mm** from a motor axis (a canopy rail), camera/antennas/RX ≥ 25 mm, disc-to-disc gap 21 mm — measured on the exported STLs at the viewer placements (v3.2 audit) |
+| prop clearance | swept radius 19.6 mm; nearest chassis point inside the blade z-band = **22.0 mm** from a motor axis (a canopy rail), camera/antennas/RX ≥ 25 mm, disc-to-disc gap 21 mm — measured on the exported STLs at the viewer placements (v3.2/v3.3 audit) |
 | motor mount | 3× M1.4 on Ø6.6 (0802 class) `TUNE` |
 | AIO mount | 25.5 × 25.5 M2 posts; **canopy legs screw on the same stack** (classic whoop sandwich: screw → canopy leg → board → post) |
 
