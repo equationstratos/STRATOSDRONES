@@ -3,10 +3,11 @@
 // Clean-room design. Visual references (owner's photos, measurement/style
 // only, nothing copied): an ~84 x 83 x 32 mm "Eagle-class" micro FPV quad
 // (whence the overall footprint and the 14000KV 2S motor class) and a
-// white-side-plate toothpick canopy — v1 follows the owner's THIRD photo set
-// (true toothpick: two SIDE PLATES + top deck, big-lens cam between them,
-// finned air-unit box, two rear antennas, XT30 + pack strapped UNDER the
-// plate). All geometry here is our own parametric OpenSCAD.
+// white-side-plate toothpick canopy — v3 follows the owner's Walle FPV
+// Eagle2 reference (wallefpv.com, photos: visual reference ONLY, clean-room)
+// : TWO LONG PARALLEL RAILS the full body length (open flat tunnel, camera
+// unit upright at the nose INSIDE the rails, XT30 + antennas out the tail),
+// trussed arms, diamond plate cutouts. Our own parametric OpenSCAD.
 //
 // Architecture: one printed UNIBODY bottom plate (X arms to four 0802-class
 // motor pods + whoop-standard 25.5x25.5 AIO mount + battery strap slots +
@@ -44,9 +45,10 @@ cam_w     = 14.4;      // nano cam side-screw width (14 mm cams + clr)     // TU
 cam_tilt  = 15;        // uptilt (deg)                                     // TUNE
 foot_h    = 7;         // pod feet (the pack under the plate lands first — toothpick way)
 batt_t    = 8;         // 2S pack thickness (strapped UNDER the plate)      // TUNE
-canopy_l  = 34;        // side-plate length
+canopy_l  = 46;        // RAIL length — full body, nose at the front motor line
 canopy_w  = 22;        // outside width across the two side plates
-canopy_h  = 16;        // side-plate height above its base
+canopy_h  = 12;        // rail height — low flat tunnel            // TUNE
+pinch     = 0;         // Eagle2 rails are PARALLEL (kept as a param)
 wall      = 2.0;       // side-plate / deck thickness
 
 posXY = wheelbase/2/sqrt(2);          // 22.98 — motor centres (X layout)
@@ -65,20 +67,28 @@ module motor_pod() {
             translate([motor_bc/2, 0, -eps]) cylinder(d=motor_hole, h=plate_t+2*eps);
     }
 }
-module foot() {   // small printed foot under each pod
-    cylinder(d1=6.5, d2=4.5, h=foot_h);
+module foot() {   // paw pad + short bumper under each pod (pack lands first)
+    translate([0,0,-1.8]) rrect(11, 11, 3.4, 1.8);          // rounded paw pad
+    translate([0,0,-6.6]) cylinder(d1=4.2, d2=6.2, h=4.8);  // bumper
 }
-module arm(ang) {
-    rotate([0,0,ang]) hull() {
-        translate([10,0,0]) cube([eps, arm_w+3, plate_t]/1, center=false);
-        translate([sqrt(2)*posXY - pod_d/2 + 1.5, -arm_w/2, 0]) cube([eps, arm_w, plate_t]);
+module arm(ang) {   // TRUSSED arm (Eagle2 style): tapered blade + lengthwise slot
+    rotate([0,0,ang]) difference() {
+        hull() {
+            translate([10, -(arm_w+2.4)/2, 0]) cube([eps, arm_w+2.4, plate_t]);
+            translate([sqrt(2)*posXY - pod_d/2 + 1.5, -(arm_w-1.8)/2, 0]) cube([eps, arm_w-1.8, plate_t]);
+        }
+        hull() for (r=[14, sqrt(2)*posXY - pod_d/2 - 3.5])
+            translate([r, 0, -eps]) cylinder(d=2.6, h=plate_t+2*eps);
     }
 }
 module centre_pad() {
     difference() {
-        rrect(centre_w, centre_w, 5, plate_t);
+        linear_extrude(plate_t) offset(3) oct(centre_w-6, centre_w-2);  // diamond-cut waist
         // lightening windows around the AIO mount
         for (sx=[-1,1]) translate([sx*10.6, 0, -eps]) rrect(6.5, 15, 2.4, plate_t+2*eps);
+        // diamond windows along the spine (Eagle2 bottom-plate look)
+        for (sy=[-1,1]) translate([0, sy*10.5, -eps]) rotate([0,0,45])
+            rrect(6.4, 6.4, 1.2, plate_t+2*eps);
         // battery strap slots (pack lies along Y, strapped to the plate)
         for (sx=[-1,1], sy=[-1,1])
             translate([sx*(batt_w/2+2.6), sy*7.5, -eps])
@@ -94,14 +104,25 @@ module centre_pad() {
 module frame() {
     for (sx=[-1,1], sy=[-1,1]) {
         translate([sx*posXY, sy*posXY, 0]) motor_pod();
-        translate([sx*posXY, sy*posXY, -foot_h]) foot();
+        translate([sx*posXY, sy*posXY, 0]) foot();
         arm(atan2(sy, sx));
     }
     centre_pad();
 }
 
 /* ---------------- canopy (side plates + spine, camera + VTX + RX) -------- */
+module plate_profile() {   // RAIL silhouette (2D): long, low, flat top,
+    L = canopy_l/2; H = canopy_h;  // chamfered ends, trussed cutouts
+    difference() {
+        polygon([[-L, 0], [L, 0], [L, H-3], [L-5, H], [-L+8, H], [-L, H-3.5]]);
+        polygon([[-L+6, 2.5], [-L+16, 2.5], [-L+13, H-3]]);              // nose triangle
+        polygon([[-2, 2.5], [9, 2.5], [11, H-3.6], [0, H-3.6]]);         // mid slot
+        polygon([[L-12, 2.5], [L-6, 2.5], [L-5, H-3.6], [L-11, H-3.6]]); // tail slot
+        translate([-L+3.2, H/2]) circle(d=2.2);                          // cam clamp screw
+    }
+}
 module canopy() {
+    L = canopy_l/2; H = canopy_h;
     // legs down to the AIO stack (same M2 screws: canopy -> board -> posts)
     for (sx=[-1,1], sy=[-1,1]) translate([sx*aio/2, sy*aio/2, 0])
         difference() {
@@ -109,26 +130,17 @@ module canopy() {
                      translate([-sx*(aio/2 - (canopy_w/2-wall/2)), -sy*3.5, 2.6]) cylinder(d=4.6, h=1.4); }
             translate([0,0,-eps]) cylinder(d=2.2, h=6);
         }
-    // two SIDE PLATES (the photo's aluminium look, printed): raked front,
-    // lightening holes, joined by a flat TOP DECK
+    // TWO PARALLEL RAILS, full body length (the Eagle2 tunnel)
     for (sx=[-1,1]) translate([sx*(canopy_w/2-wall), 0, 2.6])
-        rotate([90,0,90]) linear_extrude(wall, center=true) difference() {
-            polygon([[-canopy_l/2+3,0],[canopy_l/2,0],[canopy_l/2,canopy_h-4],
-                     [canopy_l/2-6,canopy_h],[-canopy_l/2+9,canopy_h],[-canopy_l/2+3,6]]);
-            translate([canopy_l/2-11, canopy_h-7]) circle(d=5);       // lightening
-            translate([canopy_l/2-18, canopy_h-8]) circle(d=4);
-            translate([-2, 5]) square([10, 4], center=true);          // strap/wire slot
-        }
-    translate([0, 2, 2.6+canopy_h-wall]) rrect(canopy_w, canopy_l-9, 1.6, wall);  // top deck
-    // camera RING at the raked front (big-lens nano cam, 15 deg uptilt)
-    translate([0, -canopy_l/2+4.5, 2.6+7.5]) rotate([90-cam_tilt,0,0]) difference() {
-        cylinder(d=cam_w+3.4, h=3.4, center=true);
-        cylinder(d=cam_w-1.5, h=4.0, center=true);
-    }
-    // rear antenna clamp bar: two angled tubes' seats
-    translate([0, canopy_l/2-3.5, 2.6+canopy_h-wall-2]) difference() {
-        rrect(canopy_w-4, 5, 1.6, 4);
-        for (sx=[-1,1]) translate([sx*5.5, 0, -eps]) rotate([-28,0,0]) cylinder(d=2.1, h=9);
+        rotate([0,0,-sx*pinch]) rotate([90,0,90])
+            linear_extrude(wall, center=true) plate_profile();
+    // open tunnel: one brace over the camera, one at the tail (XT30 strap)
+    translate([0, -L+7, 2.6+H-wall]) rrect(canopy_w-2, 4, 1.4, wall);
+    translate([0, L-6, 2.6+H-wall]) rrect(canopy_w-2, 4.5, 1.4, wall);
+    // raked antenna seats at the tail (tubes exit between the rails)
+    translate([0, L-3, 2.6+H/2-1]) difference() {
+        rrect(canopy_w-5, 4.5, 1.4, 4);
+        for (sx=[-1,1]) translate([sx*5, 0, -eps]) rotate([-40,0,0]) cylinder(d=2.1, h=10);
     }
 }
 
@@ -145,12 +157,13 @@ module airunit() {         // finned video/air-unit box (photo look)
     }
     translate([0, 9.5, 4]) rotate([-90,0,0]) cylinder(d=3.2, h=2.4);   // rear plug
 }
-module fpvcam() {          // big-lens nano cam
-    rrect(cam_w, 10, 1.8, cam_w);                          // body cube
-    translate([0, -6.4, cam_w/2]) rotate([90,0,0]) {
-        cylinder(d=11.4, h=5.2);                           // barrel
-        translate([0,0,5.2]) cylinder(d=9.0, h=1.6);       // lens ring
-        color("#0b1e3a") translate([0,0,6.6]) sphere(d=7.2);   // glass
+module fpvcam() {          // upright HD unit at the nose (Eagle2/O4 style)
+    rrect(13.5, 11, 1.6, 15);                              // vertical body in the tunnel
+    for (i=[0:4]) translate([-6.2, -2+i*2.0, 14.2]) cube([12.4, 1.1, 1.6]);  // top fins
+    translate([0, -5.4, 9]) rotate([90-cam_tilt,0,0]) {
+        cylinder(d=11.6, h=4.6);                           // lens barrel forward
+        translate([0,0,4.6]) cylinder(d=9.2, h=1.6);       // ring
+        color("#0b1e3a") translate([0,0,6.0]) sphere(d=7.4);   // glass
     }
 }
 module rxmod() {           // ELRS RX + wire antenna
@@ -160,12 +173,12 @@ module rxmod() {           // ELRS RX + wire antenna
 module battery_pack() {    // 2S pack strapped UNDER the plate + XT30 pigtail
     rn=2.2;
     minkowski() { cube([batt_w-2*rn, 34-2*rn, batt_t-2*rn], center=true); sphere(r=rn, $fn=24); }
-    translate([batt_w/2-2, 19.5, 0]) rotate([90,0,0]) cylinder(d=3.4, h=6);      // leads
-    color("#f5b301") translate([batt_w/2-2, 24.5, 0]) cube([7, 10, 6], center=true);  // XT30
+    translate([0, 16.5, batt_t/2+4]) cylinder(d=3.4, h=9);                        // leads up the tail
+    color("#f5b301") translate([0, 19.5, batt_t/2+14]) cube([7, 11, 6.4], center=true);  // XT30 at the tunnel tail
 }
-module antennas() {        // two rear antennas, angled up-back (photo)
-    for (sx=[-1,1]) translate([sx*5.5, canopy_l/2-3.5, canopy_h-2])
-        rotate([-28,0,0]) {
+module antennas() {        // two rear antennas, raked back (photo)
+    for (sx=[-1,1]) translate([sx*5, 0.78*canopy_l/2, 0.43*canopy_h+1])
+        rotate([-35,0,0]) {
             cylinder(d=1.7, h=34);                          // tube
             translate([0,0,34]) cylinder(d=2.6, h=8);       // sleeve tip
         }
@@ -212,8 +225,8 @@ module assembly() {
     color("#e8e8ea") translate([0, 0, plate_t+aio_post_h+1.6]) canopy();  // on the board top
     translate([0, 0, plate_t+aio_post_h]) board();
     color("#1a1c20") translate([0, 3, plate_t+aio_post_h+1.6+3.4]) airunit();
-    color("#141416") translate([0, -canopy_l/2+7.5, plate_t+aio_post_h+1.6+2.6]) fpvcam();
-    color("#1c2430") translate([0, 10, plate_t+aio_post_h+1.6+canopy_h-4]) rxmod();
+    color("#141416") translate([0, -canopy_l/2+8, plate_t+aio_post_h-1.4]) fpvcam();
+    color("#1c2430") translate([0, 5, plate_t+aio_post_h+1.6+8.8]) rxmod();
     color("#101012") translate([0, 0, plate_t+aio_post_h+1.6+2.6]) antennas();
     color("#2b2f36") translate([0, 2, -batt_t/2]) battery_pack();
     color("#3f8f7a") for (sx=[-1,1], sy=[-1,1])

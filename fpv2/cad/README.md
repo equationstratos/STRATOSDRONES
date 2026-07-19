@@ -10,7 +10,7 @@ feet 8, battery 22 wide).
 | PART | Print | Note |
 |---|---|---|
 | `frame` | 1× | unibody plate (1102 pods + whoop 25.5 AIO posts + straps + feet) |
-| `canopy` | 1× | v1 TOOTHPICK: two side plates + top deck on the AIO stack, camera ring 15°, rear antenna clamp |
+| `canopy` | 1× | v3 EAGLE2-STYLE: two long PARALLEL RAILS (open tunnel) on the AIO stack, trussed cutouts, cam clamp at the nose, raked antenna seats at the tail |
 | `prop` / `motor` | — | viewer/playground meshes (buy real ones) |
 | `board/airunit/fpvcam/rxmod/battery/antennas` | — | electronics + pack + antennas — viewer meshes (buy, don't print) |
 

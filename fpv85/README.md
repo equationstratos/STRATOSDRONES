@@ -9,11 +9,13 @@ AIO board**, two sizes.
 
 ## Inspirations (credit where due)
 
-- The owner's reference photos of an **"Eagle-class" 84 × 83 × 32 mm micro
-  FPV** (overall footprint, H≈32 with canopy, and the **2S 14000KV**
-  motor class) and of a **white side-plate toothpick canopy** — used as
-  *visual/measurement references only*; every line of geometry here is our
-  own parametric OpenSCAD (clean-room, like the Avata/Fr4n6 case).
+- The **Walle FPV Eagle2** (https://wallefpv.com/products/eagle2-hd-o4-pro-3s-brushless-fpv-drone)
+  and the owner's photos of it — the 84 × 83 × 32 mm footprint, the **twin
+  parallel white rails** forming an open tunnel (camera unit upright at the
+  nose, XT30 + antennas out the tail), the trussed arms and diamond plate
+  cutouts. Used as *visual/measurement references only*; every line of
+  geometry here is our own parametric OpenSCAD (clean-room, like the
+  Avata/Fr4n6 case).
 - The **whoop-AIO stack convention** (25.5 × 25.5 M2 pattern, canopy screwed
   on the same stack) and the open **BLHeli_S / Bluejay + ExpressLRS + analog
   VTX** ecosystem — the "meilleure solution optimum existante" for a

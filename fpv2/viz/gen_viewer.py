@@ -24,7 +24,7 @@ OUT = os.path.join(HERE, "drone_viewer.html")
 MODEL = dict(name="FR4N9", sub="FPV extérieur 2\" · 98 mm · 2S", wb=98,
              posxy=0.034648, prop_z=0.024, motor_z=0.0114, canopy_z=0.0162,
              frame_z=0.008,
-             elec=dict(board=[0,0,6.6], airunit=[0,3,11.6], fpvcam=[0,-9.5,10.8], rxmod=[0,10,20.2], antennas=[0,0,10.8], battery=[0,2,-4.5]),
+             elec=dict(board=[0,0,6.6], airunit=[0,3,11.6], fpvcam=[0,-20,5.2], rxmod=[0,5,17.0], antennas=[0,0,10.8], battery=[0,2,-4.5]),
              specs=[("Entraxe", "98 mm"), ("Hélices", "2\" (51 mm) tri-pales"),
                     ("Moteurs", "1102 ~10000KV 2S"),
                     ("ESC", "AIO BLHeli_S/Bluejay"),
@@ -271,14 +271,14 @@ const gCanopy = group('canopy'); { const m1 = mesh(STLB64.canopy, 0xe8e8ea, .25,
   m1.position.z = M.canopy_z; gCanopy.add(m1); }
 const gMot = group('motors');
 for (const [sx, sy] of [[1,1],[-1,1],[-1,-1],[1,-1]]){
-  const mm = mesh(STLB64.motor, 0x8b929c, .85, .3);
+  const mm = mesh(STLB64.motor, 0x2e6e63, .8, .32);
   mm.position.set(sx*M.posxy, sy*M.posxy, M.motor_z);
   gMot.add(mm);
 }
 const gProp = group('props');
 const propMeshes = [];
 for (const [sx, sy] of [[1,1],[-1,1],[-1,-1],[1,-1]]){
-  const pm = mesh(STLB64.prop, 0x2f6fed, .2, .4);
+  const pm = mesh(STLB64.prop, 0x4a4e55, .2, .38);
   pm.position.set(sx*M.posxy, sy*M.posxy, M.prop_z);
   pm.scale.set(0.001, (sx*sy>0)?0.001:-0.001, 0.001);   // CW/CCW mirror
   pm.userData.dir = (sx*sy>0)?1:-1;
@@ -295,19 +295,19 @@ function place(b64, colr, met, rgh, off){
 const gElec = group('elec');
 gElec.add(place(STLB64.board,   0x0a5a30, .2, .5, M.elec.board));
 gElec.add(place(STLB64.airunit, 0x1a1c20, .5, .45, M.elec.airunit));
-gElec.add(place(STLB64.fpvcam,  0x141416, .3, .35, M.elec.fpvcam));
+gElec.add(place(STLB64.fpvcam,  0x17181c, .35, .4, M.elec.fpvcam));
 gElec.add(place(STLB64.rxmod,   0x1c2430, .3, .5, M.elec.rxmod));
 const gBatt = group('battery');
 gBatt.add(place(STLB64.battery, 0x2b2f36, .25, .55, M.elec.battery));
 const gAnt = group('antennas');
-gAnt.add(place(STLB64.antennas, 0x101012, .3, .5, M.elec.antennas));
+gAnt.add(place(STLB64.antennas, 0xd8dadc, .25, .45, M.elec.antennas));
 
 // ---- part toggles ----
 const GROUPS = {
   frame:  {label:'Châssis (plaque + pods)', color:'#23272e'},
   canopy: {label:'Canopy (plaques + pont)', color:'#e8e8ea'},
-  motors: {label:'Moteurs 1102',            color:'#8b929c'},
-  props:  {label:'Hélices 2" (51 mm)',      color:'#2f6fed'},
+  motors: {label:'Moteurs 1102 (sarcelle)', color:'#2e6e63'},
+  props:  {label:'Hélices 2" (fumées)',     color:'#4a4e55'},
   elec:   {label:'Électronique (carte + air unit + cam + RX)', color:'#0a5a30'},
   battery:{label:'Batterie 2S (sous la plaque)', color:'#2b2f36'},
   antennas:{label:'Antennes (VTX + RX)',        color:'#101012'},
