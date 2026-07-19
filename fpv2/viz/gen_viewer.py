@@ -293,7 +293,8 @@ function place(b64, colr, met, rgh, off){
   return m2;
 }
 const gElec = group('elec');
-gElec.add(place(STLB64.board,   0x0a5a30, .2, .5, M.elec.board));
+{ const bm = place(STLB64.board, 0x0a5a30, .2, .5, M.elec.board);
+  bm.rotation.z = Math.PI/4; gElec.add(bm); }   // board rotated 45° (Eagle2 diamond)
 gElec.add(place(STLB64.airunit, 0x1a1c20, .5, .45, M.elec.airunit));
 gElec.add(place(STLB64.fpvcam,  0x17181c, .35, .4, M.elec.fpvcam));
 gElec.add(place(STLB64.rxmod,   0x1c2430, .3, .5, M.elec.rxmod));

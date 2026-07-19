@@ -36,6 +36,7 @@ shaft_d   = 4.2;       // prop-shaft / wire pass-through
 arm_w     = 6.4;       // arm width                                       // TUNE
 plate_t   = 3.0;       // unibody plate thickness (PLA-CF / PETG)
 aio       = 25.5;      // whoop AIO mount pitch (the shared FPV AIO board)
+aio_r     = 25.5*sqrt(2)/2;  // 18.03 — the BOARD IS ROTATED 45 deg (Eagle2): holes land ON the axes
 aio_post_d = 4.8;      // M2 posts under the board (soft-mount grommets)
 aio_post_h = 3.2;
 centre_w  = 34;        // centre pad square (32x32 board + margin)
@@ -84,22 +85,25 @@ module arm(ang) {   // TRUSSED arm (Eagle2 style): tapered blade + lengthwise sl
 module centre_pad() {
     difference() {
         linear_extrude(plate_t) offset(3) oct(centre_w-6, centre_w-2);  // diamond-cut waist
-        // lightening windows around the AIO mount
-        for (sx=[-1,1]) translate([sx*10.6, 0, -eps]) rrect(6.5, 15, 2.4, plate_t+2*eps);
-        // diamond windows along the spine (Eagle2 bottom-plate look)
-        for (sy=[-1,1]) translate([0, sy*10.5, -eps]) rotate([0,0,45])
-            rrect(6.4, 6.4, 1.2, plate_t+2*eps);
+        // DIAMOND-CROSS cutouts (Eagle2 bottom-plate look): centre + 4 around
+        translate([0, 0, -eps]) rotate([0,0,45]) rrect(7.2, 7.2, 1.2, plate_t+2*eps);
+        for (sy=[-1,1]) translate([0, sy*11, -eps]) rotate([0,0,45])
+            rrect(6.2, 6.2, 1.2, plate_t+2*eps);
+        for (sx=[-1,1]) translate([sx*10.5, 0, -eps]) rotate([0,0,45])
+            rrect(5.6, 5.6, 1.2, plate_t+2*eps);
         // battery strap slots (pack lies along Y, strapped to the plate)
         for (sx=[-1,1], sy=[-1,1])
             translate([sx*(batt_w/2+2.6), sy*7.5, -eps])
                 rrect(strap_l, strap_w, 1, plate_t+2*eps);
     }
-    // AIO posts (board soft-mounts on top)
-    for (sx=[-1,1], sy=[-1,1]) translate([sx*aio/2, sy*aio/2, plate_t-eps])
-        difference() {
+    // AIO posts — board rotated 45 deg, holes ON the axes (front/rear/sides)
+    for (p=[[1,0],[-1,0],[0,1],[0,-1]]) translate([p[0]*aio_r, p[1]*aio_r, 0]) {
+        cylinder(d=9, h=plate_t);                                   // boss pad into the plate
+        translate([0,0,plate_t-eps]) difference() {
             cylinder(d=aio_post_d, h=aio_post_h);
             translate([0,0,0.8]) cylinder(d=1.7, h=aio_post_h);
         }
+    }
 }
 module frame() {
     for (sx=[-1,1], sy=[-1,1]) {
@@ -123,20 +127,23 @@ module plate_profile() {   // RAIL silhouette (2D): long, low, flat top,
 }
 module canopy() {
     L = canopy_l/2; H = canopy_h;
-    // legs down to the AIO stack (same M2 screws: canopy -> board -> posts)
-    for (sx=[-1,1], sy=[-1,1]) translate([sx*aio/2, sy*aio/2, 0])
-        difference() {
-            hull() { cylinder(d=5.4, h=1.6);
-                     translate([-sx*(aio/2 - (canopy_w/2-wall/2)), -sy*3.5, 2.6]) cylinder(d=4.6, h=1.4); }
-            translate([0,0,-eps]) cylinder(d=2.2, h=6);
-        }
+    // centreline COLUMNS down to the rotated board's front/rear holes
+    // (the Eagle2's visible centre screws): brace -> column -> board -> post
+    for (sy=[-1,1]) translate([0, sy*aio_r, 0]) difference() {
+        cylinder(d=5.6, h=2.6+H-wall+eps);
+        translate([0,0,-eps]) cylinder(d=2.2, h=2.6+H+1);
+    }
     // TWO PARALLEL RAILS, full body length (the Eagle2 tunnel)
     for (sx=[-1,1]) translate([sx*(canopy_w/2-wall), 0, 2.6])
         rotate([0,0,-sx*pinch]) rotate([90,0,90])
             linear_extrude(wall, center=true) plate_profile();
-    // open tunnel: one brace over the camera, one at the tail (XT30 strap)
-    translate([0, -L+7, 2.6+H-wall]) rrect(canopy_w-2, 4, 1.4, wall);
-    translate([0, L-6, 2.6+H-wall]) rrect(canopy_w-2, 4.5, 1.4, wall);
+    // open tunnel: braces over the two centreline columns
+    translate([0, -aio_r, 2.6+H-wall]) rrect(canopy_w-2, 5, 1.4, wall);
+    translate([0, aio_r, 2.6+H-wall]) rrect(canopy_w-2, 5, 1.4, wall);
+    // exposed screw heads along the rails (photo look)
+    for (sx=[-1,1], yy=[-16,-6,6,16])
+        translate([sx*(canopy_w/2+0.35), yy, 2.6+2.6]) rotate([0,sx*90,0])
+            cylinder(d=2.6, h=1.0);
     // raked antenna seats at the tail (tubes exit between the rails)
     translate([0, L-3, 2.6+H/2-1]) difference() {
         rrect(canopy_w-5, 4.5, 1.4, 4);
@@ -189,13 +196,18 @@ module oct(w, l) {   // octagon: square with 45-deg corner cuts (prop clearance)
 }
 
 /* ------- viewer parts: one prop + one motor bell, centred at origin ------- */
-module prop() {   // 40 mm tri-blade (viewer/playground mesh; buy real props!)
+module blade2d() {   // curved scimitar plan-form (Gemfan look): lens of two
+    R = prop_d/2 - 2.2;                       // offset discs, swept + pointed tip
+    intersection() {
+        translate([R*0.52, -R*0.34]) circle(r=R*0.78, $fn=48);
+        translate([R*0.46,  R*0.42]) circle(r=R*0.78, $fn=48);
+    }
+}
+module prop() {   // 40 mm CURVED tri-blade (viewer/playground mesh)
     cylinder(d=7.5, h=3.2);                       // hub
     translate([0,0,3.2]) cylinder(d=3.6, h=1.4);  // shaft cap
-    for (a=[0:120:240]) rotate([0,0,a])
-        translate([prop_d/4+1.6, 0, 1.6])
-            rotate([18,0,0]) scale([1, 0.26, 0.075])
-                sphere(d=prop_d/2+3, $fn=40);
+    for (a=[0:120:240]) rotate([0,0,a]) translate([2.2,0,2.4])
+        rotate([16,0,0]) linear_extrude(1.25) blade2d();
 }
 module motor() {  // 0802-class bell
     cylinder(d=9.4, h=2.2);                        // base
@@ -223,7 +235,7 @@ module ghost_batt()  { translate([0, 4, -0.1-9.5+0]) ; translate([0,4,plate_t+ai
 module assembly() {
     color("#23272e") frame();
     color("#e8e8ea") translate([0, 0, plate_t+aio_post_h+1.6]) canopy();  // on the board top
-    translate([0, 0, plate_t+aio_post_h]) board();
+    translate([0, 0, plate_t+aio_post_h]) rotate([0,0,45]) board();
     color("#1a1c20") translate([0, 3, plate_t+aio_post_h+1.6+3.4]) airunit();
     color("#141416") translate([0, -canopy_l/2+8, plate_t+aio_post_h-1.4]) fpvcam();
     color("#1c2430") translate([0, 5, plate_t+aio_post_h+1.6+8.8]) rxmod();
