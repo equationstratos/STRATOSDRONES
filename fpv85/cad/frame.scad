@@ -142,6 +142,26 @@ module oct(w, l) {   // octagon: square with 45-deg corner cuts (prop clearance)
     intersection() { square([w, l], center=true); rotate(45) square([(w+l)*0.62, (w+l)*0.62], center=true); }
 }
 
+/* ------- viewer parts: one prop + one motor bell, centred at origin ------- */
+module prop() {   // 40 mm tri-blade (viewer/playground mesh; buy real props!)
+    cylinder(d=7.5, h=3.2);                       // hub
+    translate([0,0,3.2]) cylinder(d=3.6, h=1.4);  // shaft cap
+    for (a=[0:120:240]) rotate([0,0,a])
+        translate([prop_d/4+1.6, 0, 1.6])
+            rotate([18,0,0]) scale([1, 0.26, 0.075])
+                sphere(d=prop_d/2+3, $fn=40);
+}
+module motor() {  // 0802-class bell
+    cylinder(d=9.4, h=2.2);                        // base
+    translate([0,0,2.2]) difference() {
+        cylinder(d=11.2, h=5.6);
+        translate([0,0,-eps]) cylinder(d=9.6, h=5.2);
+    }
+    translate([0,0,2.2]) cylinder(d=9.8, h=5.0);   // stator mass
+    translate([0,0,7.8]) cylinder(d=11.2, h=1.2);  // top plate
+    translate([0,0,9.0]) cylinder(d=1.5, h=3.4);   // shaft
+}
+
 /* ---------------- ghosts (previews only, never exported as parts) -------- */
 module ghost_props() {
     for (sx=[-1,1], sy=[-1,1]) translate([sx*posXY, sy*posXY, 13])
@@ -163,4 +183,6 @@ module assembly() {
 /* ---------------- dispatch ---------------- */
 if      (PART == "frame")  frame();
 else if (PART == "canopy") canopy();
+else if (PART == "prop")   prop();
+else if (PART == "motor")  motor();
 else                       assembly();
