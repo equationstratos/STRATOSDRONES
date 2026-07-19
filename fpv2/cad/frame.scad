@@ -7,6 +7,9 @@
 // : TWO LONG PARALLEL RAILS the full body length (open flat tunnel, camera
 // unit upright at the nose INSIDE the rails, XT30 + antennas out the tail),
 // trussed arms, diamond plate cutouts. Our own parametric OpenSCAD.
+// v3.4 (kit photos + published manual numbers): FULL side plates kept, now
+// with a SLOPING top edge — tall faceted octagonal NOSE carrying kidney
+// lightening + the cam screw, down to a low chamfered tail.
 //
 // Architecture: one printed UNIBODY bottom plate (X arms to four 0802-class
 // motor pods + whoop-standard 25.5x25.5 AIO mount + battery strap slots +
@@ -118,33 +121,41 @@ module frame() {
 }
 
 /* ---------------- canopy (side plates + spine, camera + VTX + RX) -------- */
-module plate_profile() {   // RAIL silhouette (2D): long, low, flat top,
-    L = canopy_l/2; H = canopy_h;  // chamfered ends, trussed cutouts
+function rail_top(y) =    // v3.4 sloping top edge: tall faceted nose -> low
+    let(L=canopy_l/2, Hn=canopy_h+2, Ht=canopy_h-2.6)          // chamfered tail
+    (y < -L+13) ? Hn : Hn + (Ht-Hn)*(y+L-13)/(2*L-16);
+module plate_profile() {   // v3.4 RAIL silhouette (kit photos): FULL-length
+    L = canopy_l/2; H = canopy_h;   // plate, tall faceted octagonal NOSE,
+    Hn = H+2; Ht = H-2.6;           // top edge SLOPING down to the tail
     difference() {
-        polygon([[-L, 0], [L, 0], [L, H-3], [L-5, H], [-L+8, H], [-L, H-3.5]]);
-        polygon([[-L+6, 2.5], [-L+16, 2.5], [-L+13, H-3]]);              // nose triangle
-        polygon([[-2, 2.5], [8, 2.5], [9.5, H-3.6], [0, H-3.6]]);        // mid slot
-        polygon([[L-10, 2.5], [L-5.5, 2.5], [L-4.5, H-3.6], [L-9, H-3.6]]); // tail slot
-        // (v3.2: slots re-spaced — with the shorter rails the old tail slot
-        //  collided with the mid slot into a zero-width cusp = broken mesh)
-        translate([-L+3.2, H/2]) circle(d=2.2);                          // cam clamp screw
+        polygon([[-L+3, 0], [L, 0], [L, Ht-1.8], [L-3, Ht],
+                 [-L+13, Hn], [-L+3, Hn], [-L, Hn-3], [-L, 3]]);
+        // nose-plate lightening: kidney + oval + cam clamp screw (kit photos)
+        hull() { translate([-L+3.2, 0.62*Hn]) circle(d=3.6);
+                 translate([-L+6.4, 0.70*Hn]) circle(d=3.6); }
+        hull() { translate([-L+4.2, 0.26*Hn]) circle(d=3.2);
+                 translate([-L+7.0, 0.23*Hn]) circle(d=3.2); }
+        translate([-L+8.8, 0.46*Hn]) circle(d=2.2);
+        // trussed slots along the run (v3.3), tops kept under the slope
+        polygon([[-2, 2.5], [8, 2.5], [9.5, H-3.6], [0, H-3.6]]);        // mid
+        polygon([[L-10, 2.5], [L-5.5, 2.5], [L-4.5, H-4.6], [L-9, H-4.6]]); // tail
     }
 }
 module canopy() {
     L = canopy_l/2; H = canopy_h;
-    // centreline COLUMNS down to the rotated board's front/rear holes
-    // (the Eagle2's visible centre screws): brace -> column -> board -> post
+    // centreline COLUMNS down to the rotated board's front/rear holes —
+    // each stops flush under the SLOPING rail top (v3.4)
     for (sy=[-1,1]) translate([0, sy*aio_r, 0]) difference() {
-        cylinder(d=5.6, h=2.6+H-wall+eps);
-        translate([0,0,-eps]) cylinder(d=2.2, h=2.6+H+1);
+        cylinder(d=5.6, h=2.6+rail_top(sy*aio_r)-wall+eps);
+        translate([0,0,-eps]) cylinder(d=2.2, h=2.6+canopy_h+6);
     }
     // TWO PARALLEL RAILS, full body length (the Eagle2 tunnel)
     for (sx=[-1,1]) translate([sx*(canopy_w/2-wall), 0, 2.6])
         rotate([0,0,-sx*pinch]) rotate([90,0,90])
             linear_extrude(wall, center=true) plate_profile();
-    // open tunnel: braces over the two centreline columns
-    translate([0, -aio_r, 2.6+H-wall]) rrect(canopy_w-2, 5, 1.4, wall);
-    translate([0, aio_r, 2.6+H-wall]) rrect(canopy_w-2, 5, 1.4, wall);
+    // open tunnel: braces over the two centreline columns (follow the slope)
+    for (sy=[-1,1]) translate([0, sy*aio_r, 2.6+rail_top(sy*aio_r)-wall])
+        rrect(canopy_w-2, 5, 1.4, wall);
     // exposed screw heads along the rails (photo look): a row of 5 domed
     // button heads + hex socket per side, WELDED 0.6 into the rail on the
     // always-solid lower band of the profile (v3.1 floated them 1.35 mm

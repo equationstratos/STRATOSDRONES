@@ -7,7 +7,7 @@ One parametric file, `frame.scad`, `PART`-selected like every Stratos model.
 | PART | Print | Note |
 |---|---|---|
 | `frame` | 1× | unibody plate: X arms → 0802 pods (3×M1.4 Ø6.6) + whoop 25.5 AIO posts + battery strap slots + feet |
-| `canopy` | 1× | v3 EAGLE2-STYLE: two long PARALLEL RAILS (open tunnel) on the AIO stack, trussed cutouts, cam clamp at the nose, raked antenna seats at the tail |
+| `canopy` | 1× | v3.4 EAGLE2-STYLE: full-length rails with a SLOPING top — tall faceted octagonal nose (kidney cutouts + cam screw) down to a low chamfered tail; trussed slots, 5 screw heads/rail, raked antenna seats |
 | `prop` / `motor` | — | viewer/playground meshes (buy real ones) |
 | `board/airunit/fpvcam/rxmod/battery/antennas` | — | electronics + pack + antennas — viewer meshes (buy, don't print) |
 | `assembly` | — | full preview: frame + canopy + ELECTRONICS + battery + antennas + motors (ghost props) |
