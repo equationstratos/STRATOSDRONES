@@ -30,7 +30,10 @@ sdk/python/         stratospy: thin djitellopy add-on for STRATOS extensions + e
 android/            Android ground-control app (Tello SDK 2.0 client — takeoff/land/flip, joysticks, live video)
 fr4n6/              Fr4n6-001 — the 5" brushless FPV-class model (charter, CAD, hardware plan; same fc_core)
 foldable/           Fr4n7-F — folding-arm variant (spring pivots + latch; button or `deploy`-servo release; CAD + animated viewer)
+fpv85/              Fr4n8-001 — outdoor micro FPV, 85 mm class (ELRS radio + analog 5.8G video, 2S brushless; CAD + viewer + playground sim)
+fpv2/               Fr4n9-001 — outdoor 2" FPV, 98 mm (same design language + SAME shared AIO board as fpv85)
 hardware/pcb/       KiCad project + JLCPCB fab outputs (gerbers, BOM, CPL) + component map
+hardware/pcb_fpv/   STRATOS FPV AIO — shared brushless 2S board for fpv85+fpv2 (design.py → CI-generated KiCad board)
 hardware/frame/     Parametric OpenSCAD frames → STL:
                       • frame.scad …        open racing-style X-frame
                       • tello_style/ …      closed Tello-size clamshell body

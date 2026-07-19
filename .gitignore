@@ -29,6 +29,12 @@ hardware/frame/*.echo
 hardware/frame/*.csg
 foldable/cad/*.echo
 foldable/cad/*.csg
+fr4n6/cad/*.echo
+fr4n6/cad/*.csg
+fpv85/cad/*.echo
+fpv85/cad/*.csg
+fpv2/cad/*.echo
+fpv2/cad/*.csg
 
 # misc
 *.log
