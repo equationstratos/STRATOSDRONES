@@ -4,9 +4,9 @@ name: hardware
 # v8 reads the v7 files this repo commits).
 on:
   push:
-    paths: ['hardware/pcb/**', '.github/workflows/hardware.yml']
+    paths: ['hardware/pcb/**', 'hardware/pcb_fpv/**', '.github/workflows/hardware.yml']
   pull_request:
-    paths: ['hardware/pcb/**']
+    paths: ['hardware/pcb/**', 'hardware/pcb_fpv/**']
 
 jobs:
   generate-and-check:
@@ -36,3 +36,37 @@ jobs:
         with:
           name: jlcpcb-fab
           path: hardware/pcb/jlcpcb/
+
+  # STRATOS FPV AIO (hardware/pcb_fpv) — the shared brushless 2S board for
+  # fpv85 + fpv2. Its .kicad_pcb is NOT committed: this job generates it (the
+  # sandbox that authors design.py has no pcbnew) and uploads board + fab as
+  # artifacts. assert_placement() inside gen_pcb.py is the density gate
+  # (32x32 first try; grow BOARD on failure — see pcb_fpv/KNOWN_GAPS.md §3).
+  board-fpv:
+    runs-on: ubuntu-latest
+    container: kicad/kicad:8.0
+    steps:
+      - uses: actions/checkout@v4
+      - name: Generate FPV AIO board + pinmap + schematic
+        shell: bash
+        run: |
+          cd hardware/pcb_fpv
+          python3 scripts/design.py
+          python3 scripts/gen_pcb.py
+          python3 scripts/gen_pinmap.py
+          python3 scripts/gen_schematic.py
+      - name: DRC (pre-routing, informational)
+        shell: bash
+        run: |
+          cd hardware/pcb_fpv
+          kicad-cli pcb drc --exit-code-violations --severity-error \
+            stratos_fpv_aio.kicad_pcb || echo "DRC reported items (expected pre-routing; see KNOWN_GAPS)"
+      - name: Export fab package
+        shell: bash
+        run: cd hardware/pcb_fpv && python3 scripts/export_fab.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: jlcpcb-fpv
+          path: |
+            hardware/pcb_fpv/stratos_fpv_aio.kicad_pcb
+            hardware/pcb_fpv/jlcpcb/

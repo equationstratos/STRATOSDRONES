@@ -1,0 +1,63 @@
+(kicad_sch (version 20230121)
+
+  (uuid "b5838ec6-c3a9-4932-a0fe-3106aa70060b")
+
+  (paper "A4")
+
+  (title_block
+    (title "STRATOS FPV AIO")
+    (date "2024-06-17")
+    (rev "1.0")
+    (company "Equation Stratos")
+    (comment 1 "Shared brushless 2S AIO — fpv85 (Fr4n8) + fpv2 (Fr4n9)")
+    (comment 2 "Generated from design.py")
+    (comment 3 "Linked to stratos_fpv_aio.kicad_pcb")
+  )
+
+  (lib_symbols
+    (symbol "Device:R"
+      (pin_numbers hide)
+      (pin_names (offset 0.254))
+      (property "Reference" "R" (id 0) (at 2.032 0 90))
+      (property "Value" "R" (id 1) (at 0 0 90))
+      (symbol "R_0_1"
+        (rectangle (start -1.016 -2.54) (end 1.016 2.54)
+          (stroke (width 0.254)) (fill (type none))))
+      (symbol "R_1_1"
+        (pin passive line (at 0 3.81 270) (length 1.27) (name "~" (effects (font (size 1.27 1.27) (thickness 0.254)))) (number "1" (effects (font (size 1.27 1.27) (thickness 0.254)))))))
+
+    (symbol "Device:C"
+      (pin_numbers hide)
+      (pin_names (offset 0.254))
+      (property "Reference" "C" (id 0) (at 0.635 2.54 0))
+      (property "Value" "C" (id 1) (at 0.635 -2.54 0))
+      (symbol "C_0_1"
+        (polyline (pts (xy -2.032 -0.762) (xy 2.032 -0.762)) (stroke (width 0.508))))
+      (symbol "C_1_1"
+        (pin passive line (at 0 3.81 270) (length 3.048) (name "~" (effects (font (size 1.27 1.27) (thickness 0.254)))) (number "1" (effects (font (size 1.27 1.27) (thickness 0.254)))))))
+
+    (symbol "Connector:USB_C_Receptacle"
+      (property "Reference" "J" (id 0) (at 0 13.97 0))
+      (property "Value" "USB_C_Receptacle" (id 1) (at 0 -13.97 0))
+      (symbol "USB_C_Receptacle_0_1"
+        (rectangle (start -10.16 13.97) (end 10.16 -13.97)
+          (stroke (width 0.254)) (fill (type background))))
+      (symbol "USB_C_Receptacle_1_1"
+        (pin passive line (at -12.7 12.7 0) (length 2.54) (name "GND" (effects (font (size 1.27 1.27) (thickness 0.254)))) (number "A1" (effects (font (size 1.27 1.27) (thickness 0.254)))))))
+
+    (symbol "MCU_Espressif:ESP32-P4"
+      (property "Reference" "U" (id 0) (at 0 1.27 0))
+      (property "Value" "ESP32-P4" (id 1) (at 0 -1.27 0))
+      (symbol "ESP32-P4_0_1"
+        (rectangle (start -12.7 25.4) (end 12.7 -25.4)
+          (stroke (width 0.254)) (fill (type background))))
+      (symbol "ESP32-P4_1_1"
+        (pin input line (at -15.24 22.86 0) (length 2.54) (name "VDD_LP" (effects (font (size 1.27 1.27) (thickness 0.254)))) (number "9" (effects (font (size 1.27 1.27) (thickness 0.254)))))))
+  )
+
+  (wire (pts (xy 100 100) (xy 100 110)) (stroke (width 0.254)) (uuid "7610a371-676c-4b8e-9804-89eb458e1f1b"))
+
+  (text "Component Count: 158" (at 50 50 0) (effects (font (size 1.27 1.27) (thickness 0.254))))
+  (text "Schematic generated from design.py" (at 50 30 0) (effects (font (size 1 1) (thickness 0.15))))
+
+)
