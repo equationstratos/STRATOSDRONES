@@ -1,10 +1,12 @@
-// STRATOSDRONE Fr4n8-001 (fpv85) — outdoor micro-FPV frame, 85 mm class (v0, M0).
+// STRATOSDRONE Fr4n8-001 (fpv85) — outdoor micro-FPV frame, 85 mm class (v1, M0).
 //
 // Clean-room design. Visual references (owner's photos, measurement/style
 // only, nothing copied): an ~84 x 83 x 32 mm "Eagle-class" micro FPV quad
 // (whence the overall footprint and the 14000KV 2S motor class) and a
-// white-side-plate toothpick canopy. All geometry here is our own
-// parametric OpenSCAD.
+// white-side-plate toothpick canopy — v1 follows the owner's THIRD photo set
+// (true toothpick: two SIDE PLATES + top deck, big-lens cam between them,
+// finned air-unit box, two rear antennas, XT30 + pack strapped UNDER the
+// plate). All geometry here is our own parametric OpenSCAD.
 //
 // Architecture: one printed UNIBODY bottom plate (X arms to four 0802-class
 // motor pods + whoop-standard 25.5x25.5 AIO mount + battery strap slots +
@@ -40,11 +42,12 @@ batt_w    = 18;        // 2S 450 mAh pack width                            // TU
 strap_w   = 7; strap_l = 2.2;   // battery strap slots
 cam_w     = 14.4;      // nano cam side-screw width (14 mm cams + clr)     // TUNE
 cam_tilt  = 15;        // uptilt (deg)                                     // TUNE
-foot_h    = 7;         // landing feet under the pods
-canopy_l  = 30;        // canopy footprint length (covers cam->RX shelf)
-canopy_w  = 22;        // canopy width (inside the prop-free centre zone)
-canopy_h  = 17;        // apex height (overall ≈ plate+canopy ≈ 20 -> H~32 w/ antenna)
-wall      = 2.0;
+foot_h    = 7;         // pod feet (the pack under the plate lands first — toothpick way)
+batt_t    = 8;         // 2S pack thickness (strapped UNDER the plate)      // TUNE
+canopy_l  = 34;        // side-plate length
+canopy_w  = 22;        // outside width across the two side plates
+canopy_h  = 16;        // side-plate height above its base
+wall      = 2.0;       // side-plate / deck thickness
 
 posXY = wheelbase/2/sqrt(2);          // 22.98 — motor centres (X layout)
 echo(str("ASSERT wheelbase=", wheelbase,
@@ -99,45 +102,75 @@ module frame() {
 
 /* ---------------- canopy (side plates + spine, camera + VTX + RX) -------- */
 module canopy() {
-    // legs: down to the AIO mount pattern (the same M2 screws hold
-    // canopy + board + plate posts — the classic whoop stack)
+    // legs down to the AIO stack (same M2 screws: canopy -> board -> posts)
     for (sx=[-1,1], sy=[-1,1]) translate([sx*aio/2, sy*aio/2, 0])
         difference() {
             hull() { cylinder(d=5.4, h=1.6);
-                     translate([-sx*4.5, -sy*4.5, 3.4]) cylinder(d=4.6, h=1.2); }
+                     translate([-sx*(aio/2 - (canopy_w/2-wall/2)), -sy*3.5, 2.6]) cylinder(d=4.6, h=1.4); }
             translate([0,0,-eps]) cylinder(d=2.2, h=6);
         }
-    // shell: octagonal plan (45-deg corner cuts keep it inside the prop-free
-    // centre zone), sides + top spine
-    shell_z0 = 4.0;
-    difference() {
-        union() {
-            hull() {
-                translate([0,0,shell_z0]) linear_extrude(0.8) offset(2) oct(canopy_w-4, canopy_l-4);
-                translate([0,-2,canopy_h-2]) linear_extrude(2) offset(2) oct(canopy_w-9, canopy_l-13);
-            }
+    // two SIDE PLATES (the photo's aluminium look, printed): raked front,
+    // lightening holes, joined by a flat TOP DECK
+    for (sx=[-1,1]) translate([sx*(canopy_w/2-wall), 0, 2.6])
+        rotate([90,0,90]) linear_extrude(wall, center=true) difference() {
+            polygon([[-canopy_l/2+3,0],[canopy_l/2,0],[canopy_l/2,canopy_h-4],
+                     [canopy_l/2-6,canopy_h],[-canopy_l/2+9,canopy_h],[-canopy_l/2+3,6]]);
+            translate([canopy_l/2-11, canopy_h-7]) circle(d=5);       // lightening
+            translate([canopy_l/2-18, canopy_h-8]) circle(d=4);
+            translate([-2, 5]) square([10, 4], center=true);          // strap/wire slot
         }
-        // hollow it
-        hull() {
-            translate([0,0,shell_z0-eps]) linear_extrude(0.8) offset(2-wall) oct(canopy_w-4, canopy_l-4);
-            translate([0,-2,canopy_h-2-wall]) linear_extrude(2) offset(2-wall) oct(canopy_w-9, canopy_l-13);
-        }
-        // open the front face for the camera
-        translate([0, -canopy_l/2+3, shell_z0+6]) cube([cam_w+2, 10, 12], center=true);
-        // antenna exit (rear, angled up)
-        translate([0, canopy_l/2-1, canopy_h-6]) rotate([65,0,0]) cylinder(d=4.6, h=16, center=true);
+    translate([0, 2, 2.6+canopy_h-wall]) rrect(canopy_w, canopy_l-9, 1.6, wall);  // top deck
+    // camera RING at the raked front (big-lens nano cam, 15 deg uptilt)
+    translate([0, -canopy_l/2+4.5, 2.6+7.5]) rotate([90-cam_tilt,0,0]) difference() {
+        cylinder(d=cam_w+3.4, h=3.4, center=true);
+        cylinder(d=cam_w-1.5, h=4.0, center=true);
     }
-    // camera cradle: two tilted ears inside the front opening
-    for (sx=[-1,1]) difference() {
-        translate([sx*(cam_w/2+1.2), -canopy_l/2+6, shell_z0+6.5])
-            rotate([cam_tilt,0,0]) cube([2.4, 9, 10.5], center=true);
-        translate([sx*(cam_w/2+1.2), -canopy_l/2+6, shell_z0+6.5])
-            rotate([cam_tilt,0,0]) rotate([0,90,0]) cylinder(d=2.1, h=6, center=true);
+    // rear antenna clamp bar: two angled tubes' seats
+    translate([0, canopy_l/2-3.5, 2.6+canopy_h-wall-2]) difference() {
+        rrect(canopy_w-4, 5, 1.6, 4);
+        for (sx=[-1,1]) translate([sx*5.5, 0, -eps]) rotate([-28,0,0]) cylinder(d=2.1, h=9);
     }
-    // VTX shelf (mid) + RX shelf (rear)
-    translate([0, 2.5, shell_z0+0.8]) rrect(canopy_w-8, 11, 2, 1.8);
-    translate([0, canopy_l/2-5.5, shell_z0+0.8]) rrect(canopy_w-10, 6.5, 2, 1.8);
 }
+
+/* ============ ELECTRONICS (viewer/preview meshes — buy, don't print) ====== */
+module board() {           // the shared STRATOS FPV AIO, 32x32 green
+    color("#0a5a30") rrect(32, 32, 2.5, 1.6);
+    color("#caa14a") for (sx=[-1,1], sy=[-1,1])
+        translate([sx*aio/2, sy*aio/2, -eps]) cylinder(d=4, h=1.8);
+}
+module airunit() {         // finned video/air-unit box (photo look)
+    difference() {
+        rrect(16, 19, 1.6, 13);
+        for (i=[-3:3]) translate([i*2.1, -1.5, 4]) cube([1.1, 14, 12], center=false);
+    }
+    translate([0, 9.5, 4]) rotate([-90,0,0]) cylinder(d=3.2, h=2.4);   // rear plug
+}
+module fpvcam() {          // big-lens nano cam
+    rrect(cam_w, 10, 1.8, cam_w);                          // body cube
+    translate([0, -6.4, cam_w/2]) rotate([90,0,0]) {
+        cylinder(d=11.4, h=5.2);                           // barrel
+        translate([0,0,5.2]) cylinder(d=9.0, h=1.6);       // lens ring
+        color("#0b1e3a") translate([0,0,6.6]) sphere(d=7.2);   // glass
+    }
+}
+module rxmod() {           // ELRS RX + wire antenna
+    rrect(11, 14, 1.2, 2.4);
+    translate([2.5, 6.5, 1.2]) rotate([-60,0,0]) cylinder(d=1.1, h=26);
+}
+module battery_pack() {    // 2S pack strapped UNDER the plate + XT30 pigtail
+    rn=2.2;
+    minkowski() { cube([batt_w-2*rn, 34-2*rn, batt_t-2*rn], center=true); sphere(r=rn, $fn=24); }
+    translate([batt_w/2-2, 19.5, 0]) rotate([90,0,0]) cylinder(d=3.4, h=6);      // leads
+    color("#f5b301") translate([batt_w/2-2, 24.5, 0]) cube([7, 10, 6], center=true);  // XT30
+}
+module antennas() {        // two rear antennas, angled up-back (photo)
+    for (sx=[-1,1]) translate([sx*5.5, canopy_l/2-3.5, canopy_h-2])
+        rotate([-28,0,0]) {
+            cylinder(d=1.7, h=34);                          // tube
+            translate([0,0,34]) cylinder(d=2.6, h=8);       // sleeve tip
+        }
+}
+
 module oct(w, l) {   // octagon: square with 45-deg corner cuts (prop clearance)
     intersection() { square([w, l], center=true); rotate(45) square([(w+l)*0.62, (w+l)*0.62], center=true); }
 }
@@ -177,7 +210,15 @@ module ghost_batt()  { translate([0, 4, -0.1-9.5+0]) ; translate([0,4,plate_t+ai
 module assembly() {
     color("#23272e") frame();
     color("#e8e8ea") translate([0, 0, plate_t+aio_post_h+1.6]) canopy();  // on the board top
-    ghost_props(); ghost_motors(); ghost_board();
+    translate([0, 0, plate_t+aio_post_h]) board();
+    color("#1a1c20") translate([0, 3, plate_t+aio_post_h+1.6+3.4]) airunit();
+    color("#141416") translate([0, -canopy_l/2+7.5, plate_t+aio_post_h+1.6+2.6]) fpvcam();
+    color("#1c2430") translate([0, 10, plate_t+aio_post_h+1.6+canopy_h-4]) rxmod();
+    color("#101012") translate([0, 0, plate_t+aio_post_h+1.6+2.6]) antennas();
+    color("#2b2f36") translate([0, 2, -batt_t/2]) battery_pack();
+    color("#3f8f7a") for (sx=[-1,1], sy=[-1,1])
+        translate([sx*posXY, sy*posXY, plate_t]) motor();
+    ghost_props();
 }
 
 /* ---------------- dispatch ---------------- */
@@ -185,4 +226,10 @@ if      (PART == "frame")  frame();
 else if (PART == "canopy") canopy();
 else if (PART == "prop")   prop();
 else if (PART == "motor")  motor();
+else if (PART == "board")    board();
+else if (PART == "airunit")  airunit();
+else if (PART == "fpvcam")   fpvcam();
+else if (PART == "rxmod")    rxmod();
+else if (PART == "battery")  battery_pack();
+else if (PART == "antennas") antennas();
 else                       assembly();

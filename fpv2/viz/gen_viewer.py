@@ -24,11 +24,12 @@ OUT = os.path.join(HERE, "drone_viewer.html")
 MODEL = dict(name="FR4N9", sub="FPV extérieur 2\" · 98 mm · 2S", wb=98,
              posxy=0.034648, prop_z=0.024, motor_z=0.0114, canopy_z=0.0162,
              frame_z=0.008,
+             elec=dict(board=[0,0,6.6], airunit=[0,3,11.6], fpvcam=[0,-9.5,10.8], rxmod=[0,10,20.2], antennas=[0,0,10.8], battery=[0,2,-4.5]),
              specs=[("Entraxe", "98 mm"), ("Hélices", "2\" (51 mm) tri-pales"),
                     ("Moteurs", "1102 ~10000KV 2S"),
                     ("ESC", "AIO BLHeli_S/Bluejay"),
                     ("Radio", "ELRS (CRSF)"), ("Vidéo", "5,8 GHz analogique"),
-                    ("Batterie", "2S 650 mAh"), ("AUW cible", "90-110 g")])
+                    ("Batterie", "2S 650 mAh"), ("Batterie (pose)", "sous la plaque (sangle)"), ("AUW cible", "90-110 g")])
 
 
 def data_url(path):
@@ -133,7 +134,7 @@ TEMPLATE = r"""<!DOCTYPE html>
       <h2>Affichage</h2>
       <div style="display:flex;justify-content:space-between"><span>Rotation hélices</span>
         <span class="val" id="spinV">arrêt</span></div>
-      <input type="range" id="spin" min="0" max="100" value="0"/>
+      <input type="range" id="spin" min="0" max="100" value="40"/>
       <div class="btns" style="margin-top:10px">
         <button id="bWire">Fil de fer</button>
         <button id="bGrid" class="on">Grille</button>
@@ -285,12 +286,31 @@ for (const [sx, sy] of [[1,1],[-1,1],[-1,-1],[1,-1]]){
   gProp.add(pm); propMeshes.push(pm);
 }
 
+// electronics + battery + antennas (positions from the SCAD assembly)
+function place(b64, colr, met, rgh, off){
+  const m2 = mesh(b64, colr, met, rgh);
+  m2.position.set(off[0]/1000, off[1]/1000, M.frame_z + off[2]/1000);
+  return m2;
+}
+const gElec = group('elec');
+gElec.add(place(STLB64.board,   0x0a5a30, .2, .5, M.elec.board));
+gElec.add(place(STLB64.airunit, 0x1a1c20, .5, .45, M.elec.airunit));
+gElec.add(place(STLB64.fpvcam,  0x141416, .3, .35, M.elec.fpvcam));
+gElec.add(place(STLB64.rxmod,   0x1c2430, .3, .5, M.elec.rxmod));
+const gBatt = group('battery');
+gBatt.add(place(STLB64.battery, 0x2b2f36, .25, .55, M.elec.battery));
+const gAnt = group('antennas');
+gAnt.add(place(STLB64.antennas, 0x101012, .3, .5, M.elec.antennas));
+
 // ---- part toggles ----
 const GROUPS = {
   frame:  {label:'Châssis (plaque + pods)', color:'#23272e'},
-  canopy: {label:'Canopy (cam + VTX + RX)', color:'#e8e8ea'},
+  canopy: {label:'Canopy (plaques + pont)', color:'#e8e8ea'},
   motors: {label:'Moteurs 1102',            color:'#8b929c'},
   props:  {label:'Hélices 2" (51 mm)',      color:'#2f6fed'},
+  elec:   {label:'Électronique (carte + air unit + cam + RX)', color:'#0a5a30'},
+  battery:{label:'Batterie 2S (sous la plaque)', color:'#2b2f36'},
+  antennas:{label:'Antennes (VTX + RX)',        color:'#101012'},
 };
 const groupsEl = document.getElementById('groups');
 for (const k of Object.keys(GROUPS)){
@@ -317,7 +337,8 @@ let wire=false;
 document.getElementById('bWire').addEventListener('click', e=>{ wire=!wire; e.target.classList.toggle('on',wire);
   scene.traverse(o=>{ if(o.isMesh) o.material.wireframe=wire; }); });
 document.getElementById('bGrid').addEventListener('click', e=>{ grid.visible=!grid.visible; e.target.classList.toggle('on',grid.visible); });
-let spinRate=0;
+let spinRate=0.4*60;                       // hélices en rotation par défaut
+document.getElementById('spinV').textContent='40%';
 document.getElementById('spin').addEventListener('input', e=>{ spinRate=e.target.value/100*60;
   document.getElementById('spinV').textContent=e.target.value==0?'arrêt':e.target.value+'%'; });
 const R=0.22;
@@ -687,13 +708,19 @@ def main():
             .replace("__SUB__", MODEL["sub"])
             .replace("__SPECS__", specs)
             .replace("__MODEL__", json.dumps(
-                {k: MODEL[k] for k in ("posxy", "prop_z", "motor_z", "canopy_z", "frame_z")},
+                {k: MODEL[k] for k in ("posxy", "prop_z", "motor_z", "canopy_z", "frame_z", "elec")},
                 separators=(",", ":")))
             .replace("__STLS__", json.dumps({
                 "frame": b64(os.path.join(STL, "frame.stl")),
                 "canopy": b64(os.path.join(STL, "canopy.stl")),
                 "prop": b64(os.path.join(STL, "prop.stl")),
                 "motor": b64(os.path.join(STL, "motor.stl")),
+                "board": b64(os.path.join(STL, "board.stl")),
+                "airunit": b64(os.path.join(STL, "airunit.stl")),
+                "fpvcam": b64(os.path.join(STL, "fpvcam.stl")),
+                "rxmod": b64(os.path.join(STL, "rxmod.stl")),
+                "battery": b64(os.path.join(STL, "battery.stl")),
+                "antennas": b64(os.path.join(STL, "antennas.stl")),
             }, separators=(",", ":"))))
     with open(OUT, "w") as f:
         f.write(html)
