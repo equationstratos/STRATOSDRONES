@@ -190,6 +190,77 @@ void fc_sdk_handle_line(fc_sdk_t *s, const char *line_in)
     }
     if (!strcmp(c, "EXT")) { handle_ext(s, tok, n); return; }
 
+    /* --- STRATOS mode / show / figure extensions --- */
+    if (!strcmp(c, "mode") && n == 2) {
+        if (!strcmp(tok[1], "?")) {
+            reply(s, fc_mode_name(fc_mode_get(s->fc)));
+            return;
+        }
+        fc_mode_t want;
+        if (fc_mode_parse(tok[1], &want) && fc_mode_request(s->fc, want))
+            reply(s, "ok");
+        else reply(s, "error");
+        return;
+    }
+    if (!strcmp(c, "timesync") && n == 2) {
+        char *end;
+        double ms = strtod(tok[1], &end); /* epoch ms: needs double precision */
+        if (end != tok[1] && *end == '\0' && ms >= 0.0) {
+            fc_show_time_sync(s->fc, ms);
+            reply(s, "ok");
+        } else reply(s, "error");
+        return;
+    }
+    if (!strcmp(c, "show") && n >= 2) {
+        if (!strcmp(tok[1], "clear") && n == 2) {
+            fc_show_clear(s->fc);
+            reply(s, "ok");
+        } else if (!strcmp(tok[1], "count?") && n == 2) {
+            char b[16];
+            snprintf(b, sizeof(b), "%d", fc_show_count(s->fc));
+            reply(s, b);
+        } else if (!strcmp(tok[1], "key") && n == 7) {
+            float t, x, y, z, yw;
+            if (parse_f(tok[2], &t) && parse_f(tok[3], &x) &&
+                parse_f(tok[4], &y) && parse_f(tok[5], &z) &&
+                parse_f(tok[6], &yw) && t >= 0 &&
+                fc_show_add_key(s->fc, (uint32_t)t, x, y, z, yw))
+                reply(s, "ok");
+            else reply(s, "error");
+        } else if (!strcmp(tok[1], "start") && n == 3) {
+            char *end;
+            double t0 = strtod(tok[2], &end); /* epoch ms (0 = now) */
+            if (end != tok[2] && *end == '\0' && fc_show_start(s->fc, t0))
+                reply(s, "ok");
+            else reply(s, "error");
+        } else if (!strcmp(tok[1], "stop") && n == 2) {
+            fc_show_stop(s->fc);
+            reply(s, "ok");
+        } else reply(s, "error");
+        return;
+    }
+    if (!strcmp(c, "figure") && n >= 2) {
+        float p[5];
+        bool ok = true;
+        int np = n - 2;
+        if (np > 5) { reply(s, "error"); return; }
+        for (int i = 0; i < np && ok; i++) ok = parse_f(tok[i + 2], &p[i]);
+        if (!ok) { reply(s, "error"); return; }
+        if (!strcmp(tok[1], "circle") && np == 3)
+            ok = fc_figure_circle(s->fc, p[0], p[1], p[2]);
+        else if (!strcmp(tok[1], "spiral") && np == 4)
+            ok = fc_figure_spiral(s->fc, p[0], p[1], p[2], p[3]);
+        else if (!strcmp(tok[1], "line") && np == 4)
+            ok = fc_figure_line(s->fc, p[0], p[1], p[2], p[3]);
+        else if (!strcmp(tok[1], "poly") && np == 3)
+            ok = fc_figure_poly(s->fc, (int)p[0], p[1], p[2]);
+        else if (!strcmp(tok[1], "wave") && np == 5)
+            ok = fc_figure_wave(s->fc, p[0], p[1], p[2], p[3], p[4]);
+        else ok = false;
+        reply(s, ok ? "ok" : "error");
+        return;
+    }
+
     /* --- read commands --- */
     if (c[strlen(c) - 1] == '?') {
         char b[64];
@@ -204,6 +275,8 @@ void fc_sdk_handle_line(fc_sdk_t *s, const char *line_in)
                      s->plat->get_wifi_snr ? s->plat->get_wifi_snr(s->user) : 90);
         } else if (!strcmp(c, "sdk?")) {
             snprintf(b, sizeof(b), "20");
+        } else if (!strcmp(c, "mode?")) {
+            snprintf(b, sizeof(b), "%s", fc_mode_name(fc_mode_get(s->fc)));
         } else if (!strcmp(c, "sn?")) {
             snprintf(b, sizeof(b), "%s",
                      s->plat->get_sn ? s->plat->get_sn(s->user) : "STRATOS001");

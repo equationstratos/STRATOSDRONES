@@ -58,7 +58,7 @@ Decisions:
 Four modes in `fc_core/src/fc_mode.c`, arbitrated every commander tick:
 
 ```
-MANUAL      CRSF sticks -> acro rates (or angle, CH6 sub-pos) -> mixer direct
+MANUAL      CRSF sticks -> acro rates (or angle, CH7 sub-mode) -> mixer direct
 STABILIZED  pos/vel loops + flow/ToF; sticks or SDK `rc` = velocity setpoints
 PROGRAM     Tello-SDK verbs (takeoff/land/go/rc/...) — today's default path
 SWARM       fc_show keyframe playback -> position setpoints, clock-synced
@@ -66,12 +66,15 @@ SWARM       fc_show keyframe playback -> position setpoints, clock-synced
 
 Arbitration rules (in priority order):
 
-1. **CRSF failsafe** (no valid frame 300 ms while radio was live) → emergency
-   motor cut. Non-negotiable outdoors.
-2. **CH5 low** (disarm) → disarm, always.
-3. **CH6** (3-pos) selects MANUAL / STABILIZED / SWARM-armed *when the radio
-   link is live* — the safety pilot outranks the ground station.
-4. SDK `mode` verb selects PROGRAM/SWARM when no live radio overrides.
+1. **CRSF failsafe** (no valid frame 300 ms while radio was live): MANUAL →
+   emergency motor cut (no hold to fall back on — the FPV convention);
+   radio-owned STABILIZED → auto-land. Non-negotiable outdoors.
+2. **CH5 low** (disarm) while the radio is live → motors cut + IDLE, always.
+3. **CH6** (3-pos) while the radio is live: **high = MANUAL** (safety pilot
+   seizes the drone), **mid = STABILIZED**, **low = defer to the SDK-requested
+   mode**. CH7 picks the MANUAL sub-mode (low = angle, high = acro).
+4. SDK `mode` verb selects PROGRAM/STABILIZED/SWARM (MANUAL is refused
+   without a live radio); a live radio's CH6 high/mid outranks it.
 5. Default (no radio ever seen, no verb) = **PROGRAM** ≡ the exact behavior
    every existing model, test and sim has today.
 
@@ -118,12 +121,13 @@ timesync <epoch_ms>
   needs the duty headroom), SF7 / BW250 / CR4:5 ≈ 11 kbps. All params
   compile-time + `param` verbs.
 - **Frame** (max 64 B):
-  `'S' | ver:4 type:4 | swarm_id | src | dst | seq | len | payload ≤54 | crc16-ccitt`
+  `'S' | ver:4 type:4 | swarm_id | src | dst | seq | len | payload ≤55 | crc16-ccitt`
   — `dst 0xFF` = broadcast, drone ids 1-250, dongle = 0.
 - **Types**: `CMD_LINE` (one SDK ASCII line, ACKed) · `RESP_LINE` ·
-  `TELEM` (24 B binary: state, x/y/z cm, yaw, vbat, bat %, rssi — 2 Hz per
-  drone, TDMA slot = `drone_id × 40 ms` after each beacon) · `SHOW_CHUNK`
-  (keyframe upload, ACK + retry) · `TIME_BEACON` (1 Hz: epoch µs [+ T0]) ·
+  `TELEM` (14 B binary: state, mode, x/y/z cm, yaw, vbat, bat %, rssi,
+  show flag — 2 Hz per drone, TDMA slot = `drone_id × 40 ms` after each
+  beacon) · `SHOW_CHUNK` (4 keyframes of 12 B per frame, ACK + retry) ·
+  `TIME_BEACON` (1 Hz: epoch ms u64 [+ T0 u64]) ·
   `SWARM_START` / `SWARM_ABORT` (broadcast, repeated ×3) · `ACK`/`NAK`.
 - **Honesty**: LoRa is the *command/telemetry/choreography* channel, **not a
   piloting channel** — piloting stays on ELRS; shows are pre-uploaded so the

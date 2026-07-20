@@ -21,6 +21,8 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include "fc_math.h"
+#include "fc_mode.h"
+#include "fc_show.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -103,6 +105,9 @@ typedef struct {
     float takeoff_height_m, takeoff_vz, land_vz;
     float hover_thr;                /* nominal hover throttle 0..1 */
     float rc_vmax_xy, rc_vmax_z;    /* full-stick rc velocity, m/s */
+    /* manual (MANUAL mode: angle/acro FPV) */
+    float angle_max_deg;            /* full-stick lean in angle sub-mode */
+    float acro_rate_dps;            /* full-stick rotation rate in acro */
     /* flips */
     float flip_rate_dps, flip_min_bat_pct, flip_enable;
     /* battery */
@@ -210,6 +215,8 @@ typedef struct fc_core_s {
     /* commander / state machine */
     fc_state_t state;
     fc_cmdr_t cmdr;
+    fc_modes_t modes;               /* flight-mode manager (fc_mode.c) */
+    fc_show_t show;                 /* choreography executor (fc_show.c) */
     float state_t;                  /* time in current state, s */
     float flight_time_s;
     float land_still_s;

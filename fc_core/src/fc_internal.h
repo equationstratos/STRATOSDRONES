@@ -30,5 +30,12 @@ void fc_mixer_run(fc_core_t *fc);
 
 /* fc_commander.c */
 void fc_cmdr_step(fc_core_t *fc, float dt);  /* 100 Hz: setpoints + state machine */
+void fc_cmdr_force_state(fc_core_t *fc, fc_state_t st); /* MANUAL direct arm */
+
+/* fc_mode.c */
+void fc_mode_step(fc_core_t *fc, float dt);  /* 100 Hz, before the state machine */
+
+/* fc_show.c */
+void fc_show_step(fc_core_t *fc, float dt);  /* 100 Hz, SWARM playback */
 
 #endif

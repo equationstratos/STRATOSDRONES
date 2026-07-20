@@ -51,6 +51,9 @@ void fc_params_defaults(fc_params_t *p)
     p->hover_thr = 0.55f;
     p->rc_vmax_xy = 1.5f;
     p->rc_vmax_z = 1.0f;
+    /* manual (angle/acro FPV) */
+    p->angle_max_deg = 45.0f;
+    p->acro_rate_dps = 720.0f;
     /* flips */
     p->flip_rate_dps = 800.0f;
     p->flip_min_bat_pct = 50.0f;
@@ -77,6 +80,7 @@ static const struct { const char *name; size_t off; } k_table[] = {
     P(yaw_rate_max_dps), P(rate_max_dps),
     P(speed_cms), P(takeoff_height_m), P(takeoff_vz), P(land_vz), P(hover_thr),
     P(rc_vmax_xy), P(rc_vmax_z),
+    P(angle_max_deg), P(acro_rate_dps),
     P(flip_rate_dps), P(flip_min_bat_pct), P(flip_enable),
     P(vbat_full), P(vbat_empty), P(bat_low_pct), P(bat_crit_pct),
     P(cmd_timeout_s), P(tilt_kill_deg),
