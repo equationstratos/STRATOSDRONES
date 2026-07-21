@@ -7,12 +7,20 @@
 - **DXF** — the real **carbon profiles** (3 mm bottom, 2 mm top / camera
   plates) to send to a cutter, exactly as the JeNo is built.
 
-The design is a clean-room re-creation of the **JeNo Pocket V2** by **WE are
-FPV** (CC-BY-4.0, https://www.printables.com/model/1704840) — wide-X 2.5",
-whoop 25.5×25.5 M2 main stack + 13×13 rear RX stack, 9 mm motor mounts
-(1203-1303), O4-Lite-native camera bay, camera tilt 15-35°, three bottom-plate
-personalities. Geometry is our own OpenSCAD, re-branded STRATOS; go buy the
-original plates from WE are FPV.
+The `frame.scad` design is a clean-room re-creation of the **JeNo Pocket V2**
+by **WE are FPV** (CC-BY-4.0, https://www.printables.com/model/1704840) —
+wide-X 2.5", whoop 25.5×25.5 M2 main stack + 13×13 rear RX stack, 9 mm motor
+mounts (1203-1303), O4-Lite-native camera bay, camera tilt 15-35°, three
+bottom-plate personalities. Geometry is our own OpenSCAD, re-branded STRATOS.
+
+> **The genuine WE are FPV STEP is also included** — see
+> [`frame_jeno/`](frame_jeno/) (`JeNoPocket_V2.step`, CC-BY-4.0). The 3-D
+> **viewer** renders that real frame for maximum fidelity
+> ([`frame_jeno/step_to_stl.py`](frame_jeno/step_to_stl.py) meshes it to
+> `stl/frame_real.stl`); `frame.scad` here is the independent STRATOS variant
+> for those who want to print/cut the Stratos version. Attribution +
+> licence: [`frame_jeno/ATTRIBUTION.md`](frame_jeno/ATTRIBUTION.md). Go buy
+> the original plates from WE are FPV.
 
 ## Render
 

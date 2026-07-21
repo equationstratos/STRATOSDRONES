@@ -18,12 +18,14 @@ hardware + PCB, permissive licences, sim-first.
   + 13 × 13 mm rear RX stack, the three bottom-plate personalities
   (Classic / X-Core / Tank), 3 mm bottom + 2 mm top/camera carbon plates,
   9 mm motor mounts (1203-1303 class), camera tilt 15-35°, O4-Lite-native
-  camera bay. **The frame keeps their design** — per the user's brief — as a
-  *clean-room parametric OpenSCAD re-creation* from the published numbers
-  (like the Eagle2 case in [`../fpv85/`](../fpv85/)): every line of geometry
-  here is our own code, dimensioned from public specs, re-branded STRATOS
-  where possible, with attribution kept front and centre. Thank you WE are
-  FPV — go download (and buy plates for) the original.
+  camera bay. **The frame keeps their design** — per the user's brief. Two
+  forms live here: the **genuine WE are FPV STEP** (CC-BY-4.0) in
+  [`cad/frame_jeno/`](cad/frame_jeno/), which the 3-D viewer renders for full
+  fidelity; and a **clean-room parametric OpenSCAD variant**
+  ([`cad/frame.scad`](cad/frame.scad)) re-drawn from public specs and
+  re-branded STRATOS, for printing/cutting the Stratos version. Attribution +
+  licence in [`cad/frame_jeno/ATTRIBUTION.md`](cad/frame_jeno/ATTRIBUTION.md).
+  Thank you WE are FPV — go download (and buy plates for) the original.
 - The **drone-show pattern** (pre-uploaded time-stamped choreographies +
   one broadcast clock) and the **ExpressLRS + analog/O4 + BLHeli_S**
   outdoor micro ecosystem, as on fpv85/fpv2.

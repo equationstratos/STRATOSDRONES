@@ -21,11 +21,11 @@ VENDOR = os.path.join(REPO, "sim", "viz", "vendor")
 STL = os.path.join(REPO, "TinyHoopMK1", "cad", "stl")
 OUT = os.path.join(HERE, "drone_viewer.html")
 
-MODEL = dict(name="FR4N10", sub="FPV programmable / essaim · 2,5\" · 2S-3S", wb=115,
-             posxy=0.0405, motor_mx=0.042, motor_my=0.039,
-             prop_z=0.0124, motor_z=0.003, canopy_z=0.019, frame_z=0.0,
-             elec=dict(board=[0,0,6], airunit=[0,24.8,23], fpvcam=[11,22.3,19],
-                       rxmod=[0,-14,7], antennas=[0,-26,19], battery=[0,-10,21]),
+MODEL = dict(name="FR4N10", sub="FPV programmable / essaim · 2,5\" · 2S-3S", wb=116,
+             # motor-pad centres measured on the real JeNo Pocket V2 frame (mm)
+             motors=[[47,40],[-47,40],[-47,-38],[47,-38]],
+             prop_z=0.0125, motor_z=0.003, frame_z=0.0,
+             elec=dict(board=[0,-6,5], battery=[0,-10,20]),
              specs=[("Entraxe", "~115 mm (wide-X)"), ("Hélices", "2,5\" Gemfan 2520"),
                     ("Moteurs", "1203-1303 · 2S-3S"),
                     ("ESC", "AIO BLHeli_S/Bluejay · DShot600"),
@@ -269,61 +269,47 @@ const frameRoot = new THREE.Group(); scene.add(frameRoot);
 const G = {};
 function group(name){ const g = new THREE.Group(); G[name]=g; frameRoot.add(g); return g; }
 
-// carbon plates (dark matte with a faint sheen)
-const CARBON = 0x15171a;
-const gFrame  = group('frame');  { const m0 = mesh(STLB64.frame, CARBON, .25, .5);
+// the REAL JeNo Pocket V2 frame (STEP -> STL): bottom + top plates, camera
+// side plates, standoffs, cross-bars AND the camera, all in one carbon mesh
+const CARBON = 0x1a1d21;
+const gFrame = group('frame'); { const m0 = mesh(STLB64.frame, CARBON, .3, .5);
   m0.position.z = M.frame_z; gFrame.add(m0); }
-const gCanopy = group('canopy'); { const m1 = mesh(STLB64.canopy, CARBON, .25, .5);
-  m1.position.z = M.canopy_z; gCanopy.add(m1); }
-// motors + props on the WIDE-X arm tips (mx != my)
+// motors + props on the real arm-tip pads (measured from the frame)
 const gMot = group('motors');
-for (const [sx, sy] of [[1,1],[-1,1],[-1,-1],[1,-1]]){
+for (const [mx, my] of M.motors){
   const mm = mesh(STLB64.motor, 0x35383f, .85, .3);   // dark metallic bell
-  mm.position.set(sx*M.motor_mx, sy*M.motor_my, M.motor_z);
+  mm.position.set(mx/1000, my/1000, M.motor_z);
   gMot.add(mm);
 }
 const gProp = group('props');
 const propMeshes = [];
-for (const [sx, sy] of [[1,1],[-1,1],[-1,-1],[1,-1]]){
+for (const [mx, my] of M.motors){
+  const cw = (mx*my > 0);                              // diagonals share spin
   const pm = mesh(STLB64.prop, 0x8b9099, .15, .5);     // light-grey props (readable)
-  pm.position.set(sx*M.motor_mx, sy*M.motor_my, M.prop_z);
-  pm.scale.set(0.001, (sx*sy>0)?0.001:-0.001, 0.001);   // CW/CCW mirror
-  pm.userData.dir = (sx*sy>0)?1:-1;
-  pm.userData.front = (sy<0);
+  pm.position.set(mx/1000, my/1000, M.prop_z);
+  pm.scale.set(0.001, cw?0.001:-0.001, 0.001);         // CW/CCW mirror
+  pm.userData.dir = cw?1:-1;
+  pm.userData.front = (my > 0);
   gProp.add(pm); propMeshes.push(pm);
 }
-
-// electronics + battery + antennas (positions from the SCAD assembly)
+// FC board (sits low in the stack) + battery (on the top plate)
 function place(b64, colr, met, rgh, off){
   const m2 = mesh(b64, colr, met, rgh);
   m2.position.set(off[0]/1000, off[1]/1000, M.frame_z + off[2]/1000);
   return m2;
 }
 const gElec = group('elec');
-gElec.add(place(STLB64.board, 0x0b6b39, .15, .5, M.elec.board));   // AIO (axis-aligned)
-gElec.add(place(STLB64.airunit, 0x121316, .3, .5, M.elec.airunit)); // O4 Lite cam
-// two carbon camera side plates (mirror across x)
-for (const sx of [1,-1]){
-  const cp = place(STLB64.fpvcam, CARBON, .25, .5,
-                   [sx*M.elec.fpvcam[0], M.elec.fpvcam[1], M.elec.fpvcam[2]]);
-  cp.rotation.set(Math.PI/2, 0, Math.PI/2);
-  gElec.add(cp);
-}
-gElec.add(place(STLB64.rxmod, 0x1c2430, .3, .5, M.elec.rxmod));    // ELRS RX
+gElec.add(place(STLB64.board, 0x0b6b39, .15, .5, M.elec.board));
 const gBatt = group('battery');
 gBatt.add(place(STLB64.battery, 0x22262d, .1, .55, M.elec.battery));
-const gAnt = group('antennas');
-gAnt.add(place(STLB64.antennas, 0xb8a558, .5, .4, M.elec.antennas));
 
 // ---- part toggles ----
 const GROUPS = {
-  frame:  {label:'Plaque basse carbone (wide-X)', color:'#23272e'},
-  canopy: {label:'Plaque haute', color:'#e8e8ea'},
-  motors: {label:'Moteurs 1203-1303', color:'#2e6e63'},
-  props:  {label:'Hélices 2,5" (2520)',  color:'#4a4e55'},
-  elec:   {label:'Électronique (AIO + O4 Lite + plaques cam)', color:'#0a5a30'},
-  battery:{label:'Batterie 2S-3S', color:'#2b2f36'},
-  antennas:{label:'Support antennes (TPU)',        color:'#101012'},
+  frame:  {label:'Châssis JeNo Pocket V2 (STEP réel + caméra)', color:'#1a1d21'},
+  motors: {label:'Moteurs 1203-1303', color:'#35383f'},
+  props:  {label:'Hélices 2,5" (2520)',  color:'#8b9099'},
+  elec:   {label:'Carte AIO (dans le stack)', color:'#0b6b39'},
+  battery:{label:'Batterie 2S-3S', color:'#22262d'},
 };
 const groupsEl = document.getElementById('groups');
 for (const k of Object.keys(GROUPS)){
@@ -338,7 +324,6 @@ function setColor(g, hex){ if(!hex||!G[g]) return; const col=new THREE.Color(hex
   G[g].traverse(o=>{ if(o.isMesh) o.material.color.copy(col); }); }
 function applyColors(o){ if(!o) return;
   setColor('frame',  o.body!=null?o.body:o.frame);
-  setColor('canopy', o.capot!=null?o.capot:o.canopy);
   setColor('props',  o.propFront!=null?o.propFront:(o.props!=null?o.props:o.pr)); }
 applyColors({body:PARAMS.get('body'), capot:PARAMS.get('capot'), props:PARAMS.get('props')});
 addEventListener('message', e=>{ const m=e.data;
@@ -725,23 +710,17 @@ def main():
             .replace("__SUB__", MODEL["sub"])
             .replace("__SPECS__", specs)
             .replace("__MODEL__", json.dumps(
-                {k: MODEL[k] for k in ("posxy", "prop_z", "motor_z", "canopy_z", "frame_z", "elec")},
+                {k: MODEL[k] for k in ("motors", "prop_z", "motor_z", "frame_z", "elec")},
                 separators=(",", ":")))
             .replace("__STLS__", json.dumps({
-                # template keys -> TinyHoop parts (bottom plate = "frame",
-                # top plate = "canopy" toggle, O4 Lite = "airunit", camera
-                # side plate = "fpvcam", TPU guard = "rxmod" placeholder,
-                # TPU antenna mount = "antennas")
-                "frame": b64(os.path.join(STL, "bottom_classic.stl")),
-                "canopy": b64(os.path.join(STL, "top.stl")),
+                # frame = the REAL JeNo Pocket V2 STEP tessellated to STL
+                # (frame_jeno/step_to_stl.py) — includes the camera; motors,
+                # props, FC board and battery are added around it.
+                "frame": b64(os.path.join(STL, "frame_real.stl")),
                 "prop": b64(os.path.join(STL, "prop.stl")),
                 "motor": b64(os.path.join(STL, "motor.stl")),
                 "board": b64(os.path.join(STL, "board.stl")),
-                "airunit": b64(os.path.join(STL, "o4lite.stl")),
-                "fpvcam": b64(os.path.join(STL, "cam_plate.stl")),
-                "rxmod": b64(os.path.join(STL, "tpu_guard.stl")),
                 "battery": b64(os.path.join(STL, "battery.stl")),
-                "antennas": b64(os.path.join(STL, "tpu_antenna.stl")),
             }, separators=(",", ":"))))
     with open(OUT, "w") as f:
         f.write(html)
