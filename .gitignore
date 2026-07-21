@@ -39,3 +39,5 @@ fpv2/cad/*.csg
 # misc
 *.log
 .DS_Store
+TinyHoopMK1/cad/*.echo
+TinyHoopMK1/cad/*.csg
