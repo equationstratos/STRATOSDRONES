@@ -16,7 +16,9 @@
  *   RESP_LINE      SDK reply text
  *   TELEM          14 B binary (lorap_telem_t), 2 Hz per drone in the TDMA
  *                  slot drone_id * LORAP_SLOT_MS after each beacon
- *   SHOW_CHUNK     [first_idx u16][count u8][count x 12 B keyframes]
+ *   SHOW_CHUNK     [first_idx u16][count u8][count x 12 B keyframes], each
+ *                  keyframe = t_ms u32 | x_cm i16 | y_cm i16 | z_cm i16 |
+ *                  yaw_deg i16 (all little-endian)
  *   TIME_BEACON    [epoch_ms u64] or [epoch_ms u64][t0_ms u64]
  *   SWARM_START    [t0_ms u64] (broadcast, repeat x3)
  *   SWARM_ABORT    empty (broadcast, repeat x3)

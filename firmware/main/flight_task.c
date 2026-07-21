@@ -11,9 +11,17 @@
 #include "fc_core/fc_core.h"
 #include "fc_core/fc_sdk.h"
 #include "drivers.h"
+#include "board_select.h"
 #include "stratos.h"
 
 static const char *TAG = "flight";
+
+/* board-select motor output: DShot on the TinyHoop AIO, LEDC otherwise */
+#if BOARD_HAS_DSHOT
+#define MOTORS_WRITE(d) dshot_write(d)
+#else
+#define MOTORS_WRITE(d) motors_write(d)
+#endif
 
 static fc_core_t s_fc;
 static fc_sdk_t s_sdk;
@@ -112,6 +120,13 @@ void flight_task(void *arg)
         if (tick % 100 == 51) /* 10 Hz battery */
             fc_core_battery_update(&s_fc, vbat_read());
 
+#if BOARD_HAS_CRSF
+        /* ELRS sticks: latest decoded frame -> mode manager */
+        crsf_channels_t rc;
+        if (xQueueReceive(g_crsf_queue, &rc, 0) == pdTRUE)
+            fc_input_crsf(&s_fc, rc.ch, 16);
+#endif
+
         /* SDK plumbing */
         sdk_msg_t m;
         while (xQueueReceive(g_cmd_queue, &m, 0) == pdTRUE)
@@ -124,10 +139,30 @@ void flight_task(void *arg)
             xQueueSend(g_state_queue, &st, 0);
         }
 
+#if BOARD_HAS_LORA
+        if (tick % 100 == 20) { /* 10 Hz telemetry snapshot for lora_task */
+            fc_telemetry_t t;
+            fc_core_get_telemetry(&s_fc, &t);
+            lorap_telem_t lt = {
+                .state = (uint8_t)t.state,
+                .mode = (uint8_t)fc_mode_get(&s_fc),
+                .x_cm = (int16_t)(t.px_m * 100.0f),
+                .y_cm = (int16_t)(t.py_m * 100.0f),
+                .z_cm = (int16_t)(t.pz_m * 100.0f),
+                .yaw_deg = (int16_t)t.yaw_deg,
+                .vbat_mv = (uint16_t)(s_fc.vbat * 1000.0f),
+                .bat_pct = (uint8_t)t.bat_pct,
+                .rssi_dbm = 0,
+                .flags = (uint8_t)(fc_show_playing(&s_fc) ? 1 : 0),
+            };
+            g_lora_telem = lt;
+        }
+#endif
+
         /* motors out */
         float duty[4];
         fc_core_get_motors(&s_fc, duty);
-        motors_write(duty);
+        MOTORS_WRITE(duty);
 
         /* status LED: red on low battery, blue when flying */
         if (tick % 500 == 0) {
