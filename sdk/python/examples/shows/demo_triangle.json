@@ -1,0 +1,24 @@
+{
+  "name": "demo_triangle",
+  "_comment": "3-drone TinyHoop MK1 show: line -> equilateral triangle -> spin in place -> wide line. Positions in cm, drone-local frame (x fwd, y left, z up), yaw clockwise-deg. Keeps >60 cm separation throughout (safety-checked by 06_show_swarm.py). Preview in Gazebo before flying.",
+  "drones": [
+    { "id": 1, "keys": [
+      { "t": 0,     "x": 0,    "y": 120,  "z": 100 },
+      { "t": 4000,  "x": 150,  "y": 0,    "z": 120 },
+      { "t": 8000,  "x": 150,  "y": 0,    "z": 120, "yaw": 180 },
+      { "t": 12000, "x": 0,    "y": 150,  "z": 100, "yaw": 0 }
+    ]},
+    { "id": 2, "keys": [
+      { "t": 0,     "x": 0,    "y": 0,    "z": 100 },
+      { "t": 4000,  "x": -75,  "y": 130,  "z": 120 },
+      { "t": 8000,  "x": -75,  "y": 130,  "z": 120, "yaw": 180 },
+      { "t": 12000, "x": 0,    "y": 0,    "z": 100, "yaw": 0 }
+    ]},
+    { "id": 3, "keys": [
+      { "t": 0,     "x": 0,    "y": -120, "z": 100 },
+      { "t": 4000,  "x": -75,  "y": -130, "z": 120 },
+      { "t": 8000,  "x": -75,  "y": -130, "z": 120, "yaw": 180 },
+      { "t": 12000, "x": 0,    "y": -150, "z": 100, "yaw": 0 }
+    ]}
+  ]
+}
