@@ -180,8 +180,8 @@ module tpu_bumper() {   // rear bumper protecting the XT30 + antennas
 }
 
 /* ============ electronics + realistic viewer meshes (buy, don't print) ==== */
-module board() {         // STRATOS TINYHOOP AIO (viewer: 30 mm to sit in the stack)
-    bw = 30;
+module board() {         // STRATOS TINYHOOP AIO (viewer: 27 mm, mounts 25.5 @45°)
+    bw = 27;
     difference() {
         color("#0b6b39") rrect3(bw, bw, 2.5, 1.6);
         for (sx=[-1,1], sy=[-1,1]) translate([sx*stack/2, sy*stack/2, -eps])
@@ -278,6 +278,39 @@ module logo() {
              font="Liberation Sans:style=Bold");
 }
 
+/* STRATOS top plate — same envelope as the real JeNo top plate
+ * (26.6 × 68.3 × 2 mm, centred at y=-0.95), mount holes on the 3 real
+ * standoffs, STRATOS "S" cut through + the JeNo silk replaced by STRATOS. */
+module stratos_top() {
+    tw = 26.6; tl = 68.3; th = 2.0; cy = -0.95;   // real top-plate envelope
+    translate([0, cy, 17.0]) linear_extrude(th) difference() {
+        offset(3) offset(-3) square([tw, tl], center=true);       // rounded plate
+        // the 3 standoff mount holes (plate-local => subtract plate centre)
+        for (p=[[0,25.6],[8.5,-32.2],[-8.5,-32.2]])
+            translate([p[0], p[1]-cy]) circle(d=2.4, $fn=22);
+        // lightening slots down the spine (JeNo look)
+        for (sy=[-1,1]) translate([0, sy*9]) rrect(4, 12, 1.6);
+        // STRATOS wordmark cut through (replaces the "JeNo" silk)
+        translate([0, -20]) rotate(90)
+            text("STRATOS", size=4.2, halign="center", valign="center",
+                 font="Liberation Sans:style=Bold");
+        // prop-S emblem cut at the tail
+        translate([0, 26]) text("S", size=8, halign="center", valign="center",
+                 font="Liberation Sans:style=Bold");
+    }
+}
+
+/* Hammer / "T" antenna — a vertical mast with a horizontal top bar (the
+ * dipole "hammer head"), on a small foot that seats in the TPU mount. */
+module antenna_hammer() {
+    color("#141414") cylinder(d=3.4, h=3, $fn=20);              // foot / base
+    color("#1a1a1a") translate([0,0,3]) cylinder(d=2.0, h=26, $fn=16);  // mast
+    color("#c23a33") translate([0,0,29]) {                     // heat-shrunk head
+        rotate([0,90,0]) cylinder(d=3.4, h=26, center=true, $fn=18);    // hammer bar
+        for (sx=[-1,1]) translate([sx*13,0,0]) sphere(d=3.6, $fn=16);   // rounded tips
+    }
+}
+
 /* ---------------- ghosts (previews only) ---------------- */
 module ghost_props() {
     for (sx=[-1,1], sy=[-1,1]) translate([sx*motor_mx, sy*motor_my, bottom_t+9.6])
@@ -335,6 +368,8 @@ else if (PART == "screw")          screw();
 else if (PART == "logo")           logo();
 else if (PART == "antenna_vtx")    antenna_vtx();
 else if (PART == "antenna_elrs")   antenna_elrs();
+else if (PART == "stratos_top")    stratos_top();
+else if (PART == "antenna_hammer") antenna_hammer();
 // DXF: 2-D carbon profiles (render the flat shapes for cutting)
 else if (PART == "dxf_bottom_classic") bottom_2d("classic");
 else if (PART == "dxf_bottom_xcore")   bottom_2d("xcore");
