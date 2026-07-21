@@ -20,21 +20,26 @@ REPO = os.path.dirname(os.path.dirname(HERE))
 VENDOR = os.path.join(REPO, "sim", "viz", "vendor")
 STL = os.path.join(REPO, "TinyHoopMK1", "cad", "stl")
 TPU = os.path.join(REPO, "TinyHoopMK1", "cad", "frame_jeno", "tpu")
+PARTS = os.path.join(REPO, "TinyHoopMK1", "cad", "frame_jeno", "parts")
 OUT = os.path.join(HERE, "drone_viewer.html")
 
 MODEL = dict(name="FR4N10", sub="FPV programmable / essaim · 2,5\" · 2S-3S", wb=116,
-             # motor-pad centres measured on the real JeNo Pocket V2 frame (mm)
-             motors=[[47,40],[-47,40],[-47,-38],[47,-38]],
-             prop_z=0.0125, motor_z=0.003, frame_z=0.0,
-             elec=dict(board=[0,-6,5], battery=[0,-11,20], logo=[0,12,3.1]),
-             # M2 screw-head positions (mm) — top plate over the standoffs + cam
-             screws=[[-8.5,-32,19.2],[8.5,-32,19.2],[0,25.6,19.2],
+             # motor-mount hole centres measured on the real JeNo frame (mm)
+             motors=[[46.6,34.1],[-46.6,34.1],[-46.6,-34.1],[46.6,-34.1]],
+             prop_z=0.0135, motor_z=0.003, frame_z=0.0,
+             # AIO board: 25.5 whoop pattern mounted at 45° (holes on the axes
+             # at ±18 — measured on the real frame), centred at origin
+             elec=dict(board=[0,0,6], battery=[0,-11,20]),
+             # M2 screw heads on the real standoffs (top plate) + camera plates
+             screws=[[-8.5,-32.2,19.3],[8.5,-32.2,19.3],[0,25.6,19.3],
                      [-8,50,20.5],[8,50,20.5]],
-             antenna=[0,-40,31],           # VTX whip sprouting from the TPU mount
-             # per-group explode offsets (mm along Z, applied × slider)
-             explode=dict(frame=[0,0,0], motors=[0,0,-42], props=[0,0,62],
-                          board=[0,0,-34], battery=[0,0,70], screws=[0,0,50],
-                          tpu=[0,0,-26], antenna=[0,0,58], logo=[0,0,30]),
+             antenna=[0,-38,33.5],        # hammer antenna, seats in the VTX mount
+             # per-group explode offsets (mm along Z, × slider)
+             explode=dict(bottom=[0,0,0], top=[0,0,52], standoffs=[0,0,26],
+                          camcage=[0,0,40], camera=[0,0,46], cammount=[0,18,54],
+                          motors=[0,0,-40], props=[0,0,74], elec=[0,0,-30],
+                          battery=[0,0,88], screws=[0,0,64], tpu=[0,0,-26],
+                          antenna=[0,0,84]),
              specs=[("Entraxe", "~115 mm (wide-X)"), ("Hélices", "2,5\" Gemfan 2520"),
                     ("Moteurs", "1203-1303 · 2S-3S"),
                     ("ESC", "AIO BLHeli_S/Bluejay · DShot600"),
@@ -149,6 +154,24 @@ TEMPLATE = r"""<!DOCTYPE html>
     <div class="sec">
       <h2>Composants</h2>
       <div id="groups"></div>
+    </div>
+    <div class="sec">
+      <h2>Électronique</h2>
+      <button id="bElec" class="on" style="width:100%">Électronique : STRATOS TINYHOOP AIO</button>
+      <div id="bom" class="mini" style="display:none;margin-top:9px">
+        <b>Build « standard » (composants du commerce, repo JeNo) :</b>
+        <table style="margin-top:5px">
+          <tr><td>FC / ESC</td><td class="v">JHEMCU GHF435AIO V2 20A</td></tr>
+          <tr><td>Moteurs</td><td class="v">1104 7500KV (Readytosky)</td></tr>
+          <tr><td>Hélices</td><td class="v">Gemfan 2520</td></tr>
+          <tr><td>Caméra</td><td class="v">DJI O4 Lite / nano analog.</td></tr>
+          <tr><td>RX</td><td class="v">ELRS (antenne céram.)</td></tr>
+          <tr><td>VTX</td><td class="v">analogique 5,8 GHz (si non-O4)</td></tr>
+          <tr><td>Batterie</td><td class="v">2S-3S 450-560 mAh</td></tr>
+        </table>
+        <div style="margin-top:5px">Vole en Betaflight — <b>non</b> programmable /
+          essaim (ça, c'est la carte STRATOS).</div>
+      </div>
     </div>
     <div class="sec">
       <h2>Affichage</h2>
@@ -299,48 +322,57 @@ function place(b64, colr, met, rgh, off){
   if (off) m2.position.set(off[0]/1000, off[1]/1000, M.frame_z + off[2]/1000);
   return m2;
 }
-// the REAL JeNo Pocket V2 frame (official STL from WE are FPV): bottom + top
-// plates, camera side plates, standoffs, cross-bars AND the camera
-const gFrame = group('frame'); { const m0 = mesh(STLB64.frame, CARBON, .3, .5);
-  m0.position.z = M.frame_z; gFrame.add(m0); }
-// real WE are FPV TPU parts (same coordinate frame): arm bumpers ×4 + back
-// bumper + VTX antenna mount — printed in TPU (soft grey)
-const gTpu = group('tpu');
+// the REAL JeNo Pocket V2 frame, SPLIT from the STEP into separate solids so
+// each explodes on its own: bottom plate, camera cage, standoffs, camera.
+// The top plate is REPLACED by our STRATOS top (same envelope) per the brief.
 const TPU = 0x2b2f36;
-{ // arm bumper modelled on the rear-left arm; mirror to the 4 arm tips
-  for (const [sx, sy] of [[1,1],[-1,1],[1,-1],[-1,-1]]){
-    const ab = mesh(STLB64.arm_bumper, TPU, .1, .8);
-    ab.scale.set(sx*0.001, sy*0.001, 0.001);      // mirror across x / y
-    gTpu.add(ab);
-  }
-  gTpu.add(mesh(STLB64.back_bumper, TPU, .1, .8));      // tail bumper (in place)
-  gTpu.add(mesh(STLB64.vtx_mount, TPU, .1, .8));        // VTX antenna mount (in place)
+const gBottom = group('bottom'); { const m=mesh(STLB64.frame_bottom, CARBON,.3,.5);
+  m.position.z=M.frame_z; gBottom.add(m); }
+const gTop = group('top'); { const m=mesh(STLB64.frame_top, CARBON,.3,.5);
+  m.position.z=M.frame_z; gTop.add(m); }        // STRATOS top plate
+const gStand = group('standoffs'); { const m=mesh(STLB64.standoffs, 0xb9bcc2,.9,.3);
+  m.position.z=M.frame_z; gStand.add(m); }
+const gCage = group('camcage'); { const m=mesh(STLB64.camcage, CARBON,.3,.5);
+  m.position.z=M.frame_z; gCage.add(m); }
+const gCam = group('camera'); { const m=mesh(STLB64.camera, 0x15161a,.35,.45);
+  m.position.z=M.frame_z; gCam.add(m); }         // camera — toggle to show/hide
+// real WE are FPV 2-part O4 camera mount (top + aligned bottom clamp)
+const gMount = group('cammount');
+gMount.add(mesh(STLB64.cam_mount_top, TPU,.1,.8));
+gMount.add(mesh(STLB64.cam_mount_bottom, TPU,.1,.8));
+// real TPU protection: arm bumpers ×4 + back bumper + VTX antenna mount
+const gTpu = group('tpu');
+for (const [sx, sy] of [[1,1],[-1,1],[1,-1],[-1,-1]]){
+  const ab = mesh(STLB64.arm_bumper, TPU,.1,.8);
+  ab.scale.set(sx*0.001, sy*0.001, 0.001); gTpu.add(ab);
 }
-// motors + props on the real arm-tip pads (measured from the frame)
+gTpu.add(mesh(STLB64.back_bumper, TPU,.1,.8));
+gTpu.add(mesh(STLB64.vtx_mount, TPU,.1,.8));
+// real Readytosky 1104 motors on the measured hole centres (±46.6, ±34.1)
 const gMot = group('motors');
 for (const [mx, my] of M.motors){
-  const mm = mesh(STLB64.motor, 0x35383f, .85, .3);   // dark metallic bell
+  const mm = mesh(STLB64.motor, 0x3a3d43, .85, .3);
   mm.position.set(mx/1000, my/1000, M.motor_z);
   gMot.add(mm);
 }
 const gProp = group('props');
 const propMeshes = [];
 for (const [mx, my] of M.motors){
-  const cw = (mx*my > 0);                              // diagonals share spin
-  const pm = mesh(STLB64.prop, 0x8b9099, .15, .5);     // light-grey props (readable)
+  const cw = (mx*my > 0);
+  const pm = mesh(STLB64.prop, 0x8b9099, .15, .5);
   pm.position.set(mx/1000, my/1000, M.prop_z);
-  pm.scale.set(0.001, cw?0.001:-0.001, 0.001);         // CW/CCW mirror
+  pm.scale.set(0.001, cw?0.001:-0.001, 0.001);
   pm.userData.dir = cw?1:-1;
   pm.userData.front = (my > 0);
   gProp.add(pm); propMeshes.push(pm);
 }
-// FC board (low in the stack) + battery (on the top plate) + STRATOS logo
+// AIO board (25.5 pattern @45°, centred) + battery
 const gElec = group('elec');
-gElec.add(place(STLB64.board, 0x0b6b39, .15, .5, M.elec.board));
-gElec.add(place(STLB64.logo, 0xdfe3e8, .3, .45, M.elec.logo));   // STRATOS emblem
+{ const bm = place(STLB64.board, 0x0b6b39, .15, .5, M.elec.board);
+  bm.rotation.z = Math.PI/4; gElec.add(bm); }     // 45° = real JeNo AIO mount
 const gBatt = group('battery');
 gBatt.add(place(STLB64.battery, 0x22262d, .1, .55, M.elec.battery));
-// M2 screws at the stack / camera mount points
+// M2 screws on the real standoffs + camera plates
 const gScrew = group('screws');
 for (const s of M.screws){ const sc = place(STLB64.screw, 0xd6d9de, .9, .25, s);
   gScrew.add(sc); }
@@ -350,14 +382,19 @@ gAnt.add(place(STLB64.antenna, 0xca3b34, .2, .5, M.antenna));
 
 // ---- part toggles + per-part colour pickers ----
 const GROUPS = {
-  frame:  {label:'Châssis JeNo Pocket V2 (réel)', color:'#1a1d21'},
-  tpu:    {label:'Pièces TPU (bumpers + support)', color:'#2b2f36'},
-  motors: {label:'Moteurs 1203-1303', color:'#35383f'},
-  props:  {label:'Hélices 2,5" (2520)',  color:'#8b9099'},
-  elec:   {label:'Carte AIO + logo STRATOS', color:'#0b6b39'},
-  battery:{label:'Batterie 2S-3S', color:'#22262d'},
-  screws: {label:'Visserie M2', color:'#d6d9de'},
-  antenna:{label:'Antenne VTX', color:'#ca3b34'},
+  bottom:   {label:'Plaque basse (carbone réel)', color:'#1a1d21'},
+  top:      {label:'Plaque haute STRATOS', color:'#1a1d21'},
+  standoffs:{label:'Entretoises', color:'#b9bcc2'},
+  camcage:  {label:'Cage caméra (carbone)', color:'#1a1d21'},
+  camera:   {label:'Caméra', color:'#15161a'},
+  cammount: {label:'Support caméra O4 (TPU · 2 pièces)', color:'#2b2f36'},
+  tpu:      {label:'Protections TPU (bumpers)', color:'#2b2f36'},
+  motors:   {label:'Moteurs 1104 (Readytosky)', color:'#3a3d43'},
+  props:    {label:'Hélices 2,5" (2520)',  color:'#8b9099'},
+  elec:     {label:'Carte AIO', color:'#0b6b39'},
+  battery:  {label:'Batterie 2S-3S', color:'#22262d'},
+  screws:   {label:'Visserie M2', color:'#d6d9de'},
+  antenna:  {label:'Antenne (marteau)', color:'#ca3b34'},
 };
 // remember each group's assembled position so the explode slider can offset it
 for (const k of Object.keys(GROUPS)){
@@ -419,6 +456,17 @@ document.getElementById('bReset').addEventListener('click', ()=>{
   const keys=Object.keys(GROUPS);
   keys.forEach(k=> setColor(k, GROUPS[k].color));
   document.querySelectorAll('.pick').forEach((el,i)=>{ el.value=GROUPS[keys[i]].color; }); });
+
+// ---- standard vs STRATOS electronics (BOM from the JeNo repo) ----
+let stdElec=false;
+document.getElementById('bElec').addEventListener('click', e=>{
+  stdElec=!stdElec;
+  e.target.textContent = stdElec ? 'Électronique : STANDARD (Betaflight)'
+                                 : 'Électronique : STRATOS TINYHOOP AIO';
+  e.target.classList.toggle('on', !stdElec);
+  document.getElementById('bom').style.display = stdElec ? 'block' : 'none';
+  setColor('elec', stdElec ? 0x6a6f78 : 0x0b6b39);   // grey generic AIO vs green
+});
 let spinRate=0.4*60;                       // hélices en rotation par défaut
 document.getElementById('spinV').textContent='40%';
 document.getElementById('spin').addEventListener('input', e=>{ spinRate=e.target.value/100*60;
@@ -798,20 +846,25 @@ def main():
                                        "elec", "screws", "antenna", "explode")},
                 separators=(",", ":")))
             .replace("__STLS__", json.dumps({
-                # frame + TPU = the REAL WE are FPV files (01-FRAME / 02-TPU);
-                # motors, props, FC board, battery, screws, logo, antenna are
-                # our own meshes placed around them.
-                "frame": b64(os.path.join(STL, "frame_real.stl")),
+                # REAL WE are FPV geometry, split from the STEP + the 02-TPU
+                # files; STRATOS top plate, motors (real Readytosky 1104),
+                # props, board, battery, screws, antenna are our own meshes.
+                "frame_bottom": b64(os.path.join(PARTS, "frame_bottom.stl")),
+                "frame_top": b64(os.path.join(STL, "stratos_top.stl")),
+                "standoffs": b64(os.path.join(PARTS, "standoffs.stl")),
+                "camcage": b64(os.path.join(PARTS, "cam_cage.stl")),
+                "camera": b64(os.path.join(PARTS, "camera.stl")),
+                "cam_mount_top": b64(os.path.join(TPU, "o4_mount_top.stl")),
+                "cam_mount_bottom": b64(os.path.join(TPU, "o4_mount_bottom.stl")),
                 "arm_bumper": b64(os.path.join(TPU, "arm_bumper.stl")),
                 "back_bumper": b64(os.path.join(TPU, "back_bumper.stl")),
                 "vtx_mount": b64(os.path.join(TPU, "vtx_antenna_mount.stl")),
+                "motor": b64(os.path.join(PARTS, "motor_1104.stl")),
                 "prop": b64(os.path.join(STL, "prop.stl")),
-                "motor": b64(os.path.join(STL, "motor.stl")),
                 "board": b64(os.path.join(STL, "board.stl")),
                 "battery": b64(os.path.join(STL, "battery.stl")),
                 "screw": b64(os.path.join(STL, "screw.stl")),
-                "logo": b64(os.path.join(STL, "logo.stl")),
-                "antenna": b64(os.path.join(STL, "antenna_vtx.stl")),
+                "antenna": b64(os.path.join(STL, "antenna_hammer.stl")),
             }, separators=(",", ":"))))
     with open(OUT, "w") as f:
         f.write(html)

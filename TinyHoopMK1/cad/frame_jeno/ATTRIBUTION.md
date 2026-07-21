@@ -13,10 +13,20 @@
     what the viewer renders as the frame.
   - `tpu/` — the real TPU parts from `02-TPU`: `arm_bumper.stl`,
     `back_bumper.stl`, `vtx_antenna_mount.stl`, `o4lite_mount.stl`.
-- **Changes made:** none to the geometry — the files are copied as-is. The
-  viewer only *positions* them and adds our own separate meshes (motors,
-  props, FC board, battery, screws, antenna whip, STRATOS logo) around them.
-  `step_to_stl.py` is kept for anyone who wants to re-mesh the STEP instead.
+- **Changes made:** none to the geometry — the files are copied as-is.
+  - `parts/` holds the STEP **split into its individual solids** (bottom
+    plate, camera cage, standoffs, camera) by `step_to_stl.py`, so each part
+    can be shown / exploded on its own in the viewer. Same geometry, just
+    separated per solid.
+  - The viewer *positions* these and adds our own meshes (props, FC board,
+    battery, screws, hammer antenna) plus a **STRATOS top plate** that
+    replaces the JeNo top (same envelope).
+
+## Other third-party file
+
+- `parts/motor_1104.stl` — **Readytosky 1104-7500KV** motor model, provided by
+  the project owner for a faithful motor render. Product geometry by
+  Readytosky; used here for visualisation only.
 
 ## Why the real file is here
 
