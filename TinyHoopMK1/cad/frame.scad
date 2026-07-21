@@ -179,66 +179,125 @@ module tpu_bumper() {   // rear bumper protecting the XT30 + antennas
     }
 }
 
-/* ================= electronics (viewer/preview meshes — buy) ============= */
-module board() {         // STRATOS TINYHOOP AIO, 34x34 (rounded, green)
-    color("#0a5a30") rrect3(34, 34, 2.5, 1.6);
-    color("#caa14a") for (sx=[-1,1], sy=[-1,1])
-        translate([sx*stack/2, sy*stack/2, -eps]) cylinder(d=4, h=1.8);
-}
-module o4lite() {        // DJI O4 Lite air unit (the JeNo-native cam)
-    color("#17181c") difference() {
-        rrect3(20.5, 12, 1.5, 12);
-        for (i=[-4:4]) translate([i*2, -0.5, 5]) cube([1, 12, 10]);   // heatsink fins
+/* ============ electronics + realistic viewer meshes (buy, don't print) ==== */
+module board() {         // STRATOS TINYHOOP AIO, 34x34
+    difference() {
+        color("#0b6b39") rrect3(34, 34, 2.5, 1.6);
+        for (sx=[-1,1], sy=[-1,1]) translate([sx*stack/2, sy*stack/2, -eps])
+            cylinder(d=2.3, h=3, $fn=20);          // mount holes
     }
-    translate([0, -6.5, 6]) rotate([90-cam_tilt,0,0]) {
-        color("#0b1e3a") cylinder(d=11, h=5);                          // lens
-        translate([0,0,5]) sphere(d=8);                                // glass
+    color("#caa14a") for (sx=[-1,1], sy=[-1,1])    // gold plated mount rings
+        translate([sx*stack/2, sy*stack/2, 1.55]) cylinder(d=4, h=0.25, $fn=20);
+    color("#15161a") for (sx=[-1,1], sy=[-1,1])    // the two ESP32 + ESC chips
+        translate([sx*7, sy*6, 1.6]) rrect3(7, 6, 0.6, 1.9);
+    color("#20222a") translate([0, 0, 1.6]) rrect3(8, 8, 1, 1.4);   // P4 shield
+    color("#c0c0c0") translate([13, -11, 1.6]) cube([5, 3.5, 2], center=true); // XT30 pads
+    color("#d64541") translate([-13, 12, 1.6]) cube([4, 3, 1.6], center=true); // CRSF socket
+}
+module standoff(h) {     // aluminium M2 hex standoff
+    color("#b9bcc2") cylinder(d=4.0, h=h, $fn=6);
+}
+module screw() {         // M2 button-head cap screw
+    color("#e4e6ea") { cylinder(d=3.6, h=1.0, $fn=20);
+        translate([0,0,-1.6]) cylinder(d=2.0, h=1.6, $fn=14); }
+}
+module motor() {         // 1203-class brushless, bell up (props-on-top build)
+    color("#2a2d33") cylinder(d=9.0, h=1.2, $fn=40);              // mount base
+    color("#17181c") translate([0,0,1.1]) cylinder(d=8.0, h=1.7, $fn=36);  // stator
+    color("#c8402f") translate([0,0,2.4]) difference() {          // bell (red)
+        cylinder(d=15.4, h=6.4, $fn=52);
+        translate([0,0,1.4]) cylinder(d=13.6, h=6+eps, $fn=52);   // hollow (open top)
+        for (a=[0:30:330]) rotate([0,0,a]) translate([6.7,0,-eps])// cooling vents
+            cylinder(d=2.0, h=9, $fn=14);
+    }
+    color("#c8402f") translate([0,0,8.4]) cylinder(d=15.4, h=1.0, $fn=52);  // bell top (overlaps)
+    color("#dfe1e6") for (a=[45:90:315]) rotate([0,0,a])          // 4 bell screws
+        translate([4.3,0,9.3]) cylinder(d=1.7, h=0.7, $fn=12);
+    color("#9a9da3") translate([0,0,1.0]) cylinder(d=3.2, h=9.6, $fn=24);   // shaft
+}
+module blade2d() {       // Gemfan-2520-style tri-blade planform (r vs chord)
+    R = prop_d/2;
+    polygon([[3,-1.4],[10,-3.4],[19,-3.6],[27,-2.6],[R-0.4,-0.8],
+             [R-0.2,0.7],[27,2.9],[18,3.9],[9,3.2],[3,1.5]]);
+}
+module prop() {          // 2.5" (63.5 mm) tri-blade, cambered + pitched
+    color("#2a2c30") cylinder(d=7.0, h=4.2, $fn=32);             // hub
+    color("#1c1e22") translate([0,0,4.2]) cylinder(d=4.4, h=1.0, $fn=22); // cap
+    color("#3a3d43") for (a=[0:120:240]) rotate([0,0,a])
+        translate([0,0,3.0]) rotate([11,0,-4])                   // pitch + slight cone
+            linear_extrude(0.95) blade2d();
+}
+module o4lite() {        // DJI O4-Lite-class HD cam unit (JeNo-native)
+    color("#17181c") rrect3(19, 11, 1.5, 11);                    // body
+    color("#202227") for (i=[-3:3])                             // rear heatsink fins
+        translate([i*2.3, -5.4, 3]) cube([1.2, 1.6, 7]);
+    translate([0, 5.5, 5.6]) rotate([-(90-cam_tilt),0,0]) {      // lens forward + up
+        color("#0c0d10") cylinder(d=10.6, h=4.4, $fn=40);
+        color("#0b1e3a") translate([0,0,4.4]) cylinder(d=8.4, h=1.1, $fn=40);
+        color("#14315e") translate([0,0,5.2]) sphere(d=7, $fn=28);   // glass
     }
 }
-module battery_pack() {  // 2S-3S pack strapped on the top plate
-    rn = 2.5;
-    color("#2b2f36") minkowski() {
-        cube([batt_w-2*rn, 58-2*rn, 12-2*rn], center=true); sphere(r=rn, $fn=20); }
-    color("#f5b301") translate([0, 30, 0]) cube([8, 8, 7], center=true);   // XT30
+module battery_pack() {  // 2S 450-550 mAh LiPo, label up, XT30 out the tail
+    bl = 48; bw = 27; bt = 13;
+    color("#20242b") rrect3(bw, bl, 3, bt);                      // pack
+    color("#eef1f4") translate([0,0,bt-0.5]) rrect3(bw-3, bl-4, 2, 0.6);  // label
+    color("#f0b000") translate([0,-bl/2-3.5, bt*0.4])            // XT30 plug
+        rotate([90,0,0]) cube([9, 7, 7], center=true);
+    for (sx=[-1,1]) color(sx>0?"#c00":"#111")                    // pigtail leads
+        translate([sx*2.5,-bl/2-8, bt*0.4]) rotate([90,0,0]) cylinder(d=2, h=8, $fn=10);
 }
-module prop() {          // 2.5" tri-blade (Gemfan 2520 look)
-    R = (prop_d/2 - 3.0) / 1.14;
-    cylinder(d=8, h=3.4);
-    for (a=[0:120:240]) rotate([0,0,a]) translate([2.6,0,2.6])
-        rotate([15,0,0]) linear_extrude(1.4)
-            intersection() {
-                translate([R*0.5, -R*0.32]) circle(r=R*0.8, $fn=40);
-                translate([R*0.44, R*0.40]) circle(r=R*0.8, $fn=40);
-            }
+module batt_strap(zbase, bt) {   // narrow rubber gates band over the pack
+    color("#101216") difference() {
+        translate([0, -10, zbase]) rrect3(31, 7, 1.5, bt + 3);
+        translate([0, -10, zbase + 1.6]) rrect3(26, 9, 1.2, bt + 2);
+        translate([0, -10, zbase - 1]) rrect3(26, 9, 1.2, 1.8);
+    }
 }
-module motor() {         // 1203-1303 bell
-    cylinder(d=12, h=2.2);
-    translate([0,0,2.2]) difference() { cylinder(d=13.5, h=6.4); translate([0,0,-eps]) cylinder(d=11.5, h=6); }
-    translate([0,0,8.6]) cylinder(d=13.5, h=1.2);
-    translate([0,0,9.8]) cylinder(d=1.5, h=4);
+module antenna_vtx() {   // 5.8G pigtail + foam-tube tip
+    color("#141414") cylinder(d=1.7, h=9, $fn=14);
+    color("#d64541") translate([0,0,9]) cylinder(d=3.2, h=16, $fn=18);
+    color("#efefef") translate([0,0,25]) sphere(d=3.4, $fn=18);
+}
+module antenna_elrs() {  // ELRS T-antenna: coax + two dipole tips
+    color("#161616") cylinder(d=1.4, h=13, $fn=12);
+    color("#c8a24a") translate([0,0,13]) rotate([0,90,0])
+        cylinder(d=0.9, h=25, center=true, $fn=10);
 }
 
 /* ---------------- ghosts (previews only) ---------------- */
 module ghost_props() {
-    for (sx=[-1,1], sy=[-1,1]) translate([sx*motor_mx, sy*motor_my, bus_h+11])
-        %cylinder(d=prop_d, h=0.8, center=true);
+    for (sx=[-1,1], sy=[-1,1]) translate([sx*motor_mx, sy*motor_my, bottom_t+9.6])
+        %cylinder(d=prop_d, h=0.6, center=true);
 }
 
 module assembly() {
-    color("#23272e") frame_bottom(plate_style);
-    // stack standoffs
-    color("#888") for (sx=[-1,1], sy=[-1,1]) translate([sx*stack/2, sy*stack/2, bottom_t])
-        cylinder(d=4, h=bus_h);
-    translate([0, 0, bottom_t + 4]) board();
-    color("#3f8f7a") for (sx=[-1,1], sy=[-1,1])
-        translate([sx*motor_mx, sy*motor_my, bottom_t]) motor();
-    color("#2b2f36") translate([0, 0, bottom_t + bus_h]) frame_top();
-    color("#1a1c20") translate([0, body_l*0.30, bottom_t + bus_h + 2]) o4lite();
-    color("#e8e8ea") for (sx=[-1,1]) translate([sx*(cam_w/2+cam_t/2), body_l*0.30, bottom_t + bus_h])
-        rotate([90,0,90]) cam_plate();
-    translate([0, 0, bottom_t + bus_h + 14]) battery_pack();
-    color("#3f8f7a") for (sx=[-1,1], sy=[-1,1])
-        translate([sx*motor_mx, sy*motor_my, bottom_t + 9]) prop();
+    // bottom carbon plate
+    color("#1a1c1f") frame_bottom(plate_style);
+    // motors + props at the four arm tips (props-up)
+    for (sx=[-1,1], sy=[-1,1]) translate([sx*motor_mx, sy*motor_my, bottom_t]) {
+        motor();
+        translate([0,0,9.4]) prop();
+    }
+    // centre stack: 4 hex standoffs carry the board + top plate
+    for (sx=[-1,1], sy=[-1,1]) translate([sx*stack/2, sy*stack/2, bottom_t])
+        standoff(bus_h);
+    // FC board soft-mounted low on the stack
+    translate([0, 0, bottom_t + 3]) board();
+    // top carbon plate + its cap screws
+    color("#1a1c1f") translate([0, 0, bottom_t + bus_h]) frame_top();
+    for (sx=[-1,1], sy=[-1,1])
+        translate([sx*stack/2, sy*stack/2, bottom_t + bus_h + top_t]) screw();
+    // camera at the nose, between two carbon side plates (lens out front + up)
+    translate([0, body_l*0.40, bottom_t + bus_h + 4]) o4lite();
+    color("#1a1c1f") for (sx=[-1,1])
+        translate([sx*(cam_w/2 + cam_t/2), body_l*0.36, bottom_t + bus_h])
+            rotate([90,0,90]) cam_plate();
+    // battery strapped on the top plate, set back to clear the camera
+    translate([0, -10, bottom_t + bus_h + top_t]) battery_pack();
+    batt_strap(bottom_t + bus_h + top_t, 13);
+    // antennas out the tail, raked back
+    translate([9, -body_l*0.42, bottom_t + bus_h]) rotate([-38,0,8]) antenna_vtx();
+    translate([-8, -body_l*0.40, bottom_t + bus_h]) rotate([-34,0,-10]) antenna_elrs();
     ghost_props();
 }
 
