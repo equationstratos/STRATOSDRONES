@@ -19,13 +19,22 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.dirname(os.path.dirname(HERE))
 VENDOR = os.path.join(REPO, "sim", "viz", "vendor")
 STL = os.path.join(REPO, "TinyHoopMK1", "cad", "stl")
+TPU = os.path.join(REPO, "TinyHoopMK1", "cad", "frame_jeno", "tpu")
 OUT = os.path.join(HERE, "drone_viewer.html")
 
 MODEL = dict(name="FR4N10", sub="FPV programmable / essaim · 2,5\" · 2S-3S", wb=116,
              # motor-pad centres measured on the real JeNo Pocket V2 frame (mm)
              motors=[[47,40],[-47,40],[-47,-38],[47,-38]],
              prop_z=0.0125, motor_z=0.003, frame_z=0.0,
-             elec=dict(board=[0,-6,5], battery=[0,-10,20]),
+             elec=dict(board=[0,-6,5], battery=[0,-11,20], logo=[0,12,3.1]),
+             # M2 screw-head positions (mm) — top plate over the standoffs + cam
+             screws=[[-8.5,-32,19.2],[8.5,-32,19.2],[0,25.6,19.2],
+                     [-8,50,20.5],[8,50,20.5]],
+             antenna=[0,-40,31],           # VTX whip sprouting from the TPU mount
+             # per-group explode offsets (mm along Z, applied × slider)
+             explode=dict(frame=[0,0,0], motors=[0,0,-42], props=[0,0,62],
+                          board=[0,0,-34], battery=[0,0,70], screws=[0,0,50],
+                          tpu=[0,0,-26], antenna=[0,0,58], logo=[0,0,30]),
              specs=[("Entraxe", "~115 mm (wide-X)"), ("Hélices", "2,5\" Gemfan 2520"),
                     ("Moteurs", "1203-1303 · 2S-3S"),
                     ("ESC", "AIO BLHeli_S/Bluejay · DShot600"),
@@ -64,8 +73,15 @@ TEMPLATE = r"""<!DOCTYPE html>
 <title>__NAME__-001 — visualisateur 3D + simulateur</title>
 <style>
   :root{--bg:#0b0e14;--panel:#12161d;--line:#262d38;--ink:#e6edf3;--mut:#8b949e;
-        --acc:#2f6fed;--acc2:#63a4ff;}
+        --acc:#2f6fed;--acc2:#63a4ff;--btn:#1b212b;--btnh:#262d38;--tip:rgba(11,14,20,.82);}
+  body.light{--bg:#eef1f5;--panel:#f7f9fc;--line:#d3d9e0;--ink:#1a1f26;--mut:#5a636e;
+        --acc:#2f6fed;--acc2:#1b4fd0;--btn:#e6eaf0;--btnh:#d7dde6;--tip:rgba(247,249,252,.9);}
   *{box-sizing:border-box}
+  label.tog input[type=color].pick{width:15px;height:15px;padding:0;border:1px solid var(--line);
+        border-radius:3px;background:none;cursor:pointer;flex:none;appearance:none;-webkit-appearance:none}
+  label.tog input[type=color].pick::-webkit-color-swatch{border:none;border-radius:2px}
+  label.tog input[type=color].pick::-webkit-color-swatch-wrapper{padding:0}
+  label.tog span{flex:1}
   html,body{margin:0;height:100%;font:13px/1.5 -apple-system,Segoe UI,Roboto,sans-serif;
             background:var(--bg);color:var(--ink);overflow:hidden}
   #app{display:flex;height:100%}
@@ -84,9 +100,9 @@ TEMPLATE = r"""<!DOCTYPE html>
   label.tog input{accent-color:var(--acc)}
   .sw{width:11px;height:11px;border-radius:3px;flex:none}
   .btns{display:grid;grid-template-columns:1fr 1fr;gap:6px}
-  button{background:#1b212b;color:var(--ink);border:1px solid var(--line);border-radius:6px;
+  button{background:var(--btn);color:var(--ink);border:1px solid var(--line);border-radius:6px;
          padding:7px 8px;font-size:12px;cursor:pointer;transition:.12s}
-  button:hover{background:#262d38;border-color:#3a4250}
+  button:hover{background:var(--btnh);border-color:var(--acc)}
   button.on{background:var(--acc);border-color:var(--acc);color:#fff}
   input[type=range]{width:100%;accent-color:var(--acc)}
   .val{color:var(--acc);font-variant-numeric:tabular-nums}
@@ -101,7 +117,7 @@ TEMPLATE = r"""<!DOCTYPE html>
   .pg-log{height:110px;overflow-y:auto;background:#0b0e14;border:1px solid var(--line);
           border-radius:6px;padding:7px 9px;font:11px/1.6 ui-monospace,monospace}
   .pg-log .cmd{color:var(--acc2)} .pg-log .ok{color:#4cc38a} .pg-log .err{color:#ff6b63}
-  #tip{position:absolute;right:12px;top:12px;background:rgba(11,14,20,.82);
+  #tip{position:absolute;right:12px;top:12px;background:var(--tip);
        border:1px solid var(--line);border-radius:8px;padding:8px 11px;font-size:11px;
        color:var(--mut);max-width:220px}
   #tip b{color:var(--ink)}
@@ -139,9 +155,14 @@ TEMPLATE = r"""<!DOCTYPE html>
       <div style="display:flex;justify-content:space-between"><span>Rotation hélices</span>
         <span class="val" id="spinV">arrêt</span></div>
       <input type="range" id="spin" min="0" max="100" value="40"/>
+      <div style="display:flex;justify-content:space-between;margin-top:10px">
+        <span>Vue éclatée</span><span class="val" id="expV">0 %</span></div>
+      <input type="range" id="exp" min="0" max="100" value="0"/>
       <div class="btns" style="margin-top:10px">
         <button id="bWire">Fil de fer</button>
         <button id="bGrid" class="on">Grille</button>
+        <button id="bTheme">☀ Clair / 🌙 Sombre</button>
+        <button id="bReset">Couleurs par défaut</button>
       </div>
       <div class="mini">Ouvrez <b>?playground=1</b> pour le simulateur de vol
         (clavier + scripts SDK).</div>
@@ -250,8 +271,11 @@ scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
 scene.add(new THREE.HemisphereLight(0xbfd3ff, 0x202024, 0.55));
 const key = new THREE.DirectionalLight(0xffffff, 2.0); key.position.set(0.2,0.26,0.5); scene.add(key);
 const rim = new THREE.DirectionalLight(0x88aaff, 0.7); rim.position.set(-0.3,-0.28,0.16); scene.add(rim);
-const grid = new THREE.GridHelper(0.4, 32, 0x262d38, 0x171c24);
-grid.rotation.x = Math.PI/2; scene.add(grid);
+let grid;
+function makeGrid(light){ if(grid){ scene.remove(grid); grid.geometry.dispose(); grid.material.dispose(); }
+  grid = new THREE.GridHelper(0.4, 32, light?0x9aa4b0:0x262d38, light?0xc2c9d2:0x171c24);
+  grid.rotation.x = Math.PI/2; scene.add(grid); }
+makeGrid(false);
 
 const loader = new STLLoader();
 function geo(b64){ const bin = Uint8Array.from(atob(b64), c=>c.charCodeAt(0));
@@ -269,11 +293,29 @@ const frameRoot = new THREE.Group(); scene.add(frameRoot);
 const G = {};
 function group(name){ const g = new THREE.Group(); G[name]=g; frameRoot.add(g); return g; }
 
-// the REAL JeNo Pocket V2 frame (STEP -> STL): bottom + top plates, camera
-// side plates, standoffs, cross-bars AND the camera, all in one carbon mesh
 const CARBON = 0x1a1d21;
+function place(b64, colr, met, rgh, off){
+  const m2 = mesh(b64, colr, met, rgh);
+  if (off) m2.position.set(off[0]/1000, off[1]/1000, M.frame_z + off[2]/1000);
+  return m2;
+}
+// the REAL JeNo Pocket V2 frame (official STL from WE are FPV): bottom + top
+// plates, camera side plates, standoffs, cross-bars AND the camera
 const gFrame = group('frame'); { const m0 = mesh(STLB64.frame, CARBON, .3, .5);
   m0.position.z = M.frame_z; gFrame.add(m0); }
+// real WE are FPV TPU parts (same coordinate frame): arm bumpers ×4 + back
+// bumper + VTX antenna mount — printed in TPU (soft grey)
+const gTpu = group('tpu');
+const TPU = 0x2b2f36;
+{ // arm bumper modelled on the rear-left arm; mirror to the 4 arm tips
+  for (const [sx, sy] of [[1,1],[-1,1],[1,-1],[-1,-1]]){
+    const ab = mesh(STLB64.arm_bumper, TPU, .1, .8);
+    ab.scale.set(sx*0.001, sy*0.001, 0.001);      // mirror across x / y
+    gTpu.add(ab);
+  }
+  gTpu.add(mesh(STLB64.back_bumper, TPU, .1, .8));      // tail bumper (in place)
+  gTpu.add(mesh(STLB64.vtx_mount, TPU, .1, .8));        // VTX antenna mount (in place)
+}
 // motors + props on the real arm-tip pads (measured from the frame)
 const gMot = group('motors');
 for (const [mx, my] of M.motors){
@@ -292,31 +334,55 @@ for (const [mx, my] of M.motors){
   pm.userData.front = (my > 0);
   gProp.add(pm); propMeshes.push(pm);
 }
-// FC board (sits low in the stack) + battery (on the top plate)
-function place(b64, colr, met, rgh, off){
-  const m2 = mesh(b64, colr, met, rgh);
-  m2.position.set(off[0]/1000, off[1]/1000, M.frame_z + off[2]/1000);
-  return m2;
-}
+// FC board (low in the stack) + battery (on the top plate) + STRATOS logo
 const gElec = group('elec');
 gElec.add(place(STLB64.board, 0x0b6b39, .15, .5, M.elec.board));
+gElec.add(place(STLB64.logo, 0xdfe3e8, .3, .45, M.elec.logo));   // STRATOS emblem
 const gBatt = group('battery');
 gBatt.add(place(STLB64.battery, 0x22262d, .1, .55, M.elec.battery));
+// M2 screws at the stack / camera mount points
+const gScrew = group('screws');
+for (const s of M.screws){ const sc = place(STLB64.screw, 0xd6d9de, .9, .25, s);
+  gScrew.add(sc); }
+// VTX whip antenna sprouting from the TPU mount
+const gAnt = group('antenna');
+gAnt.add(place(STLB64.antenna, 0xca3b34, .2, .5, M.antenna));
 
-// ---- part toggles ----
+// ---- part toggles + per-part colour pickers ----
 const GROUPS = {
-  frame:  {label:'Châssis JeNo Pocket V2 (STEP réel + caméra)', color:'#1a1d21'},
+  frame:  {label:'Châssis JeNo Pocket V2 (réel)', color:'#1a1d21'},
+  tpu:    {label:'Pièces TPU (bumpers + support)', color:'#2b2f36'},
   motors: {label:'Moteurs 1203-1303', color:'#35383f'},
   props:  {label:'Hélices 2,5" (2520)',  color:'#8b9099'},
-  elec:   {label:'Carte AIO (dans le stack)', color:'#0b6b39'},
+  elec:   {label:'Carte AIO + logo STRATOS', color:'#0b6b39'},
   battery:{label:'Batterie 2S-3S', color:'#22262d'},
+  screws: {label:'Visserie M2', color:'#d6d9de'},
+  antenna:{label:'Antenne VTX', color:'#ca3b34'},
 };
+// remember each group's assembled position so the explode slider can offset it
+for (const k of Object.keys(GROUPS)){
+  if (G[k]) { G[k].userData.home = G[k].position.clone();
+              G[k].userData.exp = (M.explode&&M.explode[k])||[0,0,0]; } }
 const groupsEl = document.getElementById('groups');
 for (const k of Object.keys(GROUPS)){
   const l = document.createElement('label'); l.className='tog';
-  l.innerHTML = `<input type="checkbox" checked><span class="sw" style="background:${GROUPS[k].color}"></span>${GROUPS[k].label}`;
-  l.querySelector('input').addEventListener('change', e=>{ G[k].visible = e.target.checked; });
+  l.innerHTML = `<input type="checkbox" checked>`+
+    `<input type="color" class="pick" value="${GROUPS[k].color}" title="couleur">`+
+    `<span>${GROUPS[k].label}</span>`;
+  l.querySelector('input[type=checkbox]').addEventListener('change',
+    e=>{ if(G[k]) G[k].visible = e.target.checked; });
+  l.querySelector('input[type=color]').addEventListener('input',
+    e=>setColor(k, e.target.value));
   groupsEl.appendChild(l);
+}
+
+// ---- explode view ----
+function setExplode(f){                       // f in 0..1
+  for (const k of Object.keys(GROUPS)){ const g=G[k]; if(!g||!g.userData.home) continue;
+    const e=g.userData.exp;
+    g.position.set(g.userData.home.x + e[0]/1000*f,
+                   g.userData.home.y + e[1]/1000*f,
+                   g.userData.home.z + e[2]/1000*f); }
 }
 
 // ---- live recolour (configurator-compatible) ----
@@ -335,6 +401,24 @@ let wire=false;
 document.getElementById('bWire').addEventListener('click', e=>{ wire=!wire; e.target.classList.toggle('on',wire);
   scene.traverse(o=>{ if(o.isMesh) o.material.wireframe=wire; }); });
 document.getElementById('bGrid').addEventListener('click', e=>{ grid.visible=!grid.visible; e.target.classList.toggle('on',grid.visible); });
+
+// ---- exploded view ----
+{ const el=document.getElementById('exp'), v=document.getElementById('expV');
+  el.addEventListener('input', e=>{ const f=+e.target.value/100; setExplode(f);
+    v.textContent=e.target.value+' %'; }); }
+
+// ---- light / dark theme (dark by default = current look) ----
+let light=false;
+function applyTheme(){ document.body.classList.toggle('light', light);
+  scene.background = new THREE.Color(light?0xeef1f5:0x0b0e14);
+  makeGrid(light); }
+document.getElementById('bTheme').addEventListener('click', ()=>{ light=!light; applyTheme(); });
+
+// ---- reset colours to defaults ----
+document.getElementById('bReset').addEventListener('click', ()=>{
+  const keys=Object.keys(GROUPS);
+  keys.forEach(k=> setColor(k, GROUPS[k].color));
+  document.querySelectorAll('.pick').forEach((el,i)=>{ el.value=GROUPS[keys[i]].color; }); });
 let spinRate=0.4*60;                       // hélices en rotation par défaut
 document.getElementById('spinV').textContent='40%';
 document.getElementById('spin').addEventListener('input', e=>{ spinRate=e.target.value/100*60;
@@ -710,17 +794,24 @@ def main():
             .replace("__SUB__", MODEL["sub"])
             .replace("__SPECS__", specs)
             .replace("__MODEL__", json.dumps(
-                {k: MODEL[k] for k in ("motors", "prop_z", "motor_z", "frame_z", "elec")},
+                {k: MODEL[k] for k in ("motors", "prop_z", "motor_z", "frame_z",
+                                       "elec", "screws", "antenna", "explode")},
                 separators=(",", ":")))
             .replace("__STLS__", json.dumps({
-                # frame = the REAL JeNo Pocket V2 STEP tessellated to STL
-                # (frame_jeno/step_to_stl.py) — includes the camera; motors,
-                # props, FC board and battery are added around it.
+                # frame + TPU = the REAL WE are FPV files (01-FRAME / 02-TPU);
+                # motors, props, FC board, battery, screws, logo, antenna are
+                # our own meshes placed around them.
                 "frame": b64(os.path.join(STL, "frame_real.stl")),
+                "arm_bumper": b64(os.path.join(TPU, "arm_bumper.stl")),
+                "back_bumper": b64(os.path.join(TPU, "back_bumper.stl")),
+                "vtx_mount": b64(os.path.join(TPU, "vtx_antenna_mount.stl")),
                 "prop": b64(os.path.join(STL, "prop.stl")),
                 "motor": b64(os.path.join(STL, "motor.stl")),
                 "board": b64(os.path.join(STL, "board.stl")),
                 "battery": b64(os.path.join(STL, "battery.stl")),
+                "screw": b64(os.path.join(STL, "screw.stl")),
+                "logo": b64(os.path.join(STL, "logo.stl")),
+                "antenna": b64(os.path.join(STL, "antenna_vtx.stl")),
             }, separators=(",", ":"))))
     with open(OUT, "w") as f:
         f.write(html)
