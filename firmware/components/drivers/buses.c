@@ -2,7 +2,7 @@
 #include "driver/i2c_master.h"
 #include "driver/spi_master.h"
 #include "esp_check.h"
-#include "board_pinmap.h"
+#include "board_select.h"
 #include "drivers.h"
 #include "esp_log.h"
 
@@ -11,6 +11,9 @@ static const char *TAG = "buses";
 i2c_master_bus_handle_t g_i2c_bus;
 spi_device_handle_t g_spi_imu;
 spi_device_handle_t g_spi_flow;
+#if BOARD_HAS_LORA
+spi_device_handle_t g_spi_lora;
+#endif
 
 esp_err_t board_buses_init(void)
 {
@@ -44,6 +47,17 @@ esp_err_t board_buses_init(void)
     };
     ESP_RETURN_ON_ERROR(spi_bus_add_device(SPI2_HOST, &flow_cfg, &g_spi_flow),
                         TAG, "flow dev");
+
+#if BOARD_HAS_LORA
+    const spi_device_interface_config_t lora_cfg = {
+        .clock_speed_hz = 8 * 1000 * 1000,   /* SX1262 max 16 MHz */
+        .mode = 0,                           /* CPOL=0, CPHA=0 */
+        .spics_io_num = PIN_LORA_CS,
+        .queue_size = 2,
+    };
+    ESP_RETURN_ON_ERROR(spi_bus_add_device(SPI2_HOST, &lora_cfg, &g_spi_lora),
+                        TAG, "lora dev");
+#endif
 
     const i2c_master_bus_config_t i2c_cfg = {
         .i2c_port = 0,

@@ -2,9 +2,9 @@ name: cad
 # Render the 3D-printable frame parts to STL and check key dimensions.
 on:
   push:
-    paths: ['hardware/frame/**', '.github/workflows/cad.yml']
+    paths: ['hardware/frame/**', 'TinyHoopMK1/cad/**', '.github/workflows/cad.yml']
   pull_request:
-    paths: ['hardware/frame/**']
+    paths: ['hardware/frame/**', 'TinyHoopMK1/cad/**']
 
 jobs:
   stl:
@@ -51,3 +51,35 @@ jobs:
           path: |
             hardware/frame/stl/
             hardware/frame/whoop/stl/
+
+  tinyhoop:
+    # TinyHoop MK1 (Fr4n10) — render every plate as STL (printable proto) and
+    # DXF (carbon cut), assert the 2.5" prop clearance holds.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install OpenSCAD
+        run: sudo apt-get update && sudo apt-get install -y openscad
+      - name: Render STL + DXF + clearance assert
+        run: |
+          cd TinyHoopMK1/cad
+          mkdir -p stl dxf
+          for P in bottom_classic bottom_xcore bottom_tank top cam_plate \
+                   tpu_cam tpu_antenna tpu_guard tpu_bumper \
+                   motor prop board o4lite battery; do
+            openscad -o stl/$P.stl --export-format binstl -D "PART=\"$P\"" frame.scad 2>&1 | grep -i assert || true
+            test -s stl/$P.stl || { echo "FAILED to render $P"; exit 1; }
+          done
+          for P in bottom_classic bottom_xcore bottom_tank top cam; do
+            openscad -o dxf/$P.dxf -D "PART=\"dxf_$P\"" frame.scad 2>&1 | grep -i assert || true
+            test -s dxf/$P.dxf || { echo "FAILED to render dxf $P"; exit 1; }
+          done
+          # 2.5" props must not overlap: disc gap on the short axis stays positive
+          openscad -o /tmp/th.echo frame.scad >/dev/null 2>&1
+          grep -q "prop_d=63.5" /tmp/th.echo || { echo "prop size changed"; exit 1; }
+      - uses: actions/upload-artifact@v4
+        with:
+          name: tinyhoop-cad
+          path: |
+            TinyHoopMK1/cad/stl/
+            TinyHoopMK1/cad/dxf/

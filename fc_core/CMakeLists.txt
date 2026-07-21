@@ -14,6 +14,11 @@ add_library(fc_core STATIC
     src/fc_pid.c
     src/fc_params.c
     src/fc_sdk.c
+    src/fc_mode.c
+    src/fc_show.c
+    src/fc_figures.c
+    src/fc_crsf.c
+    src/fc_lorap.c
 )
 target_include_directories(fc_core PUBLIC include PRIVATE src)
 target_link_libraries(fc_core PUBLIC m)
@@ -24,7 +29,8 @@ if(PROJECT_IS_TOP_LEVEL OR FC_CORE_BUILD_TESTS)
     target_link_libraries(sil_plant PUBLIC fc_core)
     target_include_directories(sil_plant PUBLIC test)
 
-    foreach(t IN ITEMS test_units test_sil_flight test_sdk)
+    foreach(t IN ITEMS test_units test_sil_flight test_sdk
+                       test_modes test_show test_crsf test_lorap)
         add_executable(${t} test/${t}.c)
         target_link_libraries(${t} PRIVATE fc_core sil_plant)
         add_test(NAME ${t} COMMAND ${t})

@@ -32,8 +32,11 @@ fr4n6/              Fr4n6-001 — the 5" brushless FPV-class model (charter, CAD
 foldable/           Fr4n7-F — folding-arm variant (spring pivots + latch; button or `deploy`-servo release; CAD + animated viewer)
 fpv85/              Fr4n8-001 — outdoor micro FPV, 85 mm class (ELRS radio + analog 5.8G video, 2S brushless; CAD + viewer + playground sim)
 fpv2/               Fr4n9-001 — outdoor 2" FPV, 98 mm (same design language + SAME shared AIO board as fpv85)
+TinyHoopMK1/        Fr4n10-001 — programmable/swarm 2.5" FPV (JeNo Pocket V2 frame, clean-room): 4 modes (manual/stabilized/program/swarm), ELRS + LoRa 868 fleet link, flow+ToF position hold, analog or DJI O4 Lite video
 hardware/pcb/       KiCad project + JLCPCB fab outputs (gerbers, BOM, CPL) + component map
 hardware/pcb_fpv/   STRATOS FPV AIO — shared brushless 2S board for fpv85+fpv2 (design.py → CI-generated KiCad board)
+hardware/pcb_tinyhoop/ STRATOS TINYHOOP AIO — the TinyHoop MK1 board (FPV AIO + flow/ToF + SX1262 LoRa + GPS, 2S-3S)
+sdk/lora_dongle/    ground LoRa dongle (ESP32+SX1262) — transparent fc_lorap bridge for the no-Wi-Fi PC/fleet link
 hardware/frame/     Parametric OpenSCAD frames → STL:
                       • frame.scad …        open racing-style X-frame
                       • tello_style/ …      closed Tello-size clamshell body
@@ -60,6 +63,7 @@ python sdk/python/examples/03_swarm.py  # ./spawn_swarm.sh 3 first
 - [x] KiCad PCB + JLCPCB fab package *(review in KiCad before ordering — see docs/build_guide.md)*
 - [x] OpenSCAD frame → STL
 - [x] ESP32-P4 firmware tree (flight task, drivers, SDK server, H.264 video)
+- [x] TinyHoop MK1 (Fr4n10): 4-mode manager + show/figure executor + CRSF + LoRa protocol in `fc_core` (host-tested); DShot/CRSF/SX1262/LoRa firmware (CI-compiled); STRATOS TINYHOOP AIO board; clean-room JeNo Pocket V2 CAD (STL+DXF); `stratospy.lora` + choreography compiler
 - [ ] Hardware bring-up (waiting on first PCB batch — see docs/bringup.md)
 - [ ] Real-world flight tuning, camera pipeline validation, 2-drone swarm
 

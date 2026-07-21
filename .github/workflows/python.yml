@@ -20,3 +20,8 @@ jobs:
       - name: Import check
         run: |
           cd sdk/python && python -c "import stratospy; print(stratospy.__version__)"
+      - name: LoRa/show self-tests (golden-frame parity with fc_lorap.c)
+        run: |
+          cd sdk/python
+          python stratospy/lora.py
+          python stratospy/show.py

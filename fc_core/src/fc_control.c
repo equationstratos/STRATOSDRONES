@@ -125,8 +125,34 @@ void fc_mixer_run(fc_core_t *fc)
         fc->motors[i] = fc_clampf(m[i] + shift, 0.04f, 1.0f);
 }
 
+/* MANUAL mode: sticks -> inner loops only, throttle direct. The position and
+ * velocity cascades are bypassed entirely (true FPV feel; flow/ToF ignored). */
+static void manual_loop(fc_core_t *fc, float dt)
+{
+    const fc_params_t *p = &fc->par;
+    const fc_modes_t *m = &fc->modes;
+    fc->thrust = fc_clampf((m->ch[2] + 1.0f) * 0.5f, 0.04f, 0.95f);
+    if (m->acro) {
+        float r = p->acro_rate_dps * FC_DEG2RAD;
+        fc->rate_sp = fcv3(m->ch[0] * r, m->ch[1] * r, -m->ch[3] * r);
+    } else {
+        float amax = p->angle_max_deg * FC_DEG2RAD;
+        fc->yaw_rate_sp_ext = -m->ch[3] * p->yaw_rate_max_dps * FC_DEG2RAD;
+        fc->yaw_sp = fc_wrap_pi(fc->yaw_sp + fc->yaw_rate_sp_ext * dt);
+        fc->att_sp = fcq_from_euler(m->ch[0] * amax, m->ch[1] * amax, fc->yaw_sp);
+        if (fc->tick % 2 == 0) attitude_loop(fc);
+    }
+    rate_loop(fc, dt);
+}
+
 void fc_ctl_step(fc_core_t *fc, float dt)
 {
+    if (fc->modes.mode == FC_MODE_MANUAL) {
+        if (fc->state == FC_ST_FLYING)
+            manual_loop(fc, dt);
+        fc_mixer_run(fc);
+        return;
+    }
     bool flying = (fc->state == FC_ST_FLYING || fc->state == FC_ST_TAKEOFF ||
                    fc->state == FC_ST_LANDING);
     if (flying) {

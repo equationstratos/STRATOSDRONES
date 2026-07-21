@@ -26,3 +26,18 @@ jobs:
         run: |
           . $IDF_PATH/export.sh
           cd firmware && idf.py size || true
+
+  idf-build-tinyhoop:
+    # TinyHoop MK1 variant: DShot ESCs + CRSF + SX1262 LoRa selected via
+    # STRATOS_BOARD_TINYHOOP. Confirms the board-select firmware compiles.
+    runs-on: ubuntu-latest
+    container: espressif/idf:v5.4
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build firmware (esp32p4, TinyHoop AIO)
+        shell: bash
+        run: |
+          . $IDF_PATH/export.sh
+          cd firmware
+          idf.py set-target esp32p4
+          idf.py build -DCMAKE_C_FLAGS="-DSTRATOS_BOARD_TINYHOOP"

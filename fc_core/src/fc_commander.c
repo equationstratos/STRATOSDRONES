@@ -12,6 +12,8 @@ static void enter_state(fc_core_t *fc, fc_state_t st)
     fc->land_still_s = 0.0f;
 }
 
+void fc_cmdr_force_state(fc_core_t *fc, fc_state_t st) { enter_state(fc, st); }
+
 static void finish_cmd(fc_core_t *fc, fc_cmd_status_t st)
 {
     fc->cmdr.status = st;
@@ -40,6 +42,7 @@ void fc_note_sdk_traffic(fc_core_t *fc) { fc->sdk_traffic_age_s = 0.0f; }
 uint32_t fc_cmd_takeoff(fc_core_t *fc)
 {
     if (fc->state != FC_ST_IDLE) return 0;
+    if (fc->modes.mode == FC_MODE_MANUAL) return 0; /* no auto-takeoff in acro */
     if (fc->bat_pct > 0.5f && fc->bat_pct < fc->par.bat_crit_pct) return 0;
     /* local frame origin = takeoff point */
     fc->hest.px = fc->hest.py = 0.0f;
@@ -289,22 +292,30 @@ void fc_cmdr_step(fc_core_t *fc, float dt)
         fc->flight_time_s += dt;
     fc->state_t += dt;
 
+    /* ---- mode manager: arbitration, arming, radio failsafe ---- */
+    fc_mode_step(fc, dt);
+    fc_show_step(fc, dt);   /* fleet clock always runs; motion only in SWARM */
+    bool manual = (fc->modes.mode == FC_MODE_MANUAL);
+
     /* ---- safety ---- */
     float tc = fcq_tilt_cos(fc->ahrs.q);
     float tilt_kill = cosf(fc->par.tilt_kill_deg * FC_DEG2RAD);
-    if (fc->state != FC_ST_IDLE && fc->state != FC_ST_FLIP &&
+    if (!manual && /* acro flips past any tilt limit on purpose */
+        fc->state != FC_ST_IDLE && fc->state != FC_ST_FLIP &&
         fc->state != FC_ST_EMERGENCY && tc < tilt_kill) {
         fc_cmd_emergency(fc);
         return;
     }
     bool airborne = (fc->state == FC_ST_TAKEOFF || fc->state == FC_ST_FLYING ||
                      fc->state == FC_ST_FLIP);
-    if (airborne && fc->bat_pct > 0.5f && fc->bat_pct < fc->par.bat_crit_pct &&
+    if (!manual && /* the pilot owns descent decisions in MANUAL */
+        airborne && fc->bat_pct > 0.5f && fc->bat_pct < fc->par.bat_crit_pct &&
         fc->state != FC_ST_LANDING) {
         fc->low_bat_land = true;
         fc_cmd_land(fc);
     }
-    if (airborne && fc->sdk_traffic_age_s > fc->par.cmd_timeout_s &&
+    if (!manual &&
+        airborne && fc->sdk_traffic_age_s > fc->par.cmd_timeout_s &&
         fc->state != FC_ST_LANDING) {
         fc_cmd_land(fc);
     }
@@ -340,7 +351,8 @@ void fc_cmdr_step(fc_core_t *fc, float dt)
         case FC_MCMD_ROTATE: run_rotate(fc, dt); break;
         default: break;
         }
-        run_rc(fc, dt);
+        if (fc->modes.mode != FC_MODE_SWARM)
+            run_rc(fc, dt);         /* in SWARM the choreography owns pos_sp */
         break;
     case FC_ST_FLIP:
         run_flip(fc, dt);

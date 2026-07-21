@@ -41,6 +41,17 @@ esp_err_t motors_init(void);
 void motors_write(const float duty[4]);        /* 0..1, M1..M4 */
 void motors_kill(void);
 
+/* ---- brushless DShot600 (RMT, TinyHoop AIO) ---- */
+esp_err_t dshot_init(void);
+void dshot_write(const float duty[4]);         /* 0..1, M1..M4 */
+void dshot_kill(void);
+
+/* ---- SX1262 LoRa (SPI2, EU868; TinyHoop AIO) ---- */
+esp_err_t sx1262_init(void);
+bool sx1262_send(const uint8_t *data, uint8_t len, uint32_t timeout_ms);
+void sx1262_rx_start(void);
+int  sx1262_receive(uint8_t out[64], int *rssi_dbm); /* bytes, 0 = none */
+
 /* ---- battery voltage (ADC + divider) ---- */
 esp_err_t vbat_init(void);
 float vbat_read(void);                         /* volts */
