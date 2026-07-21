@@ -4,9 +4,9 @@ name: hardware
 # v8 reads the v7 files this repo commits).
 on:
   push:
-    paths: ['hardware/pcb/**', 'hardware/pcb_fpv/**', '.github/workflows/hardware.yml']
+    paths: ['hardware/pcb/**', 'hardware/pcb_fpv/**', 'hardware/pcb_tinyhoop/**', '.github/workflows/hardware.yml']
   pull_request:
-    paths: ['hardware/pcb/**', 'hardware/pcb_fpv/**']
+    paths: ['hardware/pcb/**', 'hardware/pcb_fpv/**', 'hardware/pcb_tinyhoop/**']
 
 jobs:
   generate-and-check:
@@ -70,3 +70,41 @@ jobs:
           path: |
             hardware/pcb_fpv/stratos_fpv_aio.kicad_pcb
             hardware/pcb_fpv/jlcpcb/
+
+  # STRATOS TINYHOOP AIO (hardware/pcb_tinyhoop) — the TinyHoop MK1 board.
+  # Imports the FPV AIO design and adds flow/ToF/LoRa/GPS + the /5 divider.
+  # .kicad_pcb NOT committed: generated here. assert_placement() on 34x34 is
+  # the density gate (grow to 36 on failure — see pcb_tinyhoop/KNOWN_GAPS.md).
+  board-tinyhoop:
+    runs-on: ubuntu-latest
+    container: kicad/kicad:8.0
+    steps:
+      - uses: actions/checkout@v4
+      - name: Generate TinyHoop AIO board + pinmap + schematic
+        shell: bash
+        run: |
+          cd hardware/pcb_tinyhoop
+          python3 scripts/design.py
+          python3 scripts/gen_pcb.py
+          python3 scripts/gen_pinmap.py
+          python3 scripts/gen_schematic.py
+      - name: Verify firmware pinmap matches design.py
+        shell: bash
+        run: |
+          git diff --exit-code firmware/components/board/include/board_pinmap_tinyhoop.h \
+            || (echo "board_pinmap_tinyhoop.h is stale — run make pinmap and commit" && exit 1)
+      - name: DRC (pre-routing, informational)
+        shell: bash
+        run: |
+          cd hardware/pcb_tinyhoop
+          kicad-cli pcb drc --exit-code-violations --severity-error \
+            stratos_tinyhoop_aio.kicad_pcb || echo "DRC reported items (expected pre-routing; see KNOWN_GAPS)"
+      - name: Export fab package
+        shell: bash
+        run: cd hardware/pcb_tinyhoop && python3 scripts/export_fab.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: jlcpcb-tinyhoop
+          path: |
+            hardware/pcb_tinyhoop/stratos_tinyhoop_aio.kicad_pcb
+            hardware/pcb_tinyhoop/jlcpcb/
