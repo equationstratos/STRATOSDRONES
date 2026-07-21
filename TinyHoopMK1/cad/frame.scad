@@ -180,19 +180,20 @@ module tpu_bumper() {   // rear bumper protecting the XT30 + antennas
 }
 
 /* ============ electronics + realistic viewer meshes (buy, don't print) ==== */
-module board() {         // STRATOS TINYHOOP AIO, 34x34
+module board() {         // STRATOS TINYHOOP AIO (viewer: 30 mm to sit in the stack)
+    bw = 30;
     difference() {
-        color("#0b6b39") rrect3(34, 34, 2.5, 1.6);
+        color("#0b6b39") rrect3(bw, bw, 2.5, 1.6);
         for (sx=[-1,1], sy=[-1,1]) translate([sx*stack/2, sy*stack/2, -eps])
             cylinder(d=2.3, h=3, $fn=20);          // mount holes
     }
     color("#caa14a") for (sx=[-1,1], sy=[-1,1])    // gold plated mount rings
         translate([sx*stack/2, sy*stack/2, 1.55]) cylinder(d=4, h=0.25, $fn=20);
     color("#15161a") for (sx=[-1,1], sy=[-1,1])    // the two ESP32 + ESC chips
-        translate([sx*7, sy*6, 1.6]) rrect3(7, 6, 0.6, 1.9);
+        translate([sx*6, sy*5.5, 1.6]) rrect3(6.5, 5.5, 0.6, 1.9);
     color("#20222a") translate([0, 0, 1.6]) rrect3(8, 8, 1, 1.4);   // P4 shield
-    color("#c0c0c0") translate([13, -11, 1.6]) cube([5, 3.5, 2], center=true); // XT30 pads
-    color("#d64541") translate([-13, 12, 1.6]) cube([4, 3, 1.6], center=true); // CRSF socket
+    color("#c0c0c0") translate([11, -9.5, 1.6]) cube([5, 3.5, 2], center=true); // XT30 pads
+    color("#d64541") translate([-11, 10, 1.6]) cube([4, 3, 1.6], center=true); // CRSF socket
 }
 module standoff(h) {     // aluminium M2 hex standoff
     color("#b9bcc2") cylinder(d=4.0, h=h, $fn=6);

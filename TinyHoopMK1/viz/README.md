@@ -3,9 +3,13 @@
 `drone_viewer.html` — un seul fichier autonome (double-clic, hors-ligne,
 Three.js r160 inliné) :
 
-- **Vue 3D** : plaque basse / plaque haute / moteurs / hélices / carte /
-  O4 Lite / plaques caméra (les vrais STL de `../cad/stl/`), vues, toggles,
-  fil de fer, rotation d'hélices, recolor `{type:'colors'}`.
+- **Vue 3D** : le **vrai châssis JeNo Pocket V2** (fichier STEP fourni,
+  tessellé en STL par `../cad/frame_jeno/step_to_stl.py` — plaques, plaques
+  caméra, entretoises **et la caméra**), plus moteurs / hélices / carte AIO /
+  batterie ajoutés autour, aux positions mesurées sur le châssis réel. Vues,
+  toggles, fil de fer, rotation d'hélices, recolor `{type:'colors'}`.
+  Le STEP est celui de WE are FPV (CC-BY-4.0) — voir
+  `../cad/frame_jeno/ATTRIBUTION.md`.
 - **`?playground=1` = le SIMULATEUR** — scripts SDK Tello
   (command/takeoff/go/curve/flip/…, essaim `drones N` + expressions en `i`),
   presets (hover/carré/swarm/freestyle) et **pilotage clavier** (T décoller,
