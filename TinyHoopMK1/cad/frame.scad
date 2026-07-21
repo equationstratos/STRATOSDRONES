@@ -265,6 +265,19 @@ module antenna_elrs() {  // ELRS T-antenna: coax + two dipole tips
         cylinder(d=0.9, h=25, center=true, $fn=10);
 }
 
+/* STRATOS emblem — a tri-blade prop ring with a raised "S" hub (the PCB
+ * logo): a thin decal to drop on the top plate (replaces the JeNo silk). */
+module logo() {
+    linear_extrude(0.6) {                              // 3 blades + hub disc
+        for (a=[0:120:240]) rotate(a)
+            translate([4.6, 0]) rotate(20) scale([1,0.42]) circle(d=9.5, $fn=36);
+        circle(d=6.6, $fn=44);
+    }
+    translate([0,0,0.55]) linear_extrude(0.7)          // raised S on the hub
+        text("S", size=7.5, halign="center", valign="center",
+             font="Liberation Sans:style=Bold");
+}
+
 /* ---------------- ghosts (previews only) ---------------- */
 module ghost_props() {
     for (sx=[-1,1], sy=[-1,1]) translate([sx*motor_mx, sy*motor_my, bottom_t+9.6])
@@ -318,6 +331,10 @@ else if (PART == "prop")           prop();
 else if (PART == "board")          board();
 else if (PART == "o4lite")         o4lite();
 else if (PART == "battery")        battery_pack();
+else if (PART == "screw")          screw();
+else if (PART == "logo")           logo();
+else if (PART == "antenna_vtx")    antenna_vtx();
+else if (PART == "antenna_elrs")   antenna_elrs();
 // DXF: 2-D carbon profiles (render the flat shapes for cutting)
 else if (PART == "dxf_bottom_classic") bottom_2d("classic");
 else if (PART == "dxf_bottom_xcore")   bottom_2d("xcore");
