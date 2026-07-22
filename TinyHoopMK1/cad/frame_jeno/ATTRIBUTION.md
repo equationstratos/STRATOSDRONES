@@ -19,14 +19,21 @@
     can be shown / exploded on its own in the viewer. Same geometry, just
     separated per solid.
   - The viewer *positions* these and adds our own meshes (props, FC board,
-    battery, screws, hammer antenna) plus a **STRATOS top plate** that
-    replaces the JeNo top (same envelope).
+    DOGCOM 3S 560 mAh battery, screws, LiPo capacitor, buzzer, GPS/compass,
+    ELRS RX antenna and the motor phase cables) plus a **STRATOS top plate**
+    that replaces the JeNo top (same envelope).
 
-## Other third-party file
+## Other third-party files
 
 - `parts/motor_1104.stl` — **Readytosky 1104-7500KV** motor model, provided by
   the project owner for a faithful motor render. Product geometry by
   Readytosky; used here for visualisation only.
+- `dji_o4/o4_cam_head.stl`, `dji_o4/o4_airunit.stl`, `dji_o4/o4_antenna.stl` —
+  the **DJI O4 Pro** camera head, air unit and (single) antenna, meshed from
+  the STEP files supplied by the project owner and cropped to the parts that
+  sit inside the build. Product geometry © DJI; used here for visualisation
+  only. The build keeps a **single** O4 antenna, routed into the rear TPU
+  antenna mount, exactly as requested.
 
 ## Why the real file is here
 

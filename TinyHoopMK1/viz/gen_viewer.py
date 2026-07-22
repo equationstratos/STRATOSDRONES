@@ -21,6 +21,7 @@ VENDOR = os.path.join(REPO, "sim", "viz", "vendor")
 STL = os.path.join(REPO, "TinyHoopMK1", "cad", "stl")
 TPU = os.path.join(REPO, "TinyHoopMK1", "cad", "frame_jeno", "tpu")
 PARTS = os.path.join(REPO, "TinyHoopMK1", "cad", "frame_jeno", "parts")
+DJI = os.path.join(REPO, "TinyHoopMK1", "cad", "dji_o4")
 OUT = os.path.join(HERE, "drone_viewer.html")
 
 # the 4 real motor-mount holes of the front-right corner (measured in the STEP)
@@ -33,20 +34,20 @@ _STACK_SCREWS = [[x,y,17.4] for (x,y) in _FRAME_STAND] + [[x,y,6.4] for (x,y) in
 MODEL = dict(name="FR4N10", sub="FPV programmable / essaim · 2,5\" · 2S-3S", wb=116,
              motors=[[46.6,34.1],[-46.6,34.1],[-46.6,-34.1],[46.6,-34.1]],
              prop_z=0.0135, motor_z=0.003, frame_z=0.0,
-             elec=dict(board=[0,0,6], battery=[0,-11,20]),
-             # clean standoffs: 3 tall frame posts (z3..17) + 4 short board posts
+             elec=dict(board=[0,0,6], battery=[0,-11,22],
+                       o4cam=[0,44,11], o4airunit=[0,-6,7], o4antenna=[0,-40,3],
+                       cap=[11,-13,7], buzzer=[-11,-13,7], gps=[-9,-18,20.8],
+                       rx=[13,-30,4]),
              standoffs=dict(frame=_FRAME_STAND, board=_BOARD_STAND),
              # ALL screws: 16 motor-mount + 3 frame-standoff tops + 4 board tops
              screws=_MOTOR_SCREWS + _STACK_SCREWS,
-             vtx=[0,-24,20.5],            # analog VTX module on the top plate
-             antenna=[0,-38,20.5],        # lollipop antenna, seats in the VTX mount
              cammount=[0,0,0],            # O4 mount parts are already in frame coords
              # per-group explode offsets (mm along Z, × slider)
-             explode=dict(bottom=[0,0,0], top=[0,0,52], standoffs=[0,0,26],
-                          camcage=[0,0,40], camera=[0,0,46], cammount=[0,26,54],
-                          motors=[0,0,-40], props=[0,0,74], elec=[0,0,-30],
-                          battery=[0,0,88], screws=[0,0,64], tpu=[0,0,-26],
-                          vtx=[0,0,80]),
+             explode=dict(bottom=[0,0,0], top=[0,0,56], standoffs=[0,0,26],
+                          camcage=[0,0,40], camera=[0,0,48], cammount=[0,26,56],
+                          airunit=[0,0,-18], motors=[0,0,-40], props=[0,0,78],
+                          elec=[0,0,-30], battery=[0,0,94], screws=[0,0,66],
+                          tpu=[0,0,-26], antenna=[0,0,90], extras=[0,0,-15]),
              specs=[("Entraxe", "~115 mm (wide-X)"), ("Hélices", "2,5\" Gemfan 2520"),
                     ("Moteurs", "1203-1303 · 2S-3S"),
                     ("ESC", "AIO BLHeli_S/Bluejay · DShot600"),
@@ -171,7 +172,7 @@ TEMPLATE = r"""<!DOCTYPE html>
           <tr><td>FC / ESC</td><td class="v">JHEMCU GHF435AIO V2 20A</td></tr>
           <tr><td>Moteurs</td><td class="v">1104 7500KV (Readytosky)</td></tr>
           <tr><td>Hélices</td><td class="v">Gemfan 2520</td></tr>
-          <tr><td>Caméra</td><td class="v">DJI O4 Lite / nano analog.</td></tr>
+          <tr><td>Caméra</td><td class="v">DJI O4 Pro (air unit + antenne)</td></tr>
           <tr><td>RX</td><td class="v">ELRS (antenne céram.)</td></tr>
           <tr><td>VTX</td><td class="v">analogique 5,8 GHz (si non-O4)</td></tr>
           <tr><td>Batterie</td><td class="v">2S-3S 450-560 mAh</td></tr>
@@ -310,9 +311,11 @@ makeGrid(false);
 const loader = new STLLoader();
 function geo(b64){ const bin = Uint8Array.from(atob(b64), c=>c.charCodeAt(0));
   const g = loader.parse(bin.buffer); g.computeVertexNormals(); return g; }
-function mesh(b64, color, metal, rough){
-  const m = new THREE.Mesh(geo(b64),
-    new THREE.MeshStandardMaterial({color, metalness:metal, roughness:rough}));
+function mesh(b64, color, metal, rough, opts){
+  const mat = new THREE.MeshStandardMaterial({color, metalness:metal, roughness:rough});
+  if (opts && opts.opacity!=null){ mat.transparent=true; mat.opacity=opts.opacity;
+    mat.depthWrite=false; mat.side=THREE.DoubleSide; }
+  const m = new THREE.Mesh(geo(b64), mat);
   m.scale.setScalar(0.001);          // mm -> m
   return m;
 }
@@ -345,8 +348,15 @@ for (const [x,y] of M.standoffs.board){ const s=mesh(STLB64.standoff, 0xc2c5cb,.
   s.position.set(x/1000, y/1000, 0.003); s.scale.set(0.001,0.001,0.001*3/14); gStand.add(s); }
 const gCage = group('camcage'); { const m=mesh(STLB64.camcage, CARBON,.3,.5);
   m.position.z=M.frame_z; gCage.add(m); }
-const gCam = group('camera'); { const m=mesh(STLB64.camera, 0x15161a,.35,.45);
-  m.position.z=M.frame_z; gCam.add(m); }         // camera — toggle to show/hide
+// DJI O4 Pro camera head at the nose (real STEP) — lens faces +Y
+const gCam = group('camera');
+{ const m=mesh(STLB64.o4cam, 0x121316,.4,.4);
+  m.rotation.z = -Math.PI/2;
+  m.position.set(M.elec.o4cam[0]/1000, M.elec.o4cam[1]/1000, M.elec.o4cam[2]/1000);
+  gCam.add(m); }
+// DJI O4 Pro air unit (the digital VTX) in the stack
+const gAir = group('airunit');
+gAir.add(place(STLB64.o4airunit, 0x17181c,.4,.4, M.elec.o4airunit));
 // real WE are FPV 2-part O4 camera mount (top + aligned bottom clamp)
 const gMount = group('cammount');
 gMount.add(mesh(STLB64.cam_mount_top, TPU,.1,.8));
@@ -370,7 +380,7 @@ const gProp = group('props');
 const propMeshes = [];
 for (const [mx, my] of M.motors){
   const cw = (mx*my > 0);
-  const pm = mesh(STLB64.prop, 0x8b9099, .15, .5);
+  const pm = mesh(STLB64.prop, 0xd8721e, .05, .35, {opacity:0.55});
   pm.position.set(mx/1000, my/1000, M.prop_z);
   pm.scale.set(0.001, cw?0.001:-0.001, 0.001);
   pm.userData.dir = cw?1:-1;
@@ -387,11 +397,22 @@ gBatt.add(place(STLB64.battery, 0x22262d, .1, .55, M.elec.battery));
 const gScrew = group('screws');
 for (const s of M.screws){ const sc = place(STLB64.screw, 0xd6d9de, .9, .25, s);
   gScrew.add(sc); }
-// standard analog VTX module + RHCP lollipop antenna (the O4 Lite is the
-// digital option — the frame's camera; this is the analog video chain)
-const gVtx = group('vtx');
-gVtx.add(place(STLB64.vtx, 0x1c3a1c, .2, .5, M.vtx));
-gVtx.add(place(STLB64.antenna, 0xca3b34, .2, .5, M.antenna));
+// the SINGLE DJI O4 Pro antenna, routed into the rear TPU antenna mount
+const gAnt = group('antenna');
+{ const a = place(STLB64.o4antenna, 0x101216, .2, .5, M.elec.o4antenna);
+  a.rotation.x = Math.PI/2; gAnt.add(a); }   // stand it up in the rear mount
+// build extras: LiPo capacitor, buzzer, GPS/compass, ELRS RX antenna,
+// 4 motor phase cables — all routed around the stack
+const gEx = group('extras');
+gEx.add(place(STLB64.cap,    0x1b3a8f, .25, .45, M.elec.cap));      // 25V 22µF
+gEx.add(place(STLB64.buzzer, 0x141519, .3,  .5,  M.elec.buzzer));   // Ø8 buzzer
+gEx.add(place(STLB64.gps,    0x0a0c10, .2,  .5,  M.elec.gps));      // GPS/compass
+{ const rx = place(STLB64.rx, 0xb23a2f, .2, .5, M.elec.rx);
+  rx.rotation.x = Math.PI/2; gEx.add(rx); }                         // RX whip in TPU
+for (const [mx, my] of M.motors){                                  // 4 phase cables
+  const c = mesh(STLB64.cable, 0x2a2c30, .2, .6);
+  c.position.set(mx/1000, my/1000, M.frame_z + 0.004);
+  c.scale.set(mx<0?-0.001:0.001, my<0?-0.001:0.001, 0.001); gEx.add(c); }
 
 // ---- part toggles + per-part colour pickers ----
 const GROUPS = {
@@ -399,15 +420,17 @@ const GROUPS = {
   top:      {label:'Plaque haute STRATOS', color:'#1a1d21'},
   standoffs:{label:'Entretoises', color:'#b9bcc2'},
   camcage:  {label:'Cage caméra (carbone)', color:'#1a1d21'},
-  camera:   {label:'Caméra (DJI O4 Lite)', color:'#15161a'},
+  camera:   {label:'Caméra DJI O4 Pro', color:'#121316'},
+  airunit:  {label:'Air unit DJI O4 Pro', color:'#17181c'},
   cammount: {label:'Support caméra O4 (TPU · 2 pièces)', color:'#2b2f36'},
   tpu:      {label:'Protections TPU (bumpers)', color:'#2b2f36'},
   motors:   {label:'Moteurs 1104 (Readytosky)', color:'#3a3d43'},
-  props:    {label:'Hélices 2,5" (2520)',  color:'#8b9099'},
+  props:    {label:'Hélices 2,5" (2520)',  color:'#d8721e'},
   elec:     {label:'Carte AIO', color:'#0b6b39'},
-  battery:  {label:'Batterie 2S-3S', color:'#22262d'},
+  battery:  {label:'Batterie 3S 560 mAh (DOGCOM)', color:'#22262d'},
   screws:   {label:'Visserie M2 (moteurs + stack)', color:'#d6d9de'},
-  vtx:      {label:'VTX + antenne lollipop', color:'#ca3b34'},
+  antenna:  {label:'Antenne DJI O4 (unique)', color:'#101216'},
+  extras:   {label:'Condensateur · buzzer · GPS · RX · câbles', color:'#1b3a8f'},
 };
 // remember each group's assembled position so the explode slider can offset it
 for (const k of Object.keys(GROUPS)){
@@ -856,8 +879,8 @@ def main():
             .replace("__SPECS__", specs)
             .replace("__MODEL__", json.dumps(
                 {k: MODEL[k] for k in ("motors", "prop_z", "motor_z", "frame_z",
-                                       "elec", "screws", "standoffs", "vtx",
-                                       "antenna", "cammount", "explode")},
+                                       "elec", "screws", "standoffs",
+                                       "cammount", "explode")},
                 separators=(",", ":")))
             .replace("__STLS__", json.dumps({
                 # REAL WE are FPV geometry, split from the STEP + the 02-TPU
@@ -867,7 +890,10 @@ def main():
                 "frame_top": b64(os.path.join(STL, "stratos_top.stl")),
                 "standoff": b64(os.path.join(STL, "standoff_post.stl")),
                 "camcage": b64(os.path.join(PARTS, "cam_cage.stl")),
-                "camera": b64(os.path.join(PARTS, "camera.stl")),
+                # DJI O4 Pro system (real STEP -> STL, provided by the owner)
+                "o4cam": b64(os.path.join(DJI, "o4_cam_head.stl")),
+                "o4airunit": b64(os.path.join(DJI, "o4_airunit.stl")),
+                "o4antenna": b64(os.path.join(DJI, "o4_antenna.stl")),
                 "cam_mount_top": b64(os.path.join(TPU, "o4_mount_top.stl")),
                 "cam_mount_bottom": b64(os.path.join(TPU, "o4_mount_bottom.stl")),
                 "arm_bumper": b64(os.path.join(TPU, "arm_bumper.stl")),
@@ -878,8 +904,11 @@ def main():
                 "board": b64(os.path.join(STL, "board.stl")),
                 "battery": b64(os.path.join(STL, "battery.stl")),
                 "screw": b64(os.path.join(STL, "screw.stl")),
-                "vtx": b64(os.path.join(STL, "vtx_module.stl")),
-                "antenna": b64(os.path.join(STL, "antenna_lollipop.stl")),
+                "cap": b64(os.path.join(STL, "capacitor.stl")),
+                "buzzer": b64(os.path.join(STL, "buzzer.stl")),
+                "gps": b64(os.path.join(STL, "gps_module.stl")),
+                "rx": b64(os.path.join(STL, "rx_antenna.stl")),
+                "cable": b64(os.path.join(STL, "motor_cable.stl")),
             }, separators=(",", ":"))))
     with open(OUT, "w") as f:
         f.write(html)

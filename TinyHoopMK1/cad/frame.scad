@@ -216,17 +216,21 @@ module motor() {         // 1203-class brushless, bell up (props-on-top build)
         translate([4.3,0,9.3]) cylinder(d=1.7, h=0.7, $fn=12);
     color("#9a9da3") translate([0,0,1.0]) cylinder(d=3.2, h=9.6, $fn=24);   // shaft
 }
-module blade2d() {       // Gemfan-2520-style tri-blade planform (r vs chord)
+module blade2d() {       // curved "scimitar" Gemfan-2520 planform (hull of arcs)
     R = prop_d/2;
-    polygon([[3,-1.4],[10,-3.4],[19,-3.6],[27,-2.6],[R-0.4,-0.8],
-             [R-0.2,0.7],[27,2.9],[18,3.9],[9,3.2],[3,1.5]]);
+    hull() for (i=[0:10]) {
+        u = i/10; r = 3.5 + u*(R-4.0);
+        y = 7.2*u*(1-u)*1.7 + 2.2*u;                 // camber sweep (scimitar curve)
+        ch = 1.0 + 6.6*sin(u*180)*(1 - 0.28*u);      // chord: fat mid, fine tip
+        translate([r, y]) circle(d=max(0.9, ch), $fn=16);
+    }
 }
-module prop() {          // 2.5" (63.5 mm) tri-blade, cambered + pitched
-    color("#2a2c30") cylinder(d=7.0, h=4.2, $fn=32);             // hub
-    color("#1c1e22") translate([0,0,4.2]) cylinder(d=4.4, h=1.0, $fn=22); // cap
-    color("#3a3d43") for (a=[0:120:240]) rotate([0,0,a])
-        translate([0,0,3.0]) rotate([11,0,-4])                   // pitch + slight cone
-            linear_extrude(0.95) blade2d();
+module prop() {          // 2.5" (63.5 mm) curved tri-blade (Gemfan look)
+    color("#2a2c30") cylinder(d=7.2, h=4.6, $fn=36);             // T-mount hub
+    color("#1c1e22") translate([0,0,4.6]) cylinder(d=4.6, h=1.0, $fn=24);
+    for (a=[0:120:240]) rotate([0,0,a])                          // 3 curved blades
+        translate([0,0,3.2]) rotate([13,0,-5])                   // pitch + up-cone
+            linear_extrude(0.85, twist=-6, convexity=4) blade2d();
 }
 module o4lite() {        // DJI O4-Lite-class HD cam unit (JeNo-native)
     color("#17181c") rrect3(19, 11, 1.5, 11);                    // body
@@ -238,14 +242,24 @@ module o4lite() {        // DJI O4-Lite-class HD cam unit (JeNo-native)
         color("#14315e") translate([0,0,5.2]) sphere(d=7, $fn=28);   // glass
     }
 }
-module battery_pack() {  // 2S 450-550 mAh LiPo, label up, XT30 out the tail
-    bl = 48; bw = 27; bt = 13;
-    color("#20242b") rrect3(bw, bl, 3, bt);                      // pack
-    color("#eef1f4") translate([0,0,bt-0.5]) rrect3(bw-3, bl-4, 2, 0.6);  // label
-    color("#f0b000") translate([0,-bl/2-3.5, bt*0.4])            // XT30 plug
-        rotate([90,0,0]) cube([9, 7, 7], center=true);
-    for (sx=[-1,1]) color(sx>0?"#c00":"#111")                    // pigtail leads
-        translate([sx*2.5,-bl/2-8, bt*0.4]) rotate([90,0,0]) cylinder(d=2, h=8, $fn=10);
+module battery_pack() {  // DOGCOM 3S 560 mAh — 70 × 18 × 18 mm (L × W × H)
+    bl = 70; bw = 18; bt = 18;
+    color("#1a1a1e") rrect3(bw, bl, 2.5, bt);                    // black shrink pack
+    // white label band with the LiPo spec text engraved
+    color("#e8e8ea") translate([0, 2, bt-0.4]) rrect3(bw-2, 40, 1.5, 0.5);
+    color("#111") translate([0, 12, bt+0.05]) linear_extrude(0.4)
+        text("DOGCOM", size=3.4, halign="center", valign="center",
+             font="Liberation Sans:style=Bold");
+    color("#b0111a") translate([0, 5, bt+0.05]) linear_extrude(0.4)
+        text("3S 560mAh", size=2.8, halign="center", valign="center",
+             font="Liberation Sans:style=Bold");
+    color("#333") translate([0, -1, bt+0.05]) linear_extrude(0.4)
+        text("11.1V 80C", size=2.2, halign="center", valign="center");
+    // XT30 pigtail + balance lead out the tail
+    color("#f0b000") translate([0,-bl/2-4, bt*0.4]) rotate([90,0,0]) cube([9,7,7],center=true);
+    for (sx=[-1,1]) color(sx>0?"#c00":"#111")
+        translate([sx*2.5,-bl/2-9, bt*0.4]) rotate([90,0,0]) cylinder(d=2, h=9, $fn=10);
+    color("#e0e0e0") translate([5,-bl/2-6, bt*0.7]) rotate([90,0,0]) cube([4,3,7],center=true); // balance plug
 }
 module batt_strap(zbase, bt) {   // narrow rubber gates band over the pack
     color("#101216") difference() {
@@ -263,6 +277,42 @@ module antenna_elrs() {  // ELRS T-antenna: coax + two dipole tips
     color("#161616") cylinder(d=1.4, h=13, $fn=12);
     color("#c8a24a") translate([0,0,13]) rotate([0,90,0])
         cylinder(d=0.9, h=25, center=true, $fn=10);
+}
+
+/* Low-ESR capacitor across the battery leads — 25 V 22 uF, Ø6 × 12 mm. */
+module capacitor() {
+    color("#1b1b6a") cylinder(d=6, h=12, $fn=28);              // blue can
+    color("#c9c9c9") translate([0,0,12]) cylinder(d=6, h=0.4, $fn=28); // top vent
+    for (sx=[-1,1]) color(sx>0?"#c00":"#111")                 // radial leads
+        translate([sx*1.5,0,-6]) cylinder(d=0.8, h=6, $fn=8);
+}
+
+/* 5 V piezo buzzer — small black can with two leads. */
+module buzzer() {
+    color("#141414") cylinder(d=8, h=4.5, $fn=28);
+    color("#333") translate([0,0,4.5]) cylinder(d=2, h=0.6, $fn=16);  // sound port
+    for (sx=[-1,1]) color("#c8a24a") translate([sx*2,0,-4]) cylinder(d=0.7,h=4,$fn=8);
+}
+
+/* Micro GPS + compass module (M10-class) — small PCB with a ceramic patch. */
+module gps_module() {
+    color("#1c3a1c") rrect3(14, 14, 1.2, 1.4);                 // green PCB
+    color("#d8d8d8") translate([0,0,1.4]) rrect3(10, 10, 0.6, 3.2);  // ceramic patch antenna
+    color("#111") translate([-5,-5,1.4]) cube([3,3,1.5]);     // u-blox chip
+}
+
+/* ELRS receiver whip antenna — coax + a T tip (ceramic-free micro RX). */
+module rx_antenna() {
+    color("#161616") cylinder(d=1.2, h=16, $fn=12);           // coax
+    color("#d8b24a") translate([0,0,16]) cylinder(d=1.6, h=4, $fn=12); // active tip (sleeve)
+}
+
+/* A soft silicone motor lead bundle (3 phase wires) as a swept tube. */
+module motor_cable() {
+    pts = [for (i=[0:8]) [i*1.6, 2.4*sin(i*22), 0.3*i]];
+    color("#20222a") for (i=[0:len(pts)-2])
+        hull() { translate(pts[i]) sphere(d=1.6,$fn=8);
+                 translate(pts[i+1]) sphere(d=1.6,$fn=8); }
 }
 
 /* STRATOS emblem — a tri-blade prop ring with a raised "S" hub (the PCB
@@ -398,6 +448,11 @@ else if (PART == "standoff_post")  standoff_post();
 else if (PART == "vtx_module")     vtx_module();
 else if (PART == "antenna_lollipop") antenna_lollipop();
 else if (PART == "o4_airunit")     o4_airunit();
+else if (PART == "capacitor")      capacitor();
+else if (PART == "buzzer")         buzzer();
+else if (PART == "gps_module")     gps_module();
+else if (PART == "rx_antenna")     rx_antenna();
+else if (PART == "motor_cable")    motor_cable();
 // DXF: 2-D carbon profiles (render the flat shapes for cutting)
 else if (PART == "dxf_bottom_classic") bottom_2d("classic");
 else if (PART == "dxf_bottom_xcore")   bottom_2d("xcore");
