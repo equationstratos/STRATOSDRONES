@@ -44,7 +44,8 @@ MODEL = dict(name="FR4N10", sub="FPV programmable / essaim · 2,5\" · 2S-3S", w
              cammount=[0,0,0],            # O4 mount parts are already in frame coords
              # per-group explode offsets (mm along Z, × slider)
              explode=dict(bottom=[0,0,0], top=[0,0,56], standoffs=[0,0,26],
-                          camcage=[0,0,40], camera=[0,0,48], cammount=[0,26,56],
+                          camcage=[0,0,40], camera=[0,0,48],
+                          cammount_top=[0,26,60], cammount_bottom=[0,20,52],
                           airunit=[0,0,-18], motors=[0,0,-40], props=[0,0,78],
                           elec=[0,0,-30], battery=[0,0,94], screws=[0,0,66],
                           tpu=[0,0,-26], antenna=[0,0,90], cap=[0,0,-8],
@@ -206,20 +207,30 @@ TEMPLATE = r"""<!DOCTYPE html>
       <select id="camTarget" style="width:100%;background:var(--btn);color:var(--ink);
         border:1px solid var(--line);border-radius:6px;padding:6px;margin-bottom:8px">
         <option value="camera">Caméra O4 Lite</option>
-        <option value="cammount">Support caméra (TPU)</option>
+        <option value="cammount_top">Support HAUT (TPU)</option>
+        <option value="cammount_bottom">Support BAS (TPU)</option>
       </select>
-      <div style="display:flex;justify-content:space-between"><span>Horizontal latéral (X)</span>
+      <div style="display:flex;justify-content:space-between"><span>Latéral (X)</span>
         <span class="val" id="camXV">0.0 mm</span></div>
       <input type="range" id="camX" min="-15" max="15" step="0.5" value="0"/>
-      <div style="display:flex;justify-content:space-between;margin-top:8px"><span>Profondeur (Y)</span>
+      <div style="display:flex;justify-content:space-between;margin-top:6px"><span>Profondeur (Y)</span>
         <span class="val" id="camYV">0.0 mm</span></div>
       <input type="range" id="camY" min="-20" max="20" step="0.5" value="0"/>
-      <div style="display:flex;justify-content:space-between;margin-top:8px"><span>Vertical (Z)</span>
+      <div style="display:flex;justify-content:space-between;margin-top:6px"><span>Vertical (Z)</span>
         <span class="val" id="camZV">0.0 mm</span></div>
       <input type="range" id="camZ" min="-15" max="15" step="0.5" value="0"/>
-      <div class="mini" style="margin-top:8px">Décalage <b id="camDelta">X 0 · Y 0 · Z 0</b>
-        (mm) — copie-moi cette ligne.</div>
-      <button id="camReset" style="width:100%;margin-top:8px">Réinitialiser</button>
+      <div style="display:flex;justify-content:space-between;margin-top:6px"><span>Rotation X (°)</span>
+        <span class="val" id="camRXV">0°</span></div>
+      <input type="range" id="camRX" min="-90" max="90" step="1" value="0"/>
+      <div style="display:flex;justify-content:space-between;margin-top:6px"><span>Rotation Y (°)</span>
+        <span class="val" id="camRYV">0°</span></div>
+      <input type="range" id="camRY" min="-90" max="90" step="1" value="0"/>
+      <div style="display:flex;justify-content:space-between;margin-top:6px"><span>Rotation Z (°)</span>
+        <span class="val" id="camRZV">0°</span></div>
+      <input type="range" id="camRZ" min="-90" max="90" step="1" value="0"/>
+      <div class="mini" style="margin-top:8px"><b id="camDelta">camera : X 0 · Y 0 · Z 0 · RX 0 · RY 0 · RZ 0</b>
+        — copie-moi cette ligne.</div>
+      <button id="camReset" style="width:100%;margin-top:8px">Réinitialiser cette pièce</button>
     </div>
     <div class="sec">
       <h2>Spécifications (cible)</h2>
@@ -348,6 +359,16 @@ function mesh(b64, color, metal, rough, opts){
 const frameRoot = new THREE.Group(); scene.add(frameRoot);
 const G = {};
 function group(name){ const g = new THREE.Group(); G[name]=g; frameRoot.add(g); return g; }
+// a group whose ORIGIN is a chosen pivot (mm) so sliders can translate AND
+// rotate the part about its own centre; the mesh is re-offset to stay in place.
+function adjGroup(name, meshObj, px, py, pz){
+  const g = group(name);
+  g.position.set(px/1000, py/1000, pz/1000);
+  meshObj.position.set(meshObj.position.x - px/1000,
+                       meshObj.position.y - py/1000,
+                       meshObj.position.z - pz/1000);
+  g.add(meshObj); g.userData.base = g.position.clone(); return g;
+}
 
 const CARBON = 0x1a1d21;
 function place(b64, colr, met, rgh, off){
@@ -373,11 +394,10 @@ const gCage = group('camcage'); { const m=mesh(STLB64.camcage, CARBON,.3,.5);
   m.position.z=M.frame_z; gCage.add(m); }
 // DJI O4 Lite camera head, seated in the TPU mount at the nose (real STEP).
 // Grey body + a glossy lens disc so it actually reads inside the dark cage.
-const gCam = group('camera');
-{ const m=mesh(STLB64.o4cam, 0x30343b,.5,.35);      // visible dark-grey body
+const gCam = (()=>{ const m=mesh(STLB64.o4cam, 0x30343b,.5,.35);  // dark-grey body
   m.rotation.z = Math.PI/2;                          // lens faces +Y (nose)
   m.position.set(M.elec.o4cam[0]/1000, M.elec.o4cam[1]/1000, M.elec.o4cam[2]/1000);
-  gCam.add(m); }                                      // real STEP already has the lens
+  return adjGroup('camera', m, 0, 42, 20); })();     // pivot at camera centre
 // DJI O4 Lite air unit (VTX) — stacked ABOVE the FC on soft-mount grommets,
 // aligned on the same 25.5@45° pattern, with a ribbon cable down to the camera.
 const gAir = group('airunit');
@@ -399,10 +419,12 @@ for (const [x,y] of M.standoffs.board){
   const rib=new THREE.Mesh(new THREE.TubeGeometry(cur,24,0.0016,8,false),
     new THREE.MeshStandardMaterial({color:0x1a1c20, metalness:.2, roughness:.6}));
   gAir.add(rib); }
-// real WE are FPV 2-part O4 camera mount (top + aligned bottom clamp)
-const gMount = group('cammount');
-gMount.add(mesh(STLB64.cam_mount_top, TPU,.1,.8));
-gMount.add(mesh(STLB64.cam_mount_bottom, TPU,.1,.8));
+// real WE are FPV 2-part O4 camera mount — TOP and BOTTOM as SEPARATE
+// pivot-groups so each can be translated AND rotated on its own
+const gMountT = adjGroup('cammount_top',
+  mesh(STLB64.cam_mount_top, TPU,.1,.8), 0, 43.45, 24.45);
+const gMountB = adjGroup('cammount_bottom',
+  mesh(STLB64.cam_mount_bottom, TPU,.1,.8), 0, 43.5, 11.3);
 // real TPU protection: arm bumpers ×4 + back bumper + VTX antenna mount
 const gTpu = group('tpu');
 for (const [sx, sy] of [[1,1],[-1,1],[1,-1],[-1,-1]]){
@@ -477,7 +499,8 @@ const GROUPS = {
   camcage:  {label:'Cage caméra (carbone)', color:'#1a1d21'},
   camera:   {label:'Caméra DJI O4 Lite', color:'#121316'},
   airunit:  {label:'Air unit DJI O4 Lite (PCB nue)', color:'#11532e'},
-  cammount: {label:'Support caméra O4 (TPU · 2 pièces)', color:'#2b2f36'},
+  cammount_top:    {label:'Support caméra HAUT (TPU)', color:'#2b2f36'},
+  cammount_bottom: {label:'Support caméra BAS (TPU)', color:'#2b2f36'},
   tpu:      {label:'Protections TPU (bumpers)', color:'#2b2f36'},
   motors:   {label:'Moteurs 1104 (Readytosky)', color:'#3a3d43'},
   props:    {label:'Hélices 2,5" (2520)',  color:'#d8721e'},
@@ -564,25 +587,35 @@ applyElec(stdElec);
 document.getElementById('bElec').addEventListener('click', ()=>{
   stdElec=!stdElec; applyElec(stdElec);
 });
-// ---- camera / mount fine-adjust: sliders offset the chosen group, live mm ----
-{ const off = { camera:{x:0,y:0,z:0}, cammount:{x:0,y:0,z:0} };
+// ---- per-part fine-adjust: translate + rotate the chosen part about its pivot ----
+{ const mk=()=>({x:0,y:0,z:0,rx:0,ry:0,rz:0});
+  const off = { camera:mk(), cammount_top:mk(), cammount_bottom:mk() };
   const el = id => document.getElementById(id);
+  const D = Math.PI/180;
   const applyCam = ()=>{
-    const t = el('camTarget').value; const o = off[t];
-    const g = G[t]; if (g){ g.position.set(o.x/1000, o.y/1000, o.z/1000);
+    const t = el('camTarget').value; const o = off[t]; const g = G[t];
+    if (g){ const b = g.userData.base || new THREE.Vector3();
+      g.position.set(b.x + o.x/1000, b.y + o.y/1000, b.z + o.z/1000);
+      g.rotation.set(o.rx*D, o.ry*D, o.rz*D);
       g.userData.home = g.position.clone(); }
     el('camXV').textContent = o.x.toFixed(1)+' mm';
     el('camYV').textContent = o.y.toFixed(1)+' mm';
     el('camZV').textContent = o.z.toFixed(1)+' mm';
-    el('camDelta').textContent = t+' : X '+o.x+' · Y '+o.y+' · Z '+o.z;
+    el('camRXV').textContent = o.rx+'°';
+    el('camRYV').textContent = o.ry+'°';
+    el('camRZV').textContent = o.rz+'°';
+    el('camDelta').textContent = t+' : X '+o.x+' · Y '+o.y+' · Z '+o.z
+      +' · RX '+o.rx+' · RY '+o.ry+' · RZ '+o.rz;
   };
-  const bind = (id, ax)=> el(id).addEventListener('input', e=>{
-    off[el('camTarget').value][ax] = +e.target.value; applyCam(); });
+  const bind = (id, k)=> el(id).addEventListener('input', e=>{
+    off[el('camTarget').value][k] = +e.target.value; applyCam(); });
   bind('camX','x'); bind('camY','y'); bind('camZ','z');
-  el('camTarget').addEventListener('change', ()=>{ const o=off[el('camTarget').value];
-    el('camX').value=o.x; el('camY').value=o.y; el('camZ').value=o.z; applyCam(); });
-  el('camReset').addEventListener('click', ()=>{ const o=off[el('camTarget').value];
-    o.x=o.y=o.z=0; el('camX').value=0; el('camY').value=0; el('camZ').value=0; applyCam(); });
+  bind('camRX','rx'); bind('camRY','ry'); bind('camRZ','rz');
+  const sync = ()=>{ const o=off[el('camTarget').value];
+    el('camX').value=o.x; el('camY').value=o.y; el('camZ').value=o.z;
+    el('camRX').value=o.rx; el('camRY').value=o.ry; el('camRZ').value=o.rz; applyCam(); };
+  el('camTarget').addEventListener('change', sync);
+  el('camReset').addEventListener('click', ()=>{ off[el('camTarget').value]=mk(); sync(); });
 }
 let spinRate=0.4*60;                       // hélices en rotation par défaut
 document.getElementById('spinV').textContent='40%';
