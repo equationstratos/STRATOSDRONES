@@ -315,19 +315,19 @@ module rx_antenna() {
         translate([sx*16,0,53.5]) rotate([0,90,0]) cylinder(d=2.4, h=4, center=true, $fn=12);
 }
 
-/* TPU mast holder for the T-antenna — the coax slides into the vertical bore
- * so the antenna stands PERPENDICULAR to the drone; screw tab to the plate. */
+/* White TPU antenna SLEEVE-TUBE (JeNo style) — the coax slides all the way
+ * through; the tube is mounted so the antenna lies HORIZONTAL, only the tip
+ * sticking out. Printed in white TPU (hence white on the drone). */
 module rx_ant_tpu() {
-    h = 15; od = 5.2; id = 2.0;
-    color("#2b2f36") difference() {
+    h = 30; od = 5.4; id = 2.0;
+    color("#e8e8ea") difference() {
         union() {
-            cylinder(d=od, h=h, $fn=28);                          // upright post
-            translate([-od/2, -od/2-2.2, 0]) cube([od, 2.4, 4.5]); // base tab
+            cylinder(d=od, h=h, $fn=28);                          // sleeve tube
+            translate([-od/2, -od/2-2.6, 0]) cube([od, 2.8, 5.0]); // mount foot
         }
-        translate([0,0,2.5]) cylinder(d=id, h=h, $fn=14);         // bore for the coax
-        translate([-id/2, 0, 4]) cube([id, od, h]);               // front snap slot
-        translate([0,-od/2-1.0, 2.2]) rotate([90,0,0])            // screw hole
-            cylinder(d=2.2, h=3, $fn=16, center=true);
+        translate([0,0,-0.5]) cylinder(d=id, h=h+1, $fn=16);      // full through-bore
+        translate([0,-od/2-1.2, 3.0]) rotate([90,0,0])            // screw hole in foot
+            cylinder(d=2.2, h=3.2, $fn=16, center=true);
     }
 }
 
