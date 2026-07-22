@@ -242,8 +242,8 @@ module o4lite() {        // DJI O4-Lite-class HD cam unit (JeNo-native)
         color("#14315e") translate([0,0,5.2]) sphere(d=7, $fn=28);   // glass
     }
 }
-module battery_pack() {  // DOGCOM 3S 560 mAh — compact pack, 60 × 18 × 18 mm
-    bl = 60; bw = 18; bt = 18;   // shortened so it clears the rear TPU parts
+module battery_pack() {  // DOGCOM 3S 560 mAh — compact pack, 52 × 18 × 18 mm
+    bl = 52; bw = 18; bt = 18;   // shortened again to fit fully between the plates
     color("#1a1a1e") rrect3(bw, bl, 2.5, bt);                    // black shrink pack
     // white label band with the LiPo spec text engraved
     color("#e8e8ea") translate([0, 2, bt-0.4]) rrect3(bw-2, 40, 1.5, 0.5);
@@ -305,6 +305,40 @@ module gps_module() {
 module rx_antenna() {
     color("#161616") cylinder(d=1.2, h=16, $fn=12);           // coax
     color("#d8b24a") translate([0,0,16]) cylinder(d=1.6, h=4, $fn=12); // active tip (sleeve)
+}
+
+/* TPU snap-clip that holds the 25 V 22 µF (Ø6 × 12) capacitor — printable,
+ * the can slots in through the front opening and is held by the C-wall. */
+module cap_holder() {
+    h = 13; wall = 1.3; id = 6.3; od = id + 2*wall; gap = 3.6;
+    color("#2b2f36") difference() {
+        union() {
+            cylinder(d=od, h=h, $fn=40);                          // clip body
+            translate([-od/2, -od/2-2.0, 0]) cube([od, 2.2, h]);  // mounting tab
+        }
+        translate([0,0,-0.5]) cylinder(d=id, h=h+1, $fn=36);      // bore for the can
+        translate([-gap/2, 0, 1.4]) cube([gap, od, h]);           // front snap slot
+        translate([0,-od/2-0.9, h/2]) rotate([90,0,0])            // screw hole in tab
+            cylinder(d=2.2, h=3, $fn=16, center=true);
+    }
+}
+
+/* ELRS nano receiver board (~11 × 12 mm) — the RX PCB itself. */
+module rx_pcb() {
+    color("#0f3d0f") rrect3(11, 12, 0.8, 1.0);                    // green PCB
+    color("#202020") translate([-2.5,-2.5,1.0]) cube([5,5,1.2]);  // SoC + RF can
+    color("#c8c8c8") translate([3.5,-4.5,1.0]) cube([2,2,0.8]);   // u.FL pad
+}
+
+/* TPU tray the RX board drops into, with an antenna-exit channel at the rear. */
+module rx_holder() {
+    w = 12.4; l = 13.4; wall = 1.3; d = 3.2;
+    color("#2b2f36") difference() {
+        rrect3(w+2*wall, l+2*wall, 1.6, d+1.4);                   // tray shell
+        translate([0,0,1.4]) rrect3(w, l, 1.2, d+2);             // pocket for the PCB
+        translate([0,(l/2)+wall-0.6, (d/2)+1]) rotate([90,0,0])   // antenna channel
+            cylinder(d=2.4, h=5, $fn=16, center=true);
+    }
 }
 
 /* A soft silicone motor lead bundle (3 phase wires) as a swept tube. */
@@ -479,6 +513,9 @@ else if (PART == "capacitor")      capacitor();
 else if (PART == "buzzer")         buzzer();
 else if (PART == "gps_module")     gps_module();
 else if (PART == "rx_antenna")     rx_antenna();
+else if (PART == "cap_holder")     cap_holder();
+else if (PART == "rx_pcb")         rx_pcb();
+else if (PART == "rx_holder")      rx_holder();
 else if (PART == "motor_cable")    motor_cable();
 // DXF: 2-D carbon profiles (render the flat shapes for cutting)
 else if (PART == "dxf_bottom_classic") bottom_2d("classic");
