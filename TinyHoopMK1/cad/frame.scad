@@ -242,8 +242,8 @@ module o4lite() {        // DJI O4-Lite-class HD cam unit (JeNo-native)
         color("#14315e") translate([0,0,5.2]) sphere(d=7, $fn=28);   // glass
     }
 }
-module battery_pack() {  // DOGCOM 3S 560 mAh — 70 × 18 × 18 mm (L × W × H)
-    bl = 70; bw = 18; bt = 18;
+module battery_pack() {  // DOGCOM 3S 560 mAh — compact pack, 60 × 18 × 18 mm
+    bl = 60; bw = 18; bt = 18;   // shortened so it clears the rear TPU parts
     color("#1a1a1e") rrect3(bw, bl, 2.5, bt);                    // black shrink pack
     // white label band with the LiPo spec text engraved
     color("#e8e8ea") translate([0, 2, bt-0.4]) rrect3(bw-2, 40, 1.5, 0.5);

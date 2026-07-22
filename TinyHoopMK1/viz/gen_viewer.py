@@ -34,8 +34,8 @@ _STACK_SCREWS = [[x,y,17.4] for (x,y) in _FRAME_STAND] + [[x,y,6.4] for (x,y) in
 MODEL = dict(name="FR4N10", sub="FPV programmable / essaim · 2,5\" · 2S-3S", wb=116,
              motors=[[46.6,34.1],[-46.6,34.1],[-46.6,-34.1],[46.6,-34.1]],
              prop_z=0.0135, motor_z=0.003, frame_z=0.0,
-             elec=dict(board=[0,0,4], battery=[0,-2,24],
-                       o4cam=[0,42,20], o4airunit=[0,0,13], o4antenna=[0,-47,41],
+             elec=dict(board=[0,0,4], battery=[0,4,24],
+                       o4cam=[0,40,10], o4airunit=[0,0,13], o4antenna=[0,-47,41],
                        cap=[12,-24,6], buzzer=[-12,-22,6], gps=[-9,-16,20.8],
                        rx=[13,-30,4], grommet=[0,0,11]),
              standoffs=dict(frame=_FRAME_STAND, board=_BOARD_STAND),
@@ -359,7 +359,8 @@ const gCam = group('camera');
   const lens = new THREE.Mesh(new THREE.CylinderGeometry(0.0055,0.0062,0.004,28),
     new THREE.MeshStandardMaterial({color:0x0a1a2a, metalness:.6, roughness:.1}));
   lens.rotation.x = Math.PI/2;                        // face +Y
-  lens.position.set(0, (M.elec.o4cam[1]+7)/1000, M.elec.o4cam[2]/1000);
+  // lens at the camera's front-centre so it lands in the TPU mount's ring
+  lens.position.set(0, (M.elec.o4cam[1]+11.9)/1000, (M.elec.o4cam[2]+10)/1000);
   gCam.add(lens); }
 // DJI O4 Lite air unit (VTX) — stacked ABOVE the FC on soft-mount grommets,
 // aligned on the same 25.5@45° pattern, with a ribbon cable down to the camera.
