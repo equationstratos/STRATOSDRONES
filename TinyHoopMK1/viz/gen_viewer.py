@@ -35,7 +35,7 @@ MODEL = dict(name="FR4N10", sub="FPV programmable / essaim · 2,5\" · 2S-3S", w
              motors=[[46.6,34.1],[-46.6,34.1],[-46.6,-34.1],[46.6,-34.1]],
              prop_z=0.0135, motor_z=0.003, frame_z=0.0,
              elec=dict(board=[0,0,4], battery=[0,4,24],
-                       o4cam=[0,40,10], o4airunit=[0,0,13], o4antenna=[0,-47,41],
+                       o4cam=[0,43,9], o4airunit=[0,0,13], o4antenna=[0,-47,41],
                        cap=[12,-24,6], buzzer=[-12,-22,6], gps=[-9,-16,20.8],
                        rx=[13,-30,4], grommet=[0,0,11]),
              standoffs=dict(frame=_FRAME_STAND, board=_BOARD_STAND),
