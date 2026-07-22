@@ -353,6 +353,32 @@ module stratos_top() {
     }
 }
 
+/* A JeNo-style "dumbbell" lightening slot: two holes joined by a bar. */
+module jeno_bone(len=7, d=3.2) {
+    hull() { translate([0,-len/2]) circle(d=d, $fn=22);
+             translate([0, len/2]) circle(d=d, $fn=22); }
+}
+/* Original JeNo top plate — same 26.6 × 68.3 × 2 envelope, the JeNo lightening
+ * pattern (end dumbbell slots, a centre slot row, two triangular cut-outs, four
+ * corner holes) reproduced, but WITHOUT the "JeNo" wordmark (owner's request). */
+module jeno_top() {
+    tw = 26.6; tl = 68.3; th = 2.0; cy = -0.95;
+    translate([0, cy, 17.0]) linear_extrude(th) difference() {
+        offset(3) offset(-3) square([tw, tl], center=true);        // rounded plate
+        for (p=[[0,25.6],[8.5,-32.2],[-8.5,-32.2]])                // 3 real mounts
+            translate([p[0], p[1]-cy]) circle(d=2.4, $fn=22);
+        for (sx=[-1,1]) for (sy=[-1,1])                            // 4 corner holes
+            translate([sx*10.3, sy*30 - cy]) circle(d=2.2, $fn=20);
+        for (sy=[-1,1]) for (sx=[-1,1])                            // end dumbbell slots
+            translate([sx*6.2, sy*26 - cy]) jeno_bone(6, 3.0);
+        for (yy=[-9, 0, 9])                                        // centre slot row
+            translate([0, yy - cy]) rrect(5.4, 3.0, 1.2);
+        for (sx=[-1,1])                                            // 2 triangular cut-outs
+            translate([sx*7.6, 15 - cy]) rotate(sx>0?15:-15)
+                polygon([[0,-4.6],[4.2,4.6],[-4.2,4.6]]);
+    }
+}
+
 /* Round aluminium M2 standoff (bored) — 14 mm tall; scale Z for shorter runs. */
 module standoff_post() {
     color("#c2c5cb") difference() {
@@ -444,6 +470,7 @@ else if (PART == "logo")           logo();
 else if (PART == "antenna_vtx")    antenna_vtx();
 else if (PART == "antenna_elrs")   antenna_elrs();
 else if (PART == "stratos_top")    stratos_top();
+else if (PART == "jeno_top")       jeno_top();
 else if (PART == "standoff_post")  standoff_post();
 else if (PART == "vtx_module")     vtx_module();
 else if (PART == "antenna_lollipop") antenna_lollipop();

@@ -34,10 +34,10 @@ _STACK_SCREWS = [[x,y,17.4] for (x,y) in _FRAME_STAND] + [[x,y,6.4] for (x,y) in
 MODEL = dict(name="FR4N10", sub="FPV programmable / essaim · 2,5\" · 2S-3S", wb=116,
              motors=[[46.6,34.1],[-46.6,34.1],[-46.6,-34.1],[46.6,-34.1]],
              prop_z=0.0135, motor_z=0.003, frame_z=0.0,
-             elec=dict(board=[0,0,6], battery=[0,-11,22],
-                       o4cam=[0,44,11], o4airunit=[0,-6,7], o4antenna=[0,-47,41],
-                       cap=[9,-27,9], buzzer=[-11,-13,7], gps=[-9,-18,20.8],
-                       rx=[13,-30,4]),
+             elec=dict(board=[0,0,4], battery=[0,-2,24],
+                       o4cam=[0,42,20], o4airunit=[0,0,13], o4antenna=[0,-47,41],
+                       cap=[12,-24,6], buzzer=[-12,-22,6], gps=[-9,-16,20.8],
+                       rx=[13,-30,4], grommet=[0,0,11]),
              standoffs=dict(frame=_FRAME_STAND, board=_BOARD_STAND),
              # ALL screws: 16 motor-mount + 3 frame-standoff tops + 4 board tops
              screws=_MOTOR_SCREWS + _STACK_SCREWS,
@@ -349,15 +349,39 @@ for (const [x,y] of M.standoffs.board){ const s=mesh(STLB64.standoff, 0xc2c5cb,.
   s.position.set(x/1000, y/1000, 0.003); s.scale.set(0.001,0.001,0.001*3/14); gStand.add(s); }
 const gCage = group('camcage'); { const m=mesh(STLB64.camcage, CARBON,.3,.5);
   m.position.z=M.frame_z; gCage.add(m); }
-// DJI O4 Lite camera head at the nose (real STEP) — lens faces +Y
+// DJI O4 Lite camera head, seated in the TPU mount at the nose (real STEP).
+// Grey body + a glossy lens disc so it actually reads inside the dark cage.
 const gCam = group('camera');
-{ const m=mesh(STLB64.o4cam, 0x121316,.4,.4);
-  m.rotation.z = -Math.PI/2;
+{ const m=mesh(STLB64.o4cam, 0x30343b,.5,.35);      // visible dark-grey body
+  m.rotation.z = Math.PI/2;                          // lens faces +Y (nose)
   m.position.set(M.elec.o4cam[0]/1000, M.elec.o4cam[1]/1000, M.elec.o4cam[2]/1000);
-  gCam.add(m); }
-// DJI O4 Lite air unit — the small bare VTX board (green PCB)
+  gCam.add(m);
+  const lens = new THREE.Mesh(new THREE.CylinderGeometry(0.0055,0.0062,0.004,28),
+    new THREE.MeshStandardMaterial({color:0x0a1a2a, metalness:.6, roughness:.1}));
+  lens.rotation.x = Math.PI/2;                        // face +Y
+  lens.position.set(0, (M.elec.o4cam[1]+7)/1000, M.elec.o4cam[2]/1000);
+  gCam.add(lens); }
+// DJI O4 Lite air unit (VTX) — stacked ABOVE the FC on soft-mount grommets,
+// aligned on the same 25.5@45° pattern, with a ribbon cable down to the camera.
 const gAir = group('airunit');
-gAir.add(place(STLB64.o4airunit, 0x11532e,.3,.5, M.elec.o4airunit));  // PCB green
+{ const air = place(STLB64.o4airunit, 0x11532e,.3,.5, M.elec.o4airunit);  // PCB green
+  air.rotation.z = Math.PI/4; gAir.add(air); }
+// 4 rubber grommets between the FC top and the VTX (the soft-mount stack)
+for (const [x,y] of M.standoffs.board){
+  const g = new THREE.Mesh(new THREE.CylinderGeometry(0.0022,0.0022,0.0045,18),
+    new THREE.MeshStandardMaterial({color:0xe38a1c, metalness:.1, roughness:.6}));
+  g.rotation.x = Math.PI/2;
+  g.position.set(x/1000, y/1000, (M.elec.grommet[2])/1000); gAir.add(g);
+}
+// the O4 ribbon cable: VTX -> camera at the nose (a thin dark swept strip)
+{ const pts=[]; const y0=M.elec.o4airunit[1], y1=M.elec.o4cam[1];
+  for (let i=0;i<=12;i++){ const t=i/12; const y=y0+(y1-y0)*t;
+    const z=M.elec.o4airunit[2]+2 + Math.sin(t*Math.PI)*6;
+    pts.push(new THREE.Vector3(0.003, y/1000, z/1000)); }
+  const cur=new THREE.CatmullRomCurve3(pts);
+  const rib=new THREE.Mesh(new THREE.TubeGeometry(cur,24,0.0016,8,false),
+    new THREE.MeshStandardMaterial({color:0x1a1c20, metalness:.2, roughness:.6}));
+  gAir.add(rib); }
 // real WE are FPV 2-part O4 camera mount (top + aligned bottom clamp)
 const gMount = group('cammount');
 gMount.add(mesh(STLB64.cam_mount_top, TPU,.1,.8));
@@ -403,12 +427,16 @@ gBatt.add(place(STLB64.battery, 0x22262d, .1, .55, M.elec.battery));
 const gScrew = group('screws');
 for (const s of M.screws){ const sc = place(STLB64.screw, 0xd6d9de, .9, .25, s);
   gScrew.add(sc); }
-// the SINGLE DJI O4 Lite antenna (real STEP), seated in the rear TPU mount:
-// its long axis is local +Y, so we stand it upright and rake it back so the
-// connector drops into the tube and the whip rises up-and-back
+// 4 stack screws capping the VTX-on-FC soft-mount at the board corners
+for (const [x,y] of M.standoffs.board){
+  const sc = place(STLB64.screw, 0xd6d9de, .9, .25, [x, y, M.elec.o4airunit[2]+3]);
+  gScrew.add(sc); }
+// the SINGLE DJI O4 Lite antenna (real STEP), seated in the rear TPU mount the
+// RIGHT way up: the fat connector/ferrite end drops into the tube, the thin
+// whip rises up-and-back (~26° off vertical)
 const gAnt = group('antenna');
 { const a = place(STLB64.o4antenna, 0x101216, .2, .5, M.elec.o4antenna);
-  a.rotation.x = 2.02; gAnt.add(a); }    // +Y -> up-and-back (~26° off vertical)
+  a.rotation.x = -1.12; gAnt.add(a); }   // connector down, whip up-and-back
 // LiPo low-ESR capacitor (25 V 22 µF, Ø6×12) — its own part, upright at the
 // rear beside the battery pads so it is clearly visible in 3-D
 const gCap = group('cap');
@@ -427,7 +455,7 @@ for (const [mx, my] of M.motors){                                  // 4 phase ca
 // ---- part toggles + per-part colour pickers ----
 const GROUPS = {
   bottom:   {label:'Plaque basse (carbone réel)', color:'#1a1d21'},
-  top:      {label:'Plaque haute STRATOS', color:'#1a1d21'},
+  top:      {label:'Plaque haute (JeNo, sans texte)', color:'#1a1d21'},
   standoffs:{label:'Entretoises', color:'#b9bcc2'},
   camcage:  {label:'Cage caméra (carbone)', color:'#1a1d21'},
   camera:   {label:'Caméra DJI O4 Lite', color:'#121316'},
@@ -903,7 +931,7 @@ def main():
                 # files; STRATOS top plate, motors (real Readytosky 1104),
                 # props, board, battery, screws, antenna are our own meshes.
                 "frame_bottom": b64(os.path.join(PARTS, "frame_bottom.stl")),
-                "frame_top": b64(os.path.join(STL, "stratos_top.stl")),
+                "frame_top": b64(os.path.join(STL, "jeno_top.stl")),
                 "standoff": b64(os.path.join(STL, "standoff_post.stl")),
                 "camcage": b64(os.path.join(PARTS, "cam_cage.stl")),
                 # DJI O4 Lite system (real STEP -> STL, provided by the owner)

@@ -19,9 +19,11 @@
     can be shown / exploded on its own in the viewer. Same geometry, just
     separated per solid.
   - The viewer *positions* these and adds our own meshes (props, FC board,
-    DOGCOM 3S 560 mAh battery, screws, LiPo capacitor, buzzer, GPS/compass,
-    ELRS RX antenna and the motor phase cables) plus a **STRATOS top plate**
-    that replaces the JeNo top (same envelope).
+    DOGCOM 3S 560 mAh battery, screws + grommets, LiPo capacitor, buzzer,
+    GPS/compass, ELRS RX antenna and the motor phase cables) plus a
+    **clean parametric top plate** (`../frame.scad` `jeno_top`) that keeps the
+    JeNo top-plate envelope and lightening pattern **without the "JeNo"
+    wordmark** — our own geometry, so nothing of theirs is altered.
 
 ## Other third-party files
 
