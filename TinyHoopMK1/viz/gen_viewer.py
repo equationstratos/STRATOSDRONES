@@ -35,7 +35,7 @@ MODEL = dict(name="FR4N10", sub="FPV programmable / essaim · 2,5\" · 2S-3S", w
              motors=[[46.6,34.1],[-46.6,34.1],[-46.6,-34.1],[46.6,-34.1]],
              prop_z=0.0135, motor_z=0.003, frame_z=0.0,
              elec=dict(board=[0,0,6], battery=[0,-11,22],
-                       o4cam=[0,44,11], o4airunit=[0,-6,7], o4antenna=[0,-32,16],
+                       o4cam=[0,44,11], o4airunit=[0,-6,7], o4antenna=[0,-47,41],
                        cap=[9,-27,9], buzzer=[-11,-13,7], gps=[-9,-18,20.8],
                        rx=[13,-30,4]),
              standoffs=dict(frame=_FRAME_STAND, board=_BOARD_STAND),
@@ -173,7 +173,7 @@ TEMPLATE = r"""<!DOCTYPE html>
           <tr><td>FC / ESC</td><td class="v">JHEMCU GHF411 AIO (STEP réel)</td></tr>
           <tr><td>Moteurs</td><td class="v">1104 7500KV (Readytosky)</td></tr>
           <tr><td>Hélices</td><td class="v">Gemfan 2520</td></tr>
-          <tr><td>Caméra</td><td class="v">DJI O4 Pro (air unit + antenne)</td></tr>
+          <tr><td>Caméra</td><td class="v">DJI O4 Lite (caméra + air unit + antenne)</td></tr>
           <tr><td>RX</td><td class="v">ELRS (antenne céram.)</td></tr>
           <tr><td>VTX</td><td class="v">analogique 5,8 GHz (si non-O4)</td></tr>
           <tr><td>Batterie</td><td class="v">2S-3S 450-560 mAh</td></tr>
@@ -349,14 +349,13 @@ for (const [x,y] of M.standoffs.board){ const s=mesh(STLB64.standoff, 0xc2c5cb,.
   s.position.set(x/1000, y/1000, 0.003); s.scale.set(0.001,0.001,0.001*3/14); gStand.add(s); }
 const gCage = group('camcage'); { const m=mesh(STLB64.camcage, CARBON,.3,.5);
   m.position.z=M.frame_z; gCage.add(m); }
-// DJI O4 Pro camera head at the nose (real STEP) — lens faces +Y
+// DJI O4 Lite camera head at the nose (real STEP) — lens faces +Y
 const gCam = group('camera');
 { const m=mesh(STLB64.o4cam, 0x121316,.4,.4);
   m.rotation.z = -Math.PI/2;
   m.position.set(M.elec.o4cam[0]/1000, M.elec.o4cam[1]/1000, M.elec.o4cam[2]/1000);
   gCam.add(m); }
-// DJI O4 Pro air unit (the digital VTX) — bare PCB, the metal heat-shield
-// removed so the board itself is visible (as requested)
+// DJI O4 Lite air unit — the small bare VTX board (green PCB)
 const gAir = group('airunit');
 gAir.add(place(STLB64.o4airunit, 0x11532e,.3,.5, M.elec.o4airunit));  // PCB green
 // real WE are FPV 2-part O4 camera mount (top + aligned bottom clamp)
@@ -404,12 +403,12 @@ gBatt.add(place(STLB64.battery, 0x22262d, .1, .55, M.elec.battery));
 const gScrew = group('screws');
 for (const s of M.screws){ const sc = place(STLB64.screw, 0xd6d9de, .9, .25, s);
   gScrew.add(sc); }
-// the SINGLE DJI O4 Pro antenna (real STEP — the 2nd element removed), seated
-// the right way up in the rear TPU mount: connector down in the tube, whip
-// rising up-and-back at the mount's own ~26° angle
+// the SINGLE DJI O4 Lite antenna (real STEP), seated in the rear TPU mount:
+// its long axis is local +Y, so we stand it upright and rake it back so the
+// connector drops into the tube and the whip rises up-and-back
 const gAnt = group('antenna');
 { const a = place(STLB64.o4antenna, 0x101216, .2, .5, M.elec.o4antenna);
-  a.rotation.x = 0.46; gAnt.add(a); }    // matches the TPU tube's back-rake
+  a.rotation.x = 2.02; gAnt.add(a); }    // +Y -> up-and-back (~26° off vertical)
 // LiPo low-ESR capacitor (25 V 22 µF, Ø6×12) — its own part, upright at the
 // rear beside the battery pads so it is clearly visible in 3-D
 const gCap = group('cap');
@@ -431,8 +430,8 @@ const GROUPS = {
   top:      {label:'Plaque haute STRATOS', color:'#1a1d21'},
   standoffs:{label:'Entretoises', color:'#b9bcc2'},
   camcage:  {label:'Cage caméra (carbone)', color:'#1a1d21'},
-  camera:   {label:'Caméra DJI O4 Pro', color:'#121316'},
-  airunit:  {label:'Air unit DJI O4 Pro (PCB nue)', color:'#11532e'},
+  camera:   {label:'Caméra DJI O4 Lite', color:'#121316'},
+  airunit:  {label:'Air unit DJI O4 Lite (PCB nue)', color:'#11532e'},
   cammount: {label:'Support caméra O4 (TPU · 2 pièces)', color:'#2b2f36'},
   tpu:      {label:'Protections TPU (bumpers)', color:'#2b2f36'},
   motors:   {label:'Moteurs 1104 (Readytosky)', color:'#3a3d43'},
@@ -907,7 +906,7 @@ def main():
                 "frame_top": b64(os.path.join(STL, "stratos_top.stl")),
                 "standoff": b64(os.path.join(STL, "standoff_post.stl")),
                 "camcage": b64(os.path.join(PARTS, "cam_cage.stl")),
-                # DJI O4 Pro system (real STEP -> STL, provided by the owner)
+                # DJI O4 Lite system (real STEP -> STL, provided by the owner)
                 "o4cam": b64(os.path.join(DJI, "o4_cam_head.stl")),
                 "o4airunit": b64(os.path.join(DJI, "o4_airunit.stl")),
                 "o4antenna": b64(os.path.join(DJI, "o4_antenna.stl")),

@@ -29,11 +29,11 @@
   the project owner for a faithful motor render. Product geometry by
   Readytosky; used here for visualisation only.
 - `dji_o4/o4_cam_head.stl`, `dji_o4/o4_airunit.stl`, `dji_o4/o4_antenna.stl` —
-  the **DJI O4 Pro** camera head, air unit and (single) antenna, meshed from
-  the STEP files supplied by the project owner and cropped to the parts that
-  sit inside the build (the cam's ribbon cable is trimmed). Product geometry
-  © DJI; used here for visualisation only. The build keeps a **single** O4
-  antenna, routed into the rear TPU antenna mount, exactly as requested.
+  the **DJI O4 Lite** camera head, air-unit board and antenna, split out of the
+  single O4-Lite STEP supplied by the project owner: the camera head (ribbon
+  trimmed), the small bare air-unit PCB (its ~450 micro-pads dropped for a
+  light mesh), and the **single** antenna, routed into the rear TPU antenna
+  mount. Product geometry © DJI; used here for visualisation only.
 - `dji_o4/ghf411_aio.stl` — the **JHEMCU GHF411 AIO** flight controller, meshed
   from the STEP supplied by the project owner. It is the *ready-to-buy*
   Betaflight option; the viewer's "Électronique" button swaps it for the
