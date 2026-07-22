@@ -36,8 +36,8 @@ MODEL = dict(name="FR4N10", sub="FPV programmable / essaim · 2,5\" · 2S-3S", w
              prop_z=0.0135, motor_z=0.003, frame_z=0.0,
              elec=dict(board=[0,0,4], battery=[0,4,24],
                        o4cam=[0,42,10], o4airunit=[0,0,13], o4antenna=[0,-47,41],
-                       cap=[12,-24,6], buzzer=[-12,-22,6], gps=[-9,-16,20.8],
-                       rx=[13,-30,4], grommet=[0,0,11]),
+                       cap=[12,-22,4], buzzer=[11,-31,6], gps=[-9,-16,20.8],
+                       rx=[-11,-29,4], xt30=[0,-25,15], grommet=[0,0,11]),
              standoffs=dict(frame=_FRAME_STAND, board=_BOARD_STAND),
              # ALL screws: 16 motor-mount + 3 frame-standoff tops + 4 board tops
              screws=_MOTOR_SCREWS + _STACK_SCREWS,
@@ -401,10 +401,10 @@ const gCam = (()=>{ const m=mesh(STLB64.o4cam, 0x30343b,.5,.35);  // dark-grey b
   const g = adjGroup('camera', m, 0, 42, 20);        // pivot at camera centre
   // soft rubber gasket around the lens — fills the gap between camera and the
   // TPU mount (matte black silicone O-ring); rides with the camera group
-  const rub = new THREE.Mesh(new THREE.TorusGeometry(0.0068, 0.0027, 16, 40),
+  const rub = new THREE.Mesh(new THREE.TorusGeometry(0.0064, 0.0014, 14, 40),
     new THREE.MeshStandardMaterial({color:0x0b0b0d, metalness:0.0, roughness:0.97}));
   rub.rotation.x = Math.PI/2;                         // ring axis along +Y (lens)
-  rub.position.set(0, 12.2/1000, -1/1000);           // at the lens front, in group-local
+  rub.position.set(0, 12.0/1000, -1/1000);           // thin gasket at the lens front
   g.add(rub);
   return g; })();
 // DJI O4 Lite air unit (VTX) — stacked ABOVE the FC on soft-mount grommets,
@@ -485,16 +485,39 @@ for (const [x,y] of M.standoffs.board){
 const gAnt = group('antenna');
 { const a = place(STLB64.o4antenna, 0x101216, .2, .5, M.elec.o4antenna);
   a.rotation.x = -1.12; gAnt.add(a); }   // connector down, whip up-and-back
-// LiPo low-ESR capacitor (25 V 22 µF, Ø6×12) — its own part, upright at the
-// rear beside the battery pads so it is clearly visible in 3-D
+// LiPo capacitor (25 V 22 µF, Ø6×12) SEATED IN ITS PRINTED TPU HOLDER
 const gCap = group('cap');
-gCap.add(place(STLB64.cap, 0x1b3a8f, .25, .45, M.elec.cap));        // 25V 22µF
-// build extras: buzzer, GPS/compass, ELRS RX antenna, 4 motor phase cables
+gCap.add(place(STLB64.cap_holder, TPU, .1, .85, M.elec.cap));       // TPU snap-clip
+gCap.add(place(STLB64.cap, 0x1b3a8f, .25, .45,                      // the can, in the bore
+  [M.elec.cap[0], M.elec.cap[1], M.elec.cap[2]+0.6]));
+// ---- a swept round tube between two points (mm) — for wires ----
+function wireTube(p0, p1, r, col){
+  const pts=[new THREE.Vector3(p0[0]/1000,p0[1]/1000,p0[2]/1000),
+             new THREE.Vector3((p0[0]+p1[0])/2000,(p0[1]+p1[1])/2000,(Math.max(p0[2],p1[2])+4)/1000),
+             new THREE.Vector3(p1[0]/1000,p1[1]/1000,p1[2]/1000)];
+  const c=new THREE.CatmullRomCurve3(pts);
+  return new THREE.Mesh(new THREE.TubeGeometry(c,20,r/1000,8,false),
+    new THREE.MeshStandardMaterial({color:col, metalness:.1, roughness:.55}));
+}
+// build extras: buzzer, GPS/compass, ELRS RX (PCB + antenna in TPU holder),
+// battery XT30 red/black leads to the ESC, and the 4 motor phase cables
 const gEx = group('extras');
 gEx.add(place(STLB64.buzzer, 0x141519, .3,  .5,  M.elec.buzzer));   // Ø8 buzzer
 gEx.add(place(STLB64.gps,    0x0a0c10, .2,  .5,  M.elec.gps));      // GPS/compass
-{ const rx = place(STLB64.rx, 0xb23a2f, .2, .5, M.elec.rx);
-  rx.rotation.x = Math.PI/2; gEx.add(rx); }                         // RX whip in TPU
+// ELRS RX: the PCB dropped into its TPU tray, whip antenna out the back
+gEx.add(place(STLB64.rx_holder, TPU, .1, .85, M.elec.rx));          // TPU tray
+gEx.add(place(STLB64.rx_pcb, 0x0f3d0f, .2, .5,                      // RX board
+  [M.elec.rx[0], M.elec.rx[1], M.elec.rx[2]+1.6]));
+{ const a = place(STLB64.rx, 0xb23a2f, .2, .5,                      // whip antenna
+    [M.elec.rx[0], M.elec.rx[1]-7, M.elec.rx[2]+3]);
+  a.rotation.x = Math.PI/2 + 0.5; gEx.add(a); }                     // exits the tray, up-back
+// battery XT30 connector + red(+)/black(-) leads down to the ESC pads
+{ const xt = M.elec.xt30;
+  const conn = new THREE.Mesh(new THREE.BoxGeometry(0.009,0.007,0.006),
+    new THREE.MeshStandardMaterial({color:0xf0b000, metalness:.2, roughness:.5}));
+  conn.position.set(xt[0]/1000, xt[1]/1000, xt[2]/1000); gEx.add(conn);
+  gEx.add(wireTube([xt[0]+2, xt[1], xt[2]-1], [4, -6, 8], 0.85, 0xd21f1f));   // red +
+  gEx.add(wireTube([xt[0]-2, xt[1], xt[2]-1], [-4, -6, 8], 0.85, 0x111214)); }// black -
 for (const [mx, my] of M.motors){                                  // 4 phase cables
   const c = mesh(STLB64.cable, 0x2a2c30, .2, .6);
   c.position.set(mx/1000, my/1000, M.frame_z + 0.004);
@@ -517,8 +540,8 @@ const GROUPS = {
   battery:  {label:'Batterie 3S 560 mAh (DOGCOM)', color:'#22262d'},
   screws:   {label:'Visserie M2 (moteurs + stack)', color:'#d6d9de'},
   antenna:  {label:'Antenne DJI O4 (unique, dans le TPU)', color:'#101216'},
-  cap:      {label:'Condensateur 25 V 22 µF', color:'#1b3a8f'},
-  extras:   {label:'Buzzer · GPS · RX · câbles moteurs', color:'#3a6ea5'},
+  cap:      {label:'Condensateur 25 V 22 µF (support TPU)', color:'#1b3a8f'},
+  extras:   {label:'Buzzer · GPS · RX+TPU · câbles XT30', color:'#3a6ea5'},
 };
 // remember each group's assembled position so the explode slider can offset it
 for (const k of Object.keys(GROUPS)){
@@ -1058,6 +1081,9 @@ def main():
                 "buzzer": b64(os.path.join(STL, "buzzer.stl")),
                 "gps": b64(os.path.join(STL, "gps_module.stl")),
                 "rx": b64(os.path.join(STL, "rx_antenna.stl")),
+                "cap_holder": b64(os.path.join(STL, "cap_holder.stl")),
+                "rx_pcb": b64(os.path.join(STL, "rx_pcb.stl")),
+                "rx_holder": b64(os.path.join(STL, "rx_holder.stl")),
                 "cable": b64(os.path.join(STL, "motor_cable.stl")),
             }, separators=(",", ":"))))
     with open(OUT, "w") as f:
