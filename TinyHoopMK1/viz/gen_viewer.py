@@ -169,7 +169,7 @@ TEMPLATE = r"""<!DOCTYPE html>
       <div id="bom" class="mini" style="display:none;margin-top:9px">
         <b>Build « standard » (composants du commerce, repo JeNo) :</b>
         <table style="margin-top:5px">
-          <tr><td>FC / ESC</td><td class="v">JHEMCU GHF435AIO V2 20A</td></tr>
+          <tr><td>FC / ESC</td><td class="v">JHEMCU GHF411 AIO (STEP réel)</td></tr>
           <tr><td>Moteurs</td><td class="v">1104 7500KV (Readytosky)</td></tr>
           <tr><td>Hélices</td><td class="v">Gemfan 2520</td></tr>
           <tr><td>Caméra</td><td class="v">DJI O4 Pro (air unit + antenne)</td></tr>
@@ -387,20 +387,26 @@ for (const [mx, my] of M.motors){
   pm.userData.front = (my > 0);
   gProp.add(pm); propMeshes.push(pm);
 }
-// AIO board (25.5 pattern @45°, centred) + battery
+// AIO board — two interchangeable options on the 25.5 @45° stack:
+//  · STRATOS TINYHOOP AIO (our custom board, green) — shown by default
+//  · JHEMCU GHF411 AIO (real STEP) — the ready-to-buy Betaflight option
+// the "Électronique" button swaps which one is visible.
 const gElec = group('elec');
-{ const bm = place(STLB64.board, 0x0b6b39, .15, .5, M.elec.board);
-  bm.rotation.z = Math.PI/4; gElec.add(bm); }     // 45° = real JeNo AIO mount
+const boardCustom = place(STLB64.board, 0x0b6b39, .15, .5, M.elec.board);
+boardCustom.rotation.z = Math.PI/4; gElec.add(boardCustom);   // 45° = real JeNo AIO mount
+const boardGhf = place(STLB64.ghf411, 0x14161b, .35, .45, M.elec.board);
+boardGhf.rotation.z = Math.PI/4; boardGhf.visible = false; gElec.add(boardGhf);
 const gBatt = group('battery');
 gBatt.add(place(STLB64.battery, 0x22262d, .1, .55, M.elec.battery));
 // M2 screws on the real standoffs + camera plates
 const gScrew = group('screws');
 for (const s of M.screws){ const sc = place(STLB64.screw, 0xd6d9de, .9, .25, s);
   gScrew.add(sc); }
-// the SINGLE DJI O4 Pro antenna, routed into the rear TPU antenna mount
+// the SINGLE DJI O4 Pro antenna (real STEP), seated in the rear TPU mount and
+// swept up-and-back like a real FPV whip (connector down in the mount)
 const gAnt = group('antenna');
 { const a = place(STLB64.o4antenna, 0x101216, .2, .5, M.elec.o4antenna);
-  a.rotation.x = Math.PI/2; gAnt.add(a); }   // stand it up in the rear mount
+  a.rotation.x = -1.05; gAnt.add(a); }   // ~60° back-tilt out of the rear mount
 // build extras: LiPo capacitor, buzzer, GPS/compass, ELRS RX antenna,
 // 4 motor phase cables — all routed around the stack
 const gEx = group('extras');
@@ -426,7 +432,7 @@ const GROUPS = {
   tpu:      {label:'Protections TPU (bumpers)', color:'#2b2f36'},
   motors:   {label:'Moteurs 1104 (Readytosky)', color:'#3a3d43'},
   props:    {label:'Hélices 2,5" (2520)',  color:'#d8721e'},
-  elec:     {label:'Carte AIO', color:'#0b6b39'},
+  elec:     {label:'Carte AIO (STRATOS / GHF411)', color:'#0b6b39'},
   battery:  {label:'Batterie 3S 560 mAh (DOGCOM)', color:'#22262d'},
   screws:   {label:'Visserie M2 (moteurs + stack)', color:'#d6d9de'},
   antenna:  {label:'Antenne DJI O4 (unique)', color:'#101216'},
@@ -501,7 +507,8 @@ document.getElementById('bElec').addEventListener('click', e=>{
                                  : 'Électronique : STRATOS TINYHOOP AIO';
   e.target.classList.toggle('on', !stdElec);
   document.getElementById('bom').style.display = stdElec ? 'block' : 'none';
-  setColor('elec', stdElec ? 0x6a6f78 : 0x0b6b39);   // grey generic AIO vs green
+  boardCustom.visible = !stdElec;      // STRATOS custom board
+  boardGhf.visible = stdElec;          // real JHEMCU GHF411 AIO
 });
 let spinRate=0.4*60;                       // hélices en rotation par défaut
 document.getElementById('spinV').textContent='40%';
@@ -902,6 +909,7 @@ def main():
                 "motor": b64(os.path.join(PARTS, "motor_1104.stl")),
                 "prop": b64(os.path.join(STL, "prop.stl")),
                 "board": b64(os.path.join(STL, "board.stl")),
+                "ghf411": b64(os.path.join(DJI, "ghf411_aio.stl")),
                 "battery": b64(os.path.join(STL, "battery.stl")),
                 "screw": b64(os.path.join(STL, "screw.stl")),
                 "cap": b64(os.path.join(STL, "capacitor.stl")),

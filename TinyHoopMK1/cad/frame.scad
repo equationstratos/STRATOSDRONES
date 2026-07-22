@@ -247,14 +247,14 @@ module battery_pack() {  // DOGCOM 3S 560 mAh — 70 × 18 × 18 mm (L × W × H
     color("#1a1a1e") rrect3(bw, bl, 2.5, bt);                    // black shrink pack
     // white label band with the LiPo spec text engraved
     color("#e8e8ea") translate([0, 2, bt-0.4]) rrect3(bw-2, 40, 1.5, 0.5);
-    color("#111") translate([0, 12, bt+0.05]) linear_extrude(0.4)
-        text("DOGCOM", size=3.4, halign="center", valign="center",
+    color("#111") translate([0, 14, bt+0.05]) linear_extrude(0.4)
+        text("DOG&COM", size=3.0, halign="center", valign="center",
              font="Liberation Sans:style=Bold");
-    color("#b0111a") translate([0, 5, bt+0.05]) linear_extrude(0.4)
-        text("3S 560mAh", size=2.8, halign="center", valign="center",
-             font="Liberation Sans:style=Bold");
-    color("#333") translate([0, -1, bt+0.05]) linear_extrude(0.4)
-        text("11.1V 80C", size=2.2, halign="center", valign="center");
+    color("#b0111a") translate([0, 6, bt+0.05]) linear_extrude(0.4)
+        text("560 MAH", size=5.0, halign="center", valign="center",
+             font="Liberation Sans:style=Bold");     // the big label, like the pack
+    color("#333") translate([0, -0.5, bt+0.05]) linear_extrude(0.4)
+        text("11.1V 3S 80C", size=2.1, halign="center", valign="center");
     // XT30 pigtail + balance lead out the tail
     color("#f0b000") translate([0,-bl/2-4, bt*0.4]) rotate([90,0,0]) cube([9,7,7],center=true);
     for (sx=[-1,1]) color(sx>0?"#c00":"#111")
