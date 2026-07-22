@@ -200,6 +200,28 @@ TEMPLATE = r"""<!DOCTYPE html>
         (clavier + scripts SDK).</div>
     </div>
     <div class="sec">
+      <h2>Réglage caméra / support</h2>
+      <div class="mini" style="margin-bottom:8px">Choisis la pièce, aligne-la
+        avec les curseurs, puis <b>relève les valeurs</b> et donne-les moi.</div>
+      <select id="camTarget" style="width:100%;background:var(--btn);color:var(--ink);
+        border:1px solid var(--line);border-radius:6px;padding:6px;margin-bottom:8px">
+        <option value="camera">Caméra O4 Lite</option>
+        <option value="cammount">Support caméra (TPU)</option>
+      </select>
+      <div style="display:flex;justify-content:space-between"><span>Horizontal latéral (X)</span>
+        <span class="val" id="camXV">0.0 mm</span></div>
+      <input type="range" id="camX" min="-15" max="15" step="0.5" value="0"/>
+      <div style="display:flex;justify-content:space-between;margin-top:8px"><span>Profondeur (Y)</span>
+        <span class="val" id="camYV">0.0 mm</span></div>
+      <input type="range" id="camY" min="-20" max="20" step="0.5" value="0"/>
+      <div style="display:flex;justify-content:space-between;margin-top:8px"><span>Vertical (Z)</span>
+        <span class="val" id="camZV">0.0 mm</span></div>
+      <input type="range" id="camZ" min="-15" max="15" step="0.5" value="0"/>
+      <div class="mini" style="margin-top:8px">Décalage <b id="camDelta">X 0 · Y 0 · Z 0</b>
+        (mm) — copie-moi cette ligne.</div>
+      <button id="camReset" style="width:100%;margin-top:8px">Réinitialiser</button>
+    </div>
+    <div class="sec">
       <h2>Spécifications (cible)</h2>
       <table>__SPECS__</table>
     </div>
@@ -542,6 +564,26 @@ applyElec(stdElec);
 document.getElementById('bElec').addEventListener('click', ()=>{
   stdElec=!stdElec; applyElec(stdElec);
 });
+// ---- camera / mount fine-adjust: sliders offset the chosen group, live mm ----
+{ const off = { camera:{x:0,y:0,z:0}, cammount:{x:0,y:0,z:0} };
+  const el = id => document.getElementById(id);
+  const applyCam = ()=>{
+    const t = el('camTarget').value; const o = off[t];
+    const g = G[t]; if (g){ g.position.set(o.x/1000, o.y/1000, o.z/1000);
+      g.userData.home = g.position.clone(); }
+    el('camXV').textContent = o.x.toFixed(1)+' mm';
+    el('camYV').textContent = o.y.toFixed(1)+' mm';
+    el('camZV').textContent = o.z.toFixed(1)+' mm';
+    el('camDelta').textContent = t+' : X '+o.x+' · Y '+o.y+' · Z '+o.z;
+  };
+  const bind = (id, ax)=> el(id).addEventListener('input', e=>{
+    off[el('camTarget').value][ax] = +e.target.value; applyCam(); });
+  bind('camX','x'); bind('camY','y'); bind('camZ','z');
+  el('camTarget').addEventListener('change', ()=>{ const o=off[el('camTarget').value];
+    el('camX').value=o.x; el('camY').value=o.y; el('camZ').value=o.z; applyCam(); });
+  el('camReset').addEventListener('click', ()=>{ const o=off[el('camTarget').value];
+    o.x=o.y=o.z=0; el('camX').value=0; el('camY').value=0; el('camZ').value=0; applyCam(); });
+}
 let spinRate=0.4*60;                       // hélices en rotation par défaut
 document.getElementById('spinV').textContent='40%';
 document.getElementById('spin').addEventListener('input', e=>{ spinRate=e.target.value/100*60;
