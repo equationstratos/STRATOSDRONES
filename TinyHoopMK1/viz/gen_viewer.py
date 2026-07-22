@@ -588,16 +588,23 @@ document.getElementById('bElec').addEventListener('click', ()=>{
   stdElec=!stdElec; applyElec(stdElec);
 });
 // ---- per-part fine-adjust: translate + rotate the chosen part about its pivot ----
-{ const mk=()=>({x:0,y:0,z:0,rx:0,ry:0,rz:0});
-  const off = { camera:mk(), cammount_top:mk(), cammount_bottom:mk() };
+// DEF = the alignment the owner dialled in; it is applied at load and is the
+// "reset" target, so the nose is correctly seated out of the box.
+{ const DEF = { camera:         {x:0, y:0,   z:-6,   rx:27, ry:0, rz:0},
+                cammount_top:   {x:0, y:-2,  z:-1,   rx:-6, ry:0, rz:0},
+                cammount_bottom:{x:0, y:4.5, z:-1.5, rx:-5, ry:0, rz:0} };
+  const cp = o => Object.assign({}, o);
+  const off = { camera:cp(DEF.camera), cammount_top:cp(DEF.cammount_top),
+                cammount_bottom:cp(DEF.cammount_bottom) };
   const el = id => document.getElementById(id);
   const D = Math.PI/180;
-  const applyCam = ()=>{
-    const t = el('camTarget').value; const o = off[t]; const g = G[t];
+  const applyTarget = (t)=>{ const o=off[t]; const g=G[t];
     if (g){ const b = g.userData.base || new THREE.Vector3();
       g.position.set(b.x + o.x/1000, b.y + o.y/1000, b.z + o.z/1000);
       g.rotation.set(o.rx*D, o.ry*D, o.rz*D);
-      g.userData.home = g.position.clone(); }
+      g.userData.home = g.position.clone(); } };
+  const applyCam = ()=>{
+    const t = el('camTarget').value; const o = off[t]; applyTarget(t);
     el('camXV').textContent = o.x.toFixed(1)+' mm';
     el('camYV').textContent = o.y.toFixed(1)+' mm';
     el('camZV').textContent = o.z.toFixed(1)+' mm';
@@ -615,7 +622,9 @@ document.getElementById('bElec').addEventListener('click', ()=>{
     el('camX').value=o.x; el('camY').value=o.y; el('camZ').value=o.z;
     el('camRX').value=o.rx; el('camRY').value=o.ry; el('camRZ').value=o.rz; applyCam(); };
   el('camTarget').addEventListener('change', sync);
-  el('camReset').addEventListener('click', ()=>{ off[el('camTarget').value]=mk(); sync(); });
+  el('camReset').addEventListener('click', ()=>{ off[el('camTarget').value]=cp(DEF[el('camTarget').value]); sync(); });
+  ['camera','cammount_top','cammount_bottom'].forEach(applyTarget);   // apply at load
+  sync();                                                             // reflect in UI
 }
 let spinRate=0.4*60;                       // hélices en rotation par défaut
 document.getElementById('spinV').textContent='40%';
