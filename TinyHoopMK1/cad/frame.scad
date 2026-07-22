@@ -301,10 +301,34 @@ module gps_module() {
     color("#111") translate([-5,-5,1.4]) cube([3,3,1.5]);     // u-blox chip
 }
 
-/* ELRS receiver whip antenna — coax + a T tip (ceramic-free micro RX). */
+/* iFlight ELRS 2.4 GHz Mini T-antenna (~70 mm) — u.FL plug, coax mast and a
+ * horizontal T dipole at the top (the active element sits PERPENDICULAR to
+ * the mast, as on the real part). Modelled standing up (mast along +Z). */
 module rx_antenna() {
-    color("#161616") cylinder(d=1.2, h=16, $fn=12);           // coax
-    color("#d8b24a") translate([0,0,16]) cylinder(d=1.6, h=4, $fn=12); // active tip (sleeve)
+    color("#1f6f6a") cylinder(d=3.4, h=6.5, $fn=18);          // u.FL / heatshrink base
+    color("#c8a24a") translate([0,0,-2]) cylinder(d=2.0, h=2, $fn=12);  // gold pin
+    color("#161616") translate([0,0,6.5]) cylinder(d=1.6, h=47, $fn=14); // coax mast
+    color("#222222") translate([0,0,53.5]) sphere(d=3.2, $fn=18);       // T junction
+    color("#161616") translate([0,0,53.5]) rotate([0,90,0])            // horizontal element
+        cylinder(d=1.6, h=34, center=true, $fn=14);
+    for (sx=[-1,1]) color("#333333")                          // moulded end sleeves
+        translate([sx*16,0,53.5]) rotate([0,90,0]) cylinder(d=2.4, h=4, center=true, $fn=12);
+}
+
+/* TPU mast holder for the T-antenna — the coax slides into the vertical bore
+ * so the antenna stands PERPENDICULAR to the drone; screw tab to the plate. */
+module rx_ant_tpu() {
+    h = 15; od = 5.2; id = 2.0;
+    color("#2b2f36") difference() {
+        union() {
+            cylinder(d=od, h=h, $fn=28);                          // upright post
+            translate([-od/2, -od/2-2.2, 0]) cube([od, 2.4, 4.5]); // base tab
+        }
+        translate([0,0,2.5]) cylinder(d=id, h=h, $fn=14);         // bore for the coax
+        translate([-id/2, 0, 4]) cube([id, od, h]);               // front snap slot
+        translate([0,-od/2-1.0, 2.2]) rotate([90,0,0])            // screw hole
+            cylinder(d=2.2, h=3, $fn=16, center=true);
+    }
 }
 
 /* TPU snap-clip that holds the 25 V 22 µF (Ø6 × 12) capacitor — printable,
@@ -516,6 +540,7 @@ else if (PART == "rx_antenna")     rx_antenna();
 else if (PART == "cap_holder")     cap_holder();
 else if (PART == "rx_pcb")         rx_pcb();
 else if (PART == "rx_holder")      rx_holder();
+else if (PART == "rx_ant_tpu")     rx_ant_tpu();
 else if (PART == "motor_cable")    motor_cable();
 // DXF: 2-D carbon profiles (render the flat shapes for cutting)
 else if (PART == "dxf_bottom_classic") bottom_2d("classic");

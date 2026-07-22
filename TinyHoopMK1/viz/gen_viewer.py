@@ -504,13 +504,15 @@ function wireTube(p0, p1, r, col){
 const gEx = group('extras');
 gEx.add(place(STLB64.buzzer, 0x141519, .3,  .5,  M.elec.buzzer));   // Ø8 buzzer
 gEx.add(place(STLB64.gps,    0x0a0c10, .2,  .5,  M.elec.gps));      // GPS/compass
-// ELRS RX: the PCB dropped into its TPU tray, whip antenna out the back
+// ELRS RX: the PCB in its TPU tray, and the iFlight T-antenna standing
+// PERPENDICULAR to the drone in its own printed TPU mast-holder
 gEx.add(place(STLB64.rx_holder, TPU, .1, .85, M.elec.rx));          // TPU tray
 gEx.add(place(STLB64.rx_pcb, 0x0f3d0f, .2, .5,                      // RX board
   [M.elec.rx[0], M.elec.rx[1], M.elec.rx[2]+1.6]));
-{ const a = place(STLB64.rx, 0xb23a2f, .2, .5,                      // whip antenna
-    [M.elec.rx[0], M.elec.rx[1]-7, M.elec.rx[2]+3]);
-  a.rotation.x = Math.PI/2 + 0.5; gEx.add(a); }                     // exits the tray, up-back
+{ const ap = [M.elec.rx[0], M.elec.rx[1]-6, M.elec.rx[2]];
+  gEx.add(place(STLB64.rx_ant_tpu, TPU, .1, .85, ap));             // TPU mast holder
+  gEx.add(place(STLB64.rx, 0x141414, .25, .5,                       // T-antenna, upright
+    [ap[0], ap[1], ap[2]+3])); }                                    // mast +Z = perpendicular
 // battery XT30 connector + red(+)/black(-) leads down to the ESC pads
 { const xt = M.elec.xt30;
   const conn = new THREE.Mesh(new THREE.BoxGeometry(0.009,0.007,0.006),
@@ -1084,6 +1086,7 @@ def main():
                 "cap_holder": b64(os.path.join(STL, "cap_holder.stl")),
                 "rx_pcb": b64(os.path.join(STL, "rx_pcb.stl")),
                 "rx_holder": b64(os.path.join(STL, "rx_holder.stl")),
+                "rx_ant_tpu": b64(os.path.join(STL, "rx_ant_tpu.stl")),
                 "cable": b64(os.path.join(STL, "motor_cable.stl")),
             }, separators=(",", ":"))))
     with open(OUT, "w") as f:
