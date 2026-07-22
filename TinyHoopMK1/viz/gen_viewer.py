@@ -35,8 +35,8 @@ MODEL = dict(name="FR4N10", sub="FPV programmable / essaim · 2,5\" · 2S-3S", w
              motors=[[46.6,34.1],[-46.6,34.1],[-46.6,-34.1],[46.6,-34.1]],
              prop_z=0.0135, motor_z=0.003, frame_z=0.0,
              elec=dict(board=[0,0,6], battery=[0,-11,22],
-                       o4cam=[0,44,11], o4airunit=[0,-6,7], o4antenna=[0,-40,3],
-                       cap=[11,-13,7], buzzer=[-11,-13,7], gps=[-9,-18,20.8],
+                       o4cam=[0,44,11], o4airunit=[0,-6,7], o4antenna=[0,-32,16],
+                       cap=[9,-27,9], buzzer=[-11,-13,7], gps=[-9,-18,20.8],
                        rx=[13,-30,4]),
              standoffs=dict(frame=_FRAME_STAND, board=_BOARD_STAND),
              # ALL screws: 16 motor-mount + 3 frame-standoff tops + 4 board tops
@@ -47,7 +47,8 @@ MODEL = dict(name="FR4N10", sub="FPV programmable / essaim · 2,5\" · 2S-3S", w
                           camcage=[0,0,40], camera=[0,0,48], cammount=[0,26,56],
                           airunit=[0,0,-18], motors=[0,0,-40], props=[0,0,78],
                           elec=[0,0,-30], battery=[0,0,94], screws=[0,0,66],
-                          tpu=[0,0,-26], antenna=[0,0,90], extras=[0,0,-15]),
+                          tpu=[0,0,-26], antenna=[0,0,90], cap=[0,0,-8],
+                          extras=[0,0,-15]),
              specs=[("Entraxe", "~115 mm (wide-X)"), ("Hélices", "2,5\" Gemfan 2520"),
                     ("Moteurs", "1203-1303 · 2S-3S"),
                     ("ESC", "AIO BLHeli_S/Bluejay · DShot600"),
@@ -354,9 +355,10 @@ const gCam = group('camera');
   m.rotation.z = -Math.PI/2;
   m.position.set(M.elec.o4cam[0]/1000, M.elec.o4cam[1]/1000, M.elec.o4cam[2]/1000);
   gCam.add(m); }
-// DJI O4 Pro air unit (the digital VTX) in the stack
+// DJI O4 Pro air unit (the digital VTX) — bare PCB, the metal heat-shield
+// removed so the board itself is visible (as requested)
 const gAir = group('airunit');
-gAir.add(place(STLB64.o4airunit, 0x17181c,.4,.4, M.elec.o4airunit));
+gAir.add(place(STLB64.o4airunit, 0x11532e,.3,.5, M.elec.o4airunit));  // PCB green
 // real WE are FPV 2-part O4 camera mount (top + aligned bottom clamp)
 const gMount = group('cammount');
 gMount.add(mesh(STLB64.cam_mount_top, TPU,.1,.8));
@@ -388,29 +390,32 @@ for (const [mx, my] of M.motors){
   gProp.add(pm); propMeshes.push(pm);
 }
 // AIO board — two interchangeable options on the 25.5 @45° stack:
-//  · STRATOS TINYHOOP AIO (our custom board, green) — shown by default
-//  · JHEMCU GHF411 AIO (real STEP) — the ready-to-buy Betaflight option
+//  · JHEMCU GHF411 AIO (real STEP you provided) — shown by default
+//  · STRATOS TINYHOOP AIO (our custom board, green)
 // the "Électronique" button swaps which one is visible.
 const gElec = group('elec');
 const boardCustom = place(STLB64.board, 0x0b6b39, .15, .5, M.elec.board);
-boardCustom.rotation.z = Math.PI/4; gElec.add(boardCustom);   // 45° = real JeNo AIO mount
+boardCustom.rotation.z = Math.PI/4; boardCustom.visible = false; gElec.add(boardCustom);
 const boardGhf = place(STLB64.ghf411, 0x14161b, .35, .45, M.elec.board);
-boardGhf.rotation.z = Math.PI/4; boardGhf.visible = false; gElec.add(boardGhf);
+boardGhf.rotation.z = Math.PI/4; gElec.add(boardGhf);   // 45° = real JeNo AIO mount, default
 const gBatt = group('battery');
 gBatt.add(place(STLB64.battery, 0x22262d, .1, .55, M.elec.battery));
 // M2 screws on the real standoffs + camera plates
 const gScrew = group('screws');
 for (const s of M.screws){ const sc = place(STLB64.screw, 0xd6d9de, .9, .25, s);
   gScrew.add(sc); }
-// the SINGLE DJI O4 Pro antenna (real STEP), seated in the rear TPU mount and
-// swept up-and-back like a real FPV whip (connector down in the mount)
+// the SINGLE DJI O4 Pro antenna (real STEP — the 2nd element removed), seated
+// the right way up in the rear TPU mount: connector down in the tube, whip
+// rising up-and-back at the mount's own ~26° angle
 const gAnt = group('antenna');
 { const a = place(STLB64.o4antenna, 0x101216, .2, .5, M.elec.o4antenna);
-  a.rotation.x = -1.05; gAnt.add(a); }   // ~60° back-tilt out of the rear mount
-// build extras: LiPo capacitor, buzzer, GPS/compass, ELRS RX antenna,
-// 4 motor phase cables — all routed around the stack
+  a.rotation.x = 0.46; gAnt.add(a); }    // matches the TPU tube's back-rake
+// LiPo low-ESR capacitor (25 V 22 µF, Ø6×12) — its own part, upright at the
+// rear beside the battery pads so it is clearly visible in 3-D
+const gCap = group('cap');
+gCap.add(place(STLB64.cap, 0x1b3a8f, .25, .45, M.elec.cap));        // 25V 22µF
+// build extras: buzzer, GPS/compass, ELRS RX antenna, 4 motor phase cables
 const gEx = group('extras');
-gEx.add(place(STLB64.cap,    0x1b3a8f, .25, .45, M.elec.cap));      // 25V 22µF
 gEx.add(place(STLB64.buzzer, 0x141519, .3,  .5,  M.elec.buzzer));   // Ø8 buzzer
 gEx.add(place(STLB64.gps,    0x0a0c10, .2,  .5,  M.elec.gps));      // GPS/compass
 { const rx = place(STLB64.rx, 0xb23a2f, .2, .5, M.elec.rx);
@@ -427,7 +432,7 @@ const GROUPS = {
   standoffs:{label:'Entretoises', color:'#b9bcc2'},
   camcage:  {label:'Cage caméra (carbone)', color:'#1a1d21'},
   camera:   {label:'Caméra DJI O4 Pro', color:'#121316'},
-  airunit:  {label:'Air unit DJI O4 Pro', color:'#17181c'},
+  airunit:  {label:'Air unit DJI O4 Pro (PCB nue)', color:'#11532e'},
   cammount: {label:'Support caméra O4 (TPU · 2 pièces)', color:'#2b2f36'},
   tpu:      {label:'Protections TPU (bumpers)', color:'#2b2f36'},
   motors:   {label:'Moteurs 1104 (Readytosky)', color:'#3a3d43'},
@@ -435,8 +440,9 @@ const GROUPS = {
   elec:     {label:'Carte AIO (STRATOS / GHF411)', color:'#0b6b39'},
   battery:  {label:'Batterie 3S 560 mAh (DOGCOM)', color:'#22262d'},
   screws:   {label:'Visserie M2 (moteurs + stack)', color:'#d6d9de'},
-  antenna:  {label:'Antenne DJI O4 (unique)', color:'#101216'},
-  extras:   {label:'Condensateur · buzzer · GPS · RX · câbles', color:'#1b3a8f'},
+  antenna:  {label:'Antenne DJI O4 (unique, dans le TPU)', color:'#101216'},
+  cap:      {label:'Condensateur 25 V 22 µF', color:'#1b3a8f'},
+  extras:   {label:'Buzzer · GPS · RX · câbles moteurs', color:'#3a6ea5'},
 };
 // remember each group's assembled position so the explode slider can offset it
 for (const k of Object.keys(GROUPS)){
@@ -499,16 +505,20 @@ document.getElementById('bReset').addEventListener('click', ()=>{
   keys.forEach(k=> setColor(k, GROUPS[k].color));
   document.querySelectorAll('.pick').forEach((el,i)=>{ el.value=GROUPS[keys[i]].color; }); });
 
-// ---- standard vs STRATOS electronics (BOM from the JeNo repo) ----
-let stdElec=false;
-document.getElementById('bElec').addEventListener('click', e=>{
-  stdElec=!stdElec;
-  e.target.textContent = stdElec ? 'Électronique : STANDARD (Betaflight)'
-                                 : 'Électronique : STRATOS TINYHOOP AIO';
-  e.target.classList.toggle('on', !stdElec);
-  document.getElementById('bom').style.display = stdElec ? 'block' : 'none';
-  boardCustom.visible = !stdElec;      // STRATOS custom board
-  boardGhf.visible = stdElec;          // real JHEMCU GHF411 AIO
+// ---- real GHF411 (default) vs STRATOS custom electronics ----
+function applyElec(std){                    // std = show the real GHF411
+  const b = document.getElementById('bElec');
+  b.textContent = std ? 'Électronique : JHEMCU GHF411 (réel)'
+                      : 'Électronique : STRATOS TINYHOOP AIO';
+  b.classList.toggle('on', !std);           // "on" highlights our custom board
+  document.getElementById('bom').style.display = std ? 'block' : 'none';
+  boardGhf.visible = std;                    // real JHEMCU GHF411 AIO
+  boardCustom.visible = !std;                // STRATOS custom board
+}
+let stdElec=true;                            // default: show the FC you provided
+applyElec(stdElec);
+document.getElementById('bElec').addEventListener('click', ()=>{
+  stdElec=!stdElec; applyElec(stdElec);
 });
 let spinRate=0.4*60;                       // hélices en rotation par défaut
 document.getElementById('spinV').textContent='40%';
