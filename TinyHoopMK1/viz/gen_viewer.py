@@ -268,6 +268,7 @@ land</textarea>
         <button id="pgP2">02 · Carré</button>
         <button id="pgP3">03 · Swarm ×3</button>
         <button id="pgP4">★ Freestyle</button>
+        <button id="pgP5" style="grid-column:1/-1">⚡ Run FPV (nerveux)</button>
       </div>
     </div>
     <div class="sec">
@@ -397,7 +398,15 @@ const gCage = group('camcage'); { const m=mesh(STLB64.camcage, CARBON,.3,.5);
 const gCam = (()=>{ const m=mesh(STLB64.o4cam, 0x30343b,.5,.35);  // dark-grey body
   m.rotation.z = Math.PI/2;                          // lens faces +Y (nose)
   m.position.set(M.elec.o4cam[0]/1000, M.elec.o4cam[1]/1000, M.elec.o4cam[2]/1000);
-  return adjGroup('camera', m, 0, 42, 20); })();     // pivot at camera centre
+  const g = adjGroup('camera', m, 0, 42, 20);        // pivot at camera centre
+  // soft rubber gasket around the lens — fills the gap between camera and the
+  // TPU mount (matte black silicone O-ring); rides with the camera group
+  const rub = new THREE.Mesh(new THREE.TorusGeometry(0.0068, 0.0027, 16, 40),
+    new THREE.MeshStandardMaterial({color:0x0b0b0d, metalness:0.0, roughness:0.97}));
+  rub.rotation.x = Math.PI/2;                         // ring axis along +Y (lens)
+  rub.position.set(0, 12.2/1000, -1/1000);           // at the lens front, in group-local
+  g.add(rub);
+  return g; })();
 // DJI O4 Lite air unit (VTX) — stacked ABOVE the FC on soft-mount grommets,
 // aligned on the same 25.5@45° pattern, with a ribbon cable down to the camera.
 const gAir = group('airunit');
@@ -940,8 +949,25 @@ const PG = (function(){
             'flip f','curve 80 (i-1)*60 20 160 0 0 60',
             'flip b','curve 80 (1-i)*60 -20 160 0 0 50',
             'cw 120+60*i','flip l','land'].join('\n'),
+    fpv: ['# ⚡ RUN FPV — rapide & nerveux : dives, power loops, split-S, slalom',
+            'command','speed 100','takeoff','up 80',
+            '# acceleration en courbe (montee qui s ouvre)',
+            'curve 120 50 30 240 -20 -20 60',
+            '# power loop avant',
+            'flip f','curve 60 0 70 130 0 -50 60',
+            '# whip yaw agressif + tonneau',
+            'cw 180','flip r',
+            '# split-S : demi-tonneau + plongée sèche',
+            'flip l','down 60',
+            '# slalom incurvé nerveux (gauche / droite)',
+            'curve 130 70 15 260 -70 0 60',
+            'curve 130 -70 -15 260 70 0 60',
+            '# ligne rapide basse + power loop arrière',
+            'go 300 0 0 100','flip b','cw 150',
+            '# dernière plongée + sortie',
+            'down 50','go 200 0 40 100','flip f','land'].join('\n'),
   };
-  for (const [id, keyn] of [['pgP1','hover'],['pgP2','square'],['pgP3','swarm'],['pgP4','freestyle']])
+  for (const [id, keyn] of [['pgP1','hover'],['pgP2','square'],['pgP3','swarm'],['pgP4','freestyle'],['pgP5','fpv']])
     $(id).addEventListener('click', ()=>{ $('pgCode').value = PRESETS[keyn]; });
   $('pgRun').addEventListener('click', run);
   $('pgReset').addEventListener('click', ()=>{ reset(true); log('réinitialisé','ok'); });
