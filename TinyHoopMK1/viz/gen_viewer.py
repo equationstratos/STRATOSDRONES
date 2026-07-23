@@ -695,9 +695,9 @@ document.getElementById('bElec').addEventListener('click', ()=>{
 { const DEF = { camera:         {x:0, y:0,   z:-6,   rx:27, ry:0, rz:0},
                 cammount_top:   {x:0, y:-2,  z:-1,   rx:-6, ry:0, rz:0},
                 cammount_bottom:{x:0, y:4.5, z:-1.5, rx:-5, ry:0, rz:0},
-                vtx_dji:        {x:0, y:-34, z:42,   rx:-147, ry:0, rz:0},
-                vtx_rhcp:       {x:0, y:0,   z:0,    rx:28, ry:0, rz:0},
-                vtx_foxeer:     {x:0, y:0,   z:0,    rx:28, ry:0, rz:0},
+                vtx_dji:        {x:0, y:-29,   z:48.5, rx:-147, ry:0, rz:0},
+                vtx_rhcp:       {x:0, y:0,     z:0,    rx:28,   ry:0, rz:0},
+                vtx_foxeer:     {x:0, y:0,     z:0,    rx:28,   ry:0, rz:0},
                 vtx_matchstick: {x:0, y:0,   z:0,    rx:28, ry:0, rz:0},
                 rxant:          {x:0, y:0,   z:0,    rx:87, ry:0, rz:0} };
   const cp = o => Object.assign({}, o);
