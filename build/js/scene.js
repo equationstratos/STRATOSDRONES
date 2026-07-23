@@ -1,21 +1,15 @@
 /* =====================================================
    STRATOS DRONES
    TinyHoop MK1 BUILDER
-   SCENE ENGINE
+   SCENE ENGINE SIMPLE
 ===================================================== */
 
 
 var scene;
-
 var camera;
-
 var renderer;
-
 var controls;
-
 var droneRoot;
-
-
 
 
 
@@ -35,8 +29,6 @@ function initScene(){
     new THREE.Color(
         0x111111
     );
-
-
 
 
 
@@ -65,9 +57,6 @@ function initScene(){
         350
 
     );
-
-
-
 
 
 
@@ -114,62 +103,10 @@ function initScene(){
 
 
 
-
-
     /*
-       Orbit Controls
+       PAS D'ORBIT CONTROLS POUR L'INSTANT
+       CAMERA FIXE POUR VALIDATION
     */
-
-
-    if(THREE.OrbitControls)
-
-    {
-
-
-        controls =
-        new THREE.OrbitControls(
-
-            camera,
-
-            renderer.domElement
-
-        );
-
-
-        controls.enableDamping=true;
-
-
-        controls.target.set(
-
-            0,
-
-            0,
-
-            0
-
-        );
-
-
-        controls.update();
-
-
-    }
-
-    else
-
-    {
-
-        console.error(
-
-            "OrbitControls missing"
-
-        );
-
-    }
-
-
-
-
 
 
 
@@ -195,15 +132,11 @@ function initScene(){
 
 
 
-
-
     createFloor();
 
 
 
-
     animate();
-
 
 
 
@@ -230,7 +163,6 @@ function initScene(){
 function createLights(){
 
 
-
     var ambient =
     new THREE.AmbientLight(
 
@@ -248,7 +180,6 @@ function createLights(){
 
 
 
-
     var light =
     new THREE.DirectionalLight(
 
@@ -257,7 +188,6 @@ function createLights(){
         2
 
     );
-
 
 
     light.position.set(
@@ -271,17 +201,11 @@ function createLights(){
     );
 
 
-
-    light.castShadow=true;
-
-
-
     scene.add(
 
         light
 
     );
-
 
 
 }
@@ -295,7 +219,6 @@ function createLights(){
 
 
 function createFloor(){
-
 
 
     var geometry =
@@ -312,12 +235,9 @@ function createFloor(){
     var material =
     new THREE.MeshStandardMaterial({
 
-        color:
-        0x181818
+        color:0x181818
 
     });
-
-
 
 
 
@@ -349,7 +269,6 @@ function createFloor(){
     );
 
 
-
 }
 
 
@@ -363,22 +282,11 @@ function createFloor(){
 function animate(){
 
 
-
     requestAnimationFrame(
 
         animate
 
     );
-
-
-
-    if(controls)
-
-    {
-
-        controls.update();
-
-    }
 
 
 
@@ -389,7 +297,6 @@ function animate(){
         camera
 
     );
-
 
 
 }
@@ -403,7 +310,6 @@ function animate(){
 
 
 function resizeScene(){
-
 
 
     camera.aspect =
@@ -426,9 +332,7 @@ function resizeScene(){
     );
 
 
-
 }
-
 
 
 
@@ -441,12 +345,13 @@ function loadDroneModel(){
 
     console.log(
 
-        "No GLB loaded yet"
+        "GLB loading disabled"
 
     );
 
 
 }
+
 
 
 
