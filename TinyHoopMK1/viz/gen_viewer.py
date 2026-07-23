@@ -228,13 +228,13 @@ TEMPLATE = r"""<!DOCTYPE html>
       </select>
       <div style="display:flex;justify-content:space-between"><span>Latéral (X)</span>
         <span class="val" id="camXV">0.0 mm</span></div>
-      <input type="range" id="camX" min="-30" max="30" step="0.5" value="0"/>
+      <input type="range" id="camX" min="-60" max="60" step="0.5" value="0"/>
       <div style="display:flex;justify-content:space-between;margin-top:6px"><span>Profondeur (Y)</span>
         <span class="val" id="camYV">0.0 mm</span></div>
-      <input type="range" id="camY" min="-30" max="30" step="0.5" value="0"/>
+      <input type="range" id="camY" min="-60" max="60" step="0.5" value="0"/>
       <div style="display:flex;justify-content:space-between;margin-top:6px"><span>Vertical (Z)</span>
         <span class="val" id="camZV">0.0 mm</span></div>
-      <input type="range" id="camZ" min="-30" max="30" step="0.5" value="0"/>
+      <input type="range" id="camZ" min="-60" max="60" step="0.5" value="0"/>
       <div style="display:flex;justify-content:space-between;margin-top:6px"><span>Rotation X (°)</span>
         <span class="val" id="camRXV">0°</span></div>
       <input type="range" id="camRX" min="-180" max="180" step="1" value="0"/>
@@ -525,6 +525,14 @@ const vtxModels = {
 };
 let vtxCur='dji'; vtxModels[vtxCur].visible=true;         // default: the DJI antenna
 // (the 28° seating tilt is carried by the fine-adjust DEF below, applied at load)
+// Show ONE VTX model and keep BOTH dropdowns (model + fine-adjust) in step, so
+// picking an antenna to adjust always makes that same antenna visible.
+function showVtxModel(key){
+  if (!vtxModels[key]) return;
+  if (vtxModels[vtxCur]) vtxModels[vtxCur].visible = false;
+  vtxCur = key; vtxModels[key].visible = true;
+  const s = document.getElementById('vtxSel'); if (s) s.value = key;
+}
 // LiPo capacitor (25 V 22 µF, Ø6×12) SEATED IN ITS PRINTED TPU HOLDER
 const gCap = group('cap');
 gCap.add(place(STLB64.cap_holder, TPU, .1, .85, M.elec.cap));       // TPU snap-clip
@@ -671,10 +679,11 @@ function applyElec(std){                    // std = show the real GHF411
 }
 let stdElec=true;                            // default: show the FC you provided
 applyElec(stdElec);
-// VTX antenna model selector — swap which of the 3 meshes is visible
+// VTX antenna model selector — swap which mesh is visible AND point the
+// fine-adjust panel at the same antenna (so its sliders act on what you see).
 { const sel=document.getElementById('vtxSel'); if(sel){ sel.value=vtxCur;
-  sel.addEventListener('change',e=>{ if(vtxModels[vtxCur])vtxModels[vtxCur].visible=false;
-    vtxCur=e.target.value; if(vtxModels[vtxCur])vtxModels[vtxCur].visible=true; }); } }
+  sel.addEventListener('change',e=>{ showVtxModel(e.target.value);
+    if (window.__pickAntenna) window.__pickAntenna('vtx_'+e.target.value); }); } }
 document.getElementById('bElec').addEventListener('click', ()=>{
   stdElec=!stdElec; applyElec(stdElec);
 });
@@ -686,7 +695,7 @@ document.getElementById('bElec').addEventListener('click', ()=>{
 { const DEF = { camera:         {x:0, y:0,   z:-6,   rx:27, ry:0, rz:0},
                 cammount_top:   {x:0, y:-2,  z:-1,   rx:-6, ry:0, rz:0},
                 cammount_bottom:{x:0, y:4.5, z:-1.5, rx:-5, ry:0, rz:0},
-                vtx_dji:        {x:0, y:0,   z:0,    rx:28, ry:0, rz:0},
+                vtx_dji:        {x:0, y:-34, z:42,   rx:-147, ry:0, rz:0},
                 vtx_rhcp:       {x:0, y:0,   z:0,    rx:28, ry:0, rz:0},
                 vtx_foxeer:     {x:0, y:0,   z:0,    rx:28, ry:0, rz:0},
                 vtx_matchstick: {x:0, y:0,   z:0,    rx:28, ry:0, rz:0},
@@ -719,7 +728,14 @@ document.getElementById('bElec').addEventListener('click', ()=>{
   const sync = ()=>{ const o=off[el('camTarget').value];
     el('camX').value=o.x; el('camY').value=o.y; el('camZ').value=o.z;
     el('camRX').value=o.rx; el('camRY').value=o.ry; el('camRZ').value=o.rz; applyCam(); };
-  el('camTarget').addEventListener('change', sync);
+  // changing the fine-adjust target also DISPLAYS that antenna (VTX targets),
+  // so you always see the one your sliders are moving.
+  const onPick = ()=>{ const t = el('camTarget').value;
+    if (t.indexOf('vtx_')===0 && typeof showVtxModel==='function') showVtxModel(t.slice(4));
+    sync(); };
+  el('camTarget').addEventListener('change', onPick);
+  // let the model dropdown drive this panel too (see vtxSel handler above)
+  window.__pickAntenna = (t)=>{ const s=el('camTarget'); if(s){ s.value=t; sync(); } };
   el('camReset').addEventListener('click', ()=>{ off[el('camTarget').value]=cp(DEF[el('camTarget').value]); sync(); });
   Object.keys(DEF).forEach(applyTarget);   // seat camera/mounts + tilt every antenna at load
   sync();                                  // reflect the current dropdown target in the UI
