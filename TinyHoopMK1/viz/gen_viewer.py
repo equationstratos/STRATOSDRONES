@@ -215,8 +215,8 @@ TEMPLATE = r"""<!DOCTYPE html>
         (clavier + scripts SDK).</div>
     </div>
     <div class="sec">
-      <h2>Réglage antennes</h2>
-      <div class="mini" style="margin-bottom:8px">Choisis l'antenne, aligne-la
+      <h2>Réglage antennes &amp; joint</h2>
+      <div class="mini" style="margin-bottom:8px">Choisis la pièce, aligne-la
         avec les curseurs (chacune se règle <b>indépendamment</b>), puis
         <b>relève les valeurs</b> et donne-les moi.</div>
       <select id="camTarget" style="width:100%;background:var(--btn);color:var(--ink);
@@ -227,6 +227,7 @@ TEMPLATE = r"""<!DOCTYPE html>
         <option value="vtx_matchstick">Antenne VTX — Matchstick</option>
         <option value="vtx_microlp">Antenne VTX — Micro Lollipop</option>
         <option value="rxant">Antenne RX — ELRS</option>
+        <option value="gasket">Joint caoutchouc caméra</option>
       </select>
       <div style="display:flex;justify-content:space-between"><span>Latéral (X)</span>
         <span class="val" id="camXV">0.0 mm</span></div>
@@ -246,7 +247,10 @@ TEMPLATE = r"""<!DOCTYPE html>
       <div style="display:flex;justify-content:space-between;margin-top:6px"><span>Rotation Z (°)</span>
         <span class="val" id="camRZV">0°</span></div>
       <input type="range" id="camRZ" min="-180" max="180" step="1" value="0"/>
-      <div class="mini" style="margin-top:8px"><b id="camDelta">vtx_dji : X 0 · Y 0 · Z 0 · RX 28 · RY 0 · RZ 0</b>
+      <div style="display:flex;justify-content:space-between;margin-top:6px"><span>Taille (%)</span>
+        <span class="val" id="camSV">100%</span></div>
+      <input type="range" id="camS" min="30" max="200" step="1" value="100"/>
+      <div class="mini" style="margin-top:8px"><b id="camDelta">vtx_dji : X 0 · Y 0 · Z 0 · RX 28 · RY 0 · RZ 0 · S 100</b>
         — copie-moi cette ligne.</div>
       <button id="camReset" style="width:100%;margin-top:8px">Réinitialiser cette antenne</button>
     </div>
@@ -418,17 +422,19 @@ const gCam = (()=>{ const m=mesh(STLB64.o4cam, 0x30343b,.5,.35);  // dark-grey b
   m.position.set(M.elec.o4cam[0]/1000, M.elec.o4cam[1]/1000, M.elec.o4cam[2]/1000);
   const g = adjGroup('camera', m, 0, 42, 20);        // pivot at camera centre
   // soft rubber gasket around the lens — a FLAT washer (not a torus), so it
-  // sits flush and reaches the TPU mount edge WITHOUT bulging into a "beignet".
-  // Ring from the lens barrel (inner) out to the mount opening (outer).
-  const gOuter=0.0110, gInner=0.0064, gThick=0.0010;
+  // sits flush WITHOUT bulging into a "beignet". Sized to sit INSIDE the TPU
+  // mount opening (camera -> gasket -> support). Adjustable via the Réglage
+  // panel (its own group 'gasket': position + size sliders).
+  const gOuter=0.0090, gInner=0.0062, gThick=0.0010;
   const shp=new THREE.Shape(); shp.absarc(0,0,gOuter,0,Math.PI*2,false);
   const gh=new THREE.Path(); gh.absarc(0,0,gInner,0,Math.PI*2,true); shp.holes.push(gh);
   const rub=new THREE.Mesh(new THREE.ExtrudeGeometry(shp,{depth:gThick,bevelEnabled:true,
     bevelThickness:0.00018,bevelSize:0.00018,bevelSegments:1,curveSegments:56}),
     new THREE.MeshStandardMaterial({color:0x0b0b0d, metalness:0.0, roughness:0.97}));
   rub.rotation.x = -Math.PI/2;                        // flat face toward the nose (+Y)
-  rub.position.set(0, 11.4/1000, -1/1000);            // seated flat against the mount
-  g.add(rub);
+  const gsk = new THREE.Group();                      // own group so it is adjustable
+  gsk.add(rub); gsk.position.set(0, 11.4/1000, -1/1000);
+  gsk.userData.base = gsk.position.clone(); G['gasket'] = gsk; g.add(gsk);
   return g; })();
 // DJI O4 Lite air unit (VTX) — stacked ABOVE the FC on soft-mount grommets,
 // aligned on the same 25.5@45° pattern, with a ribbon cable down to the camera.
@@ -723,7 +729,8 @@ document.getElementById('bElec').addEventListener('click', ()=>{
                 vtx_foxeer:     {x:0, y:0,     z:0,    rx:28,   ry:0, rz:0},
                 vtx_matchstick: {x:0, y:0,   z:0,    rx:28, ry:0, rz:0},
                 vtx_microlp:    {x:0, y:0,   z:0,    rx:28, ry:0, rz:0},
-                rxant:          {x:0, y:0,   z:0,    rx:87, ry:0, rz:0} };
+                rxant:          {x:0, y:0,   z:0,    rx:87, ry:0, rz:0},
+                gasket:         {x:0, y:0,   z:0,    rx:0,  ry:0, rz:0, s:100} };
   const cp = o => Object.assign({}, o);
   const off = {}; for (const k in DEF) off[k] = cp(DEF[k]);
   const SEAT = ['camera','cammount_top','cammount_bottom'];   // applied, not in the dropdown
@@ -733,25 +740,29 @@ document.getElementById('bElec').addEventListener('click', ()=>{
     if (g){ const b = g.userData.base || new THREE.Vector3();
       g.position.set(b.x + o.x/1000, b.y + o.y/1000, b.z + o.z/1000);
       g.rotation.set(o.rx*D, o.ry*D, o.rz*D);
+      g.scale.setScalar((o.s==null?100:o.s)/100);      // size slider
       g.userData.home = g.position.clone(); } };
   const applyCam = ()=>{
     const t = el('camTarget').value; const o = off[t]; applyTarget(t);
+    const s = (o.s==null?100:o.s);
     el('camXV').textContent = o.x.toFixed(1)+' mm';
     el('camYV').textContent = o.y.toFixed(1)+' mm';
     el('camZV').textContent = o.z.toFixed(1)+' mm';
     el('camRXV').textContent = o.rx+'°';
     el('camRYV').textContent = o.ry+'°';
     el('camRZV').textContent = o.rz+'°';
+    el('camSV').textContent = s+'%';
     el('camDelta').textContent = t+' : X '+o.x+' · Y '+o.y+' · Z '+o.z
-      +' · RX '+o.rx+' · RY '+o.ry+' · RZ '+o.rz;
+      +' · RX '+o.rx+' · RY '+o.ry+' · RZ '+o.rz+' · S '+s;
   };
   const bind = (id, k)=> el(id).addEventListener('input', e=>{
     off[el('camTarget').value][k] = +e.target.value; applyCam(); });
   bind('camX','x'); bind('camY','y'); bind('camZ','z');
-  bind('camRX','rx'); bind('camRY','ry'); bind('camRZ','rz');
+  bind('camRX','rx'); bind('camRY','ry'); bind('camRZ','rz'); bind('camS','s');
   const sync = ()=>{ const o=off[el('camTarget').value];
     el('camX').value=o.x; el('camY').value=o.y; el('camZ').value=o.z;
-    el('camRX').value=o.rx; el('camRY').value=o.ry; el('camRZ').value=o.rz; applyCam(); };
+    el('camRX').value=o.rx; el('camRY').value=o.ry; el('camRZ').value=o.rz;
+    el('camS').value=(o.s==null?100:o.s); applyCam(); };
   // changing the fine-adjust target also DISPLAYS that antenna (VTX targets),
   // so you always see the one your sliders are moving.
   const onPick = ()=>{ const t = el('camTarget').value;
