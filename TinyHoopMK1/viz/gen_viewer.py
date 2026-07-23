@@ -35,10 +35,10 @@ MODEL = dict(name="FR4N10", sub="FPV programmable / essaim · 2,5\" · 2S-3S", w
              motors=[[46.6,34.1],[-46.6,34.1],[-46.6,-34.1],[46.6,-34.1]],
              prop_z=0.0135, motor_z=0.003, frame_z=0.0,
              elec=dict(board=[0,0,4], battery=[0,4,24],
-                       o4cam=[0,42,10], o4airunit=[0,0,10], o4antenna=[0,-47,41],
-                       vtxant=[0,-31,5],
+                       o4cam=[0,42,10], o4airunit=[0,0,10],
+                       vtxant=[0,-30,7], rearbay=[0,-32,3], rxant=[0,-33,6],
                        cap=[12,-22,4], buzzer=[11,-31,6], gps=[-9,-16,20.8],
-                       rx=[-11,-29,4], xt30=[0,-25,15], grommet=[0,0,11]),
+                       rx=[0,-22,4], xt30=[0,-25,11], grommet=[0,0,11]),
              standoffs=dict(frame=_FRAME_STAND, board=_BOARD_STAND),
              # ALL screws: 16 motor-mount + 3 frame-standoff tops + 4 board tops
              screws=_MOTOR_SCREWS + _STACK_SCREWS,
@@ -170,9 +170,9 @@ TEMPLATE = r"""<!DOCTYPE html>
       <h2>Antenne VTX (5,8 GHz)</h2>
       <select id="vtxSel" style="width:100%;background:var(--btn);color:var(--ink);
         border:1px solid var(--line);border-radius:6px;padding:7px;font-size:12px">
-        <option value="lollipop4">Foxeer Lollipop 4 (U.FL)</option>
-        <option value="osprey">FlyFishRC Osprey (U.FL)</option>
-        <option value="singularity">TrueRC Singularity / Matchstick (U.FL)</option>
+        <option value="dji">DJI O4 Pro (antenne, STEP réel)</option>
+        <option value="rhcp">RHCP LP A1 (STEP réel)</option>
+        <option value="foxeer">Foxeer Lollipop 5,8 GHz (STEP réel)</option>
       </select>
       <div class="mini" style="margin-top:5px">Insérée dans le TPU arrière, tête vers le haut.</div>
     </div>
@@ -452,7 +452,12 @@ for (const [sx, sy] of [[1,1],[-1,1],[1,-1],[-1,-1]]){
   ab.scale.set(sx*0.001, sy*0.001, 0.001); gTpu.add(ab);
 }
 gTpu.add(mesh(STLB64.back_bumper, TPU,.1,.8));
-gTpu.add(mesh(STLB64.vtx_mount, TPU,.1,.8));
+// NEW integrated rear TPU bay (replaces the crossing vtx_antenna_mount): holds
+// the VTX antenna angled-up + the RX antenna out the back, all in the footprint
+{ const rb = mesh(STLB64.rear_bay, 0x2b2f36, .1, .85);
+  rb.rotation.z = Math.PI;                                        // its rear faces the drone rear (-Y)
+  rb.position.set(M.elec.rearbay[0]/1000, M.elec.rearbay[1]/1000, M.elec.rearbay[2]/1000);
+  gTpu.add(rb); }
 // real Readytosky 1104 motors on the measured hole centres (±46.6, ±34.1)
 const gMot = group('motors');
 for (const [mx, my] of M.motors){
@@ -494,12 +499,13 @@ for (const [x,y] of M.standoffs.board){
 // HEAD UP (only the chosen one is visible; dropdown in the sidebar).
 const gVtxAnt = group('vtxant');
 const vtxModels = {
-  singularity: place(STLB64.ant_singularity, 0x181818, .2, .5, M.elec.vtxant),
-  osprey:      place(STLB64.ant_osprey,      0x141414, .2, .5, M.elec.vtxant),
-  lollipop4:   place(STLB64.ant_lollipop4,   0x171717, .2, .5, M.elec.vtxant),
+  dji:    place(STLB64.dji_pro_ant, 0x0f1114, .2, .5, M.elec.vtxant),  // DJI O4 Pro antenna
+  rhcp:   place(STLB64.rhcp_lp,     0x141414, .2, .5, M.elec.vtxant),  // RHCP LP A1 (STEP)
+  foxeer: place(STLB64.foxeer_lp,   0x141414, .2, .5, M.elec.vtxant),  // Foxeer Lollipop 5.8 (STEP)
 };
-Object.values(vtxModels).forEach(m=>{ m.rotation.x = 0.42; m.visible=false; gVtxAnt.add(m); });
-let vtxCur='lollipop4'; vtxModels[vtxCur].visible=true;   // default model, head up in the TPU
+// tilt back 28° to seat in the rear-bay receptacle, head up-and-back
+Object.values(vtxModels).forEach(m=>{ m.rotation.x = 0.49; m.visible=false; gVtxAnt.add(m); });
+let vtxCur='dji'; vtxModels[vtxCur].visible=true;         // default: the DJI antenna
 // LiPo capacitor (25 V 22 µF, Ø6×12) SEATED IN ITS PRINTED TPU HOLDER
 const gCap = group('cap');
 gCap.add(place(STLB64.cap_holder, TPU, .1, .85, M.elec.cap));       // TPU snap-clip
@@ -519,17 +525,16 @@ function wireTube(p0, p1, r, col){
 const gEx = group('extras');
 gEx.add(place(STLB64.buzzer, 0x141519, .3,  .5,  M.elec.buzzer));   // Ø8 buzzer
 gEx.add(place(STLB64.gps,    0x0a0c10, .2,  .5,  M.elec.gps));      // GPS/compass
-// ELRS RX: the PCB in its TPU tray, and a SINGLE T-antenna laid HORIZONTAL
-// straight out the back in one white TPU sleeve-tube (centred at the rear).
-gEx.add(place(STLB64.rx_holder, TPU, .1, .85, M.elec.rx));          // TPU tray
+// ELRS RX: the PCB centred in the footprint, and the antenna threaded through
+// the rear-bay's horizontal sleeve so it exits STRAIGHT OUT THE BACK.
+gEx.add(place(STLB64.rx_holder, TPU, .1, .85, M.elec.rx));          // TPU tray, centred
 gEx.add(place(STLB64.rx_pcb, 0x0f3d0f, .2, .5,                      // RX board
   [M.elec.rx[0], M.elec.rx[1], M.elec.rx[2]+1.6]));
 { const g = new THREE.Group();
-  g.add(mesh(STLB64.rx_ant_tpu, 0xdadade, .1, .85));               // short white TPU sleeve
-  g.add(mesh(STLB64.rx, 0x141414, .25, .5));                        // the (shortened) antenna
+  g.add(mesh(STLB64.rx, 0x141414, .25, .5));                        // antenna only (bay = the sleeve)
   g.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,1),
-    new THREE.Vector3(0,-1,0.06).normalize());                     // horizontal, out the back
-  g.position.set(0, -30/1000, 6/1000); gEx.add(g); }               // close to the frame
+    new THREE.Vector3(0,-1,0.05).normalize());                     // horizontal, out the back
+  g.position.set(M.elec.rxant[0]/1000, M.elec.rxant[1]/1000, M.elec.rxant[2]/1000); gEx.add(g); }
 // realistic battery lead: a YELLOW XT30 (housing + gold pins) with thick
 // silicone RED(+) and BLACK(-) wires — pack tail -> XT30 -> ESC pads.
 { const xt = M.elec.xt30, bt = M.elec.battery, brear = bt[1] - 26;
@@ -1118,9 +1123,10 @@ def main():
                 "rx_pcb": b64(os.path.join(STL, "rx_pcb.stl")),
                 "rx_holder": b64(os.path.join(STL, "rx_holder.stl")),
                 "rx_ant_tpu": b64(os.path.join(STL, "rx_ant_tpu.stl")),
-                "ant_singularity": b64(os.path.join(STL, "ant_singularity.stl")),
-                "ant_osprey": b64(os.path.join(STL, "ant_osprey.stl")),
-                "ant_lollipop4": b64(os.path.join(STL, "ant_lollipop4.stl")),
+                "dji_pro_ant": b64(os.path.join(STL, "dji_pro_ant.stl")),
+                "rhcp_lp": b64(os.path.join(STL, "rhcp_lp.stl")),
+                "foxeer_lp": b64(os.path.join(STL, "foxeer_lp.stl")),
+                "rear_bay": b64(os.path.join(STL, "rear_bay.stl")),
                 "cable": b64(os.path.join(STL, "motor_cable.stl")),
             }, separators=(",", ":"))))
     with open(OUT, "w") as f:

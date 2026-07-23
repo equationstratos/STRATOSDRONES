@@ -315,6 +315,27 @@ module rx_antenna() {
         translate([sx*11,0,30.5]) rotate([0,90,0]) cylinder(d=2.4, h=4, center=true, $fn=12);
 }
 
+/* Integrated REAR TPU BAY — mounts on the rear standoffs (X ±8.5), keeps every
+ * component INSIDE the frame footprint: an angled-up receptacle for the VTX
+ * antenna (rises up-and-back, base captured in the frame), a horizontal sleeve
+ * for the RX antenna exiting straight out the back, and a cable channel.
+ * Nothing hangs off the sides. */
+module rear_bay() {
+    w = 22; d = 12; h = 6; ang = 28;
+    color("#2b2f36") difference() {
+        union() {
+            rrect3(w, d, 2.5, h);                                             // base pad on the plate
+            translate([0,-2.5,h-1]) rotate([-ang,0,0]) cylinder(d=6.8, h=15, $fn=28);  // VTX post (up-back)
+            translate([0, d/2-1.5, 2.8]) rotate([-90,0,0]) cylinder(d=5.4, h=6, $fn=22); // RX sleeve stub (rear)
+        }
+        translate([0,-2.5,h-1]) rotate([-ang,0,0]) translate([0,0,-4])
+            cylinder(d=3.2, h=24, $fn=18);                                    // VTX bore (antenna coax)
+        translate([0,0,2.8]) rotate([-90,0,0]) cylinder(d=2.6, h=d+10, center=true, $fn=16); // RX bore (rear)
+        for (sx=[-1,1]) translate([sx*8.5,0,-1]) cylinder(d=2.2, h=h+2, $fn=14);            // mount holes
+        translate([-3.6,-d/2-1,1.4]) cube([7.2, d+2, 3.2]);                   // cable channel
+    }
+}
+
 /* White TPU antenna SLEEVE-TUBE (JeNo style) — the coax slides all the way
  * through; the tube is mounted so the antenna lies HORIZONTAL, only the tip
  * sticking out. Printed in white TPU (hence white on the drone). */
@@ -568,6 +589,7 @@ else if (PART == "cap_holder")     cap_holder();
 else if (PART == "rx_pcb")         rx_pcb();
 else if (PART == "rx_holder")      rx_holder();
 else if (PART == "rx_ant_tpu")     rx_ant_tpu();
+else if (PART == "rear_bay")       rear_bay();
 else if (PART == "motor_cable")    motor_cable();
 // DXF: 2-D carbon profiles (render the flat shapes for cutting)
 else if (PART == "dxf_bottom_classic") bottom_2d("classic");
