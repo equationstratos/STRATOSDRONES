@@ -86,7 +86,7 @@ TEMPLATE = r"""<!DOCTYPE html>
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>__NAME__-001 — visualisateur 3D + simulateur</title>
+<title>__NAME__-001 · 3D</title>
 <style>
   :root{--bg:#0b0e14;--panel:#12161d;--line:#262d38;--ink:#e6edf3;--mut:#8b949e;
         --acc:#2f6fed;--acc2:#63a4ff;--btn:#1b212b;--btnh:#262d38;--tip:rgba(11,14,20,.82);}
