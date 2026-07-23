@@ -481,8 +481,8 @@ const gCageStd = group('cagestd');
     for (const s of [-1,1]){ const cap=new THREE.Mesh(                 // steel screw heads (inside the cage)
         new THREE.CylinderGeometry(0.0021,0.0021,0.0014,20), aluMat);
       cap.rotation.z=Math.PI/2; cap.position.set(s*8.0/1000, y/1000, z/1000); gCageStd.add(cap); } };
-  bar(49, 28.5);                                              // top bar (above the lens)
-  bar(53.5, 6);                                               // bottom bar (below the lens, forward)
+  bar(45, 29);                                                // top bar (replaces the cropped STL bar)
+  bar(55, 8);                                                 // bottom bar (replaces the cropped STL bar)
 }
 // ---- realistic FPV lens assembly (shared): a Flywoo-Wylde-style M12 THREADED
 // BARREL with a CONVEX AR-coated dome (as on a DJI O4 with an aftermarket lens).
