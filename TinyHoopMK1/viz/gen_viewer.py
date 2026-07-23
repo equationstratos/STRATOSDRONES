@@ -517,9 +517,10 @@ const gCam = (()=>{ const g = group('camera');
   nanoG.visible=false; camModels.nano=nanoG; g.add(nanoG);
   // shared realistic lens at the lens centre (in front of whichever body)
   const lens=buildLens(); lens.position.set(0, 11.4/1000, -1/1000); g.add(lens);
-  // SLIM O-ring seal — a fine rubber ring hugging the barrel (consolidates &
-  // seals, not bulky); adjustable (own group 'gasket').
-  const gInner=0.0060, gOuter=0.0067, gThick=0.0006;
+  // rubber seal — a FLAT ring that fills the whole gap between the camera and
+  // the top/bottom TPU supports (no empty space), yet stays inside the cage
+  // (outer < 9.1 mm). Adjustable (own group 'gasket').
+  const gInner=0.0062, gOuter=0.0088, gThick=0.0007;
   const shp=new THREE.Shape(); shp.absarc(0,0,gOuter,0,Math.PI*2,false);
   const gh=new THREE.Path(); gh.absarc(0,0,gInner,0,Math.PI*2,true); shp.holes.push(gh);
   const rub=new THREE.Mesh(new THREE.ExtrudeGeometry(shp,{depth:gThick,bevelEnabled:true,
@@ -832,7 +833,7 @@ document.getElementById('bElec').addEventListener('click', ()=>{
 // "reset" target, so the nose is correctly seated out of the box.
 // The camera + mounts keep their dialled-in seating (applied at load, not
 // user-editable here anymore); the panel now drives the antennas one-by-one.
-{ const DEF = { camera:         {x:0, y:-3,  z:-6,   rx:27, ry:0, rz:0},
+{ const DEF = { camera:         {x:0, y:-5,  z:-6,   rx:27, ry:0, rz:0},
                 cammount_top:   {x:0, y:-2,  z:-1,   rx:-6, ry:0, rz:0},
                 cammount_bottom:{x:0, y:4.5, z:-1.5, rx:-5, ry:0, rz:0},
                 vtx_dji:        {x:0, y:-29,   z:48.5, rx:-147, ry:0, rz:0},
