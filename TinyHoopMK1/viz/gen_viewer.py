@@ -386,6 +386,46 @@ function mesh(b64, color, metal, rough, opts){
   m.scale.setScalar(0.001);          // mm -> m
   return m;
 }
+// ---- procedural PBR textures (canvas, NO external files) --------------------
+// Real 2x2 twill carbon weave baked into a normal map + a roughness map.
+function carbonMaps(){
+  const S=256, N=8;                    // N tows across -> repeats every UV unit
+  const cn=document.createElement('canvas'); cn.width=cn.height=S;
+  const cr=document.createElement('canvas'); cr.width=cr.height=S;
+  const n=cn.getContext('2d'), r=cr.getContext('2d');
+  n.fillStyle='#8080ff'; n.fillRect(0,0,S,S);            // flat normal base
+  r.fillStyle='#6f6f6f'; r.fillRect(0,0,S,S);            // mid roughness base
+  const t=S/N;
+  for(let j=0;j<N;j++){ for(let i=0;i<N;i++){
+    const horiz = (((i+j)>>1) & 1)===0;                  // 2x2 twill float direction
+    const x0=i*t, y0=j*t;
+    const g = horiz ? n.createLinearGradient(x0,y0, x0, y0+t)
+                    : n.createLinearGradient(x0,y0, x0+t, y0);
+    g.addColorStop(0,'#8f8fff'); g.addColorStop(.5,'#8080ff'); g.addColorStop(1,'#7373ff');
+    n.fillStyle=g; n.fillRect(x0,y0,t,t);                // per-tow micro-tilt
+    const rg = horiz ? r.createLinearGradient(x0,y0, x0, y0+t)
+                     : r.createLinearGradient(x0,y0, x0+t, y0);
+    rg.addColorStop(0,'#8a8a8a'); rg.addColorStop(.5,'#5f5f5f'); rg.addColorStop(1,'#828282');
+    r.fillStyle=rg; r.fillRect(x0,y0,t,t);               // woven sheen bands
+  }}
+  const mk=(cv,lin)=>{ const tx=new THREE.CanvasTexture(cv);
+    tx.wrapS=tx.wrapT=THREE.RepeatWrapping; if(lin) tx.colorSpace=THREE.NoColorSpace; return tx; };
+  return { normal: mk(cn,true), rough: mk(cr,true) };
+}
+const CARBON_TEX = carbonMaps();
+// planar top-down UVs (mm) so the weave tiles at a real ~5.5 mm pitch on plates
+function planarUV(g, pitch){ g.computeBoundingBox();
+  const p=g.attributes.position, uv=new Float32Array(p.count*2);
+  for(let i=0;i<p.count;i++){ uv[i*2]=p.getX(i)/pitch; uv[i*2+1]=p.getY(i)/pitch; }
+  g.setAttribute('uv', new THREE.BufferAttribute(uv,2)); }
+// woven-carbon mesh for the flat plates (real weave, subtle gloss)
+function carbonMesh(b64, color){
+  const g=geo(b64); planarUV(g, 5.5);
+  const mat=new THREE.MeshStandardMaterial({color, metalness:.22, roughness:.46,
+    normalMap:CARBON_TEX.normal, normalScale:new THREE.Vector2(.4,.4),
+    roughnessMap:CARBON_TEX.rough});
+  const m=new THREE.Mesh(g, mat); m.scale.setScalar(0.001); return m;
+}
 
 // ---- the drone: ONE group whose origin is the ground under its centre ----
 // (the playground moves/clones this group; feet touch z=0)
@@ -413,9 +453,9 @@ function place(b64, colr, met, rgh, off){
 // each explodes on its own: bottom plate, camera cage, standoffs, camera.
 // The top plate is REPLACED by our STRATOS top (same envelope) per the brief.
 const TPU = 0x2b2f36;
-const gBottom = group('bottom'); { const m=mesh(STLB64.frame_bottom, CARBON,.3,.5);
+const gBottom = group('bottom'); { const m=carbonMesh(STLB64.frame_bottom, CARBON);
   m.position.z=M.frame_z; gBottom.add(m); }
-const gTop = group('top'); { const m=mesh(STLB64.frame_top, CARBON,.3,.5);
+const gTop = group('top'); { const m=carbonMesh(STLB64.frame_top, CARBON);
   m.position.z=M.frame_z; gTop.add(m); }        // STRATOS top plate
 // clean aluminium standoffs: 3 tall frame posts (z3→17) + 4 short board posts
 const gStand = group('standoffs');
@@ -423,7 +463,7 @@ for (const [x,y] of M.standoffs.frame){ const s=mesh(STLB64.standoff, 0xc2c5cb,.
   s.position.set(x/1000, y/1000, 0.003); gStand.add(s); }
 for (const [x,y] of M.standoffs.board){ const s=mesh(STLB64.standoff, 0xc2c5cb,.9,.3);
   s.position.set(x/1000, y/1000, 0.003); s.scale.set(0.001,0.001,0.001*3/14); gStand.add(s); }
-const gCage = group('camcage'); { const m=mesh(STLB64.camcage, CARBON,.3,.5);
+const gCage = group('camcage'); { const m=carbonMesh(STLB64.camcage, CARBON);
   m.position.z=M.frame_z; gCage.add(m); }
 // ---- realistic FPV lens assembly (shared): black barrel + knurled metallic
 // retaining ring + AR-coated glossy glass dome (the reddish sheen of real
@@ -439,7 +479,9 @@ function buildLens(){
     new THREE.MeshStandardMaterial({color:0x9aa1a9, metalness:.95, roughness:.26}));
   ring.rotation.x=Math.PI/2; ring.position.y=0.0018; grp.add(ring);   // knurled metal ring
   const glass=new THREE.Mesh(new THREE.SphereGeometry(0.0040,40,26,0,Math.PI*2,0,Math.PI*0.5),
-    new THREE.MeshStandardMaterial({color:0x1a1026, metalness:.92, roughness:.05}));
+    new THREE.MeshPhysicalMaterial({color:0x08080e, metalness:.1, roughness:.04,
+      clearcoat:1, clearcoatRoughness:.03, iridescence:1, iridescenceIOR:1.9,
+      iridescenceThicknessRange:[130,400]}));                 // AR coating shimmer
   glass.position.y=0.0018; grp.add(glass);                    // AR-coated dome, opens +Y
   return grp;
 }
