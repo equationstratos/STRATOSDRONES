@@ -213,36 +213,39 @@ TEMPLATE = r"""<!DOCTYPE html>
         (clavier + scripts SDK).</div>
     </div>
     <div class="sec">
-      <h2>Réglage caméra / support</h2>
-      <div class="mini" style="margin-bottom:8px">Choisis la pièce, aligne-la
-        avec les curseurs, puis <b>relève les valeurs</b> et donne-les moi.</div>
+      <h2>Réglage antennes</h2>
+      <div class="mini" style="margin-bottom:8px">Choisis l'antenne, aligne-la
+        avec les curseurs (chacune se règle <b>indépendamment</b>), puis
+        <b>relève les valeurs</b> et donne-les moi.</div>
       <select id="camTarget" style="width:100%;background:var(--btn);color:var(--ink);
         border:1px solid var(--line);border-radius:6px;padding:6px;margin-bottom:8px">
-        <option value="camera">Caméra O4 Lite</option>
-        <option value="cammount_top">Support HAUT (TPU)</option>
-        <option value="cammount_bottom">Support BAS (TPU)</option>
+        <option value="vtx_dji">Antenne VTX — DJI O4</option>
+        <option value="vtx_rhcp">Antenne VTX — RHCP (déjà OK)</option>
+        <option value="vtx_foxeer">Antenne VTX — Foxeer Lollipop</option>
+        <option value="vtx_matchstick">Antenne VTX — Matchstick</option>
+        <option value="rxant">Antenne RX — ELRS</option>
       </select>
       <div style="display:flex;justify-content:space-between"><span>Latéral (X)</span>
         <span class="val" id="camXV">0.0 mm</span></div>
-      <input type="range" id="camX" min="-15" max="15" step="0.5" value="0"/>
+      <input type="range" id="camX" min="-30" max="30" step="0.5" value="0"/>
       <div style="display:flex;justify-content:space-between;margin-top:6px"><span>Profondeur (Y)</span>
         <span class="val" id="camYV">0.0 mm</span></div>
-      <input type="range" id="camY" min="-20" max="20" step="0.5" value="0"/>
+      <input type="range" id="camY" min="-30" max="30" step="0.5" value="0"/>
       <div style="display:flex;justify-content:space-between;margin-top:6px"><span>Vertical (Z)</span>
         <span class="val" id="camZV">0.0 mm</span></div>
-      <input type="range" id="camZ" min="-15" max="15" step="0.5" value="0"/>
+      <input type="range" id="camZ" min="-30" max="30" step="0.5" value="0"/>
       <div style="display:flex;justify-content:space-between;margin-top:6px"><span>Rotation X (°)</span>
         <span class="val" id="camRXV">0°</span></div>
-      <input type="range" id="camRX" min="-90" max="90" step="1" value="0"/>
+      <input type="range" id="camRX" min="-180" max="180" step="1" value="0"/>
       <div style="display:flex;justify-content:space-between;margin-top:6px"><span>Rotation Y (°)</span>
         <span class="val" id="camRYV">0°</span></div>
-      <input type="range" id="camRY" min="-90" max="90" step="1" value="0"/>
+      <input type="range" id="camRY" min="-180" max="180" step="1" value="0"/>
       <div style="display:flex;justify-content:space-between;margin-top:6px"><span>Rotation Z (°)</span>
         <span class="val" id="camRZV">0°</span></div>
-      <input type="range" id="camRZ" min="-90" max="90" step="1" value="0"/>
-      <div class="mini" style="margin-top:8px"><b id="camDelta">camera : X 0 · Y 0 · Z 0 · RX 0 · RY 0 · RZ 0</b>
+      <input type="range" id="camRZ" min="-180" max="180" step="1" value="0"/>
+      <div class="mini" style="margin-top:8px"><b id="camDelta">vtx_dji : X 0 · Y 0 · Z 0 · RX 28 · RY 0 · RZ 0</b>
         — copie-moi cette ligne.</div>
-      <button id="camReset" style="width:100%;margin-top:8px">Réinitialiser cette pièce</button>
+      <button id="camReset" style="width:100%;margin-top:8px">Réinitialiser cette antenne</button>
     </div>
     <div class="sec">
       <h2>Spécifications (cible)</h2>
@@ -500,16 +503,27 @@ for (const [x,y] of M.standoffs.board){
   gScrew.add(sc); }
 // 5.8 GHz VTX antenna in the rear TPU mount — SELECTABLE among 3 real models,
 // HEAD UP (only the chosen one is visible; dropdown in the sidebar).
-const gVtxAnt = group('vtxant');
+const gVtxAnt = group('vtxant');                         // parent: toggle + colour
+// Each model gets its OWN pivot group at the antenna base so the fine-adjust
+// panel can translate/rotate them ONE BY ONE (moving the DJI must not move the
+// RHCP, which is already well seated). Only one group is visible at a time.
+function vtxPivot(key, m){
+  const g = new THREE.Group();
+  g.position.set(M.elec.vtxant[0]/1000, M.elec.vtxant[1]/1000,
+                 M.frame_z + M.elec.vtxant[2]/1000);     // origin = antenna base
+  g.add(m);                                              // mesh sits at group origin
+  g.userData.base = g.position.clone();
+  g.visible = false; G['vtx_'+key] = g; gVtxAnt.add(g);
+  return g;
+}
 const vtxModels = {
-  dji:        place(STLB64.dji_pro_ant, 0x0f1114, .2, .5, M.elec.vtxant),  // DJI O4 Pro antenna
-  rhcp:       place(STLB64.rhcp_lp,     0x141414, .2, .5, M.elec.vtxant),  // RHCP LP A1 (STEP)
-  foxeer:     place(STLB64.foxeer_lp,   0x141414, .2, .5, M.elec.vtxant),  // Foxeer Lollipop 5.8 (STEP)
-  matchstick: place(STLB64.matchstick,  0x181818, .2, .5, M.elec.vtxant),  // TrueRC Singularity/Matchstick
+  dji:        vtxPivot('dji',        mesh(STLB64.dji_pro_ant, 0x0f1114, .2, .5)),  // DJI O4 Pro antenna
+  rhcp:       vtxPivot('rhcp',       mesh(STLB64.rhcp_lp,     0x141414, .2, .5)),  // RHCP LP A1 (STEP)
+  foxeer:     vtxPivot('foxeer',     mesh(STLB64.foxeer_lp,   0x141414, .2, .5)),  // Foxeer Lollipop 5.8
+  matchstick: vtxPivot('matchstick', mesh(STLB64.matchstick,  0x181818, .2, .5)),  // TrueRC Singularity
 };
-// tilt back 28° to seat in the rear-bay receptacle, head up-and-back
-Object.values(vtxModels).forEach(m=>{ m.rotation.x = 0.49; m.visible=false; gVtxAnt.add(m); });
 let vtxCur='dji'; vtxModels[vtxCur].visible=true;         // default: the DJI antenna
+// (the 28° seating tilt is carried by the fine-adjust DEF below, applied at load)
 // LiPo capacitor (25 V 22 µF, Ø6×12) SEATED IN ITS PRINTED TPU HOLDER
 const gCap = group('cap');
 gCap.add(place(STLB64.cap_holder, TPU, .1, .85, M.elec.cap));       // TPU snap-clip
@@ -534,11 +548,13 @@ const gRx = group('rx');
 gRx.add(place(STLB64.rx_holder, TPU, .1, .85, M.elec.rx));          // TPU tray
 gRx.add(place(STLB64.rx_pcb, 0x0f3d0f, .2, .5,
   [M.elec.rx[0], M.elec.rx[1], M.elec.rx[2]+1.6]));                 // RX board
-{ const g = new THREE.Group();
-  g.add(mesh(STLB64.rx, 0x141414, .25, .5));
-  g.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,1),
-    new THREE.Vector3(0,-1,0.05).normalize());                     // horizontal, out the back
-  g.position.set(M.elec.rxant[0]/1000, M.elec.rxant[1]/1000, M.elec.rxant[2]/1000); gRx.add(g); }
+// RX antenna in its OWN pivot group (base = sleeve exit) so it too is fine-
+// adjustable one-by-one; the ~87° tilt (horizontal, out the back) is the DEF.
+{ const g = group('rxant');
+  g.add(mesh(STLB64.rx, 0x141414, .25, .5));                       // mesh at group origin
+  g.position.set(M.elec.rxant[0]/1000, M.elec.rxant[1]/1000,
+                 M.frame_z + M.elec.rxant[2]/1000);
+  g.userData.base = g.position.clone(); gRx.add(g); }              // reparent under RX toggle
 // ALL cables in one group: battery XT30 red/black leads + 4 motor phase cables
 const gCbl = group('cables');
 { const xt = M.elec.xt30, bt = M.elec.battery, brear = bt[1] - 26;
@@ -664,12 +680,19 @@ document.getElementById('bElec').addEventListener('click', ()=>{
 // ---- per-part fine-adjust: translate + rotate the chosen part about its pivot ----
 // DEF = the alignment the owner dialled in; it is applied at load and is the
 // "reset" target, so the nose is correctly seated out of the box.
+// The camera + mounts keep their dialled-in seating (applied at load, not
+// user-editable here anymore); the panel now drives the antennas one-by-one.
 { const DEF = { camera:         {x:0, y:0,   z:-6,   rx:27, ry:0, rz:0},
                 cammount_top:   {x:0, y:-2,  z:-1,   rx:-6, ry:0, rz:0},
-                cammount_bottom:{x:0, y:4.5, z:-1.5, rx:-5, ry:0, rz:0} };
+                cammount_bottom:{x:0, y:4.5, z:-1.5, rx:-5, ry:0, rz:0},
+                vtx_dji:        {x:0, y:0,   z:0,    rx:28, ry:0, rz:0},
+                vtx_rhcp:       {x:0, y:0,   z:0,    rx:28, ry:0, rz:0},
+                vtx_foxeer:     {x:0, y:0,   z:0,    rx:28, ry:0, rz:0},
+                vtx_matchstick: {x:0, y:0,   z:0,    rx:28, ry:0, rz:0},
+                rxant:          {x:0, y:0,   z:0,    rx:87, ry:0, rz:0} };
   const cp = o => Object.assign({}, o);
-  const off = { camera:cp(DEF.camera), cammount_top:cp(DEF.cammount_top),
-                cammount_bottom:cp(DEF.cammount_bottom) };
+  const off = {}; for (const k in DEF) off[k] = cp(DEF[k]);
+  const SEAT = ['camera','cammount_top','cammount_bottom'];   // applied, not in the dropdown
   const el = id => document.getElementById(id);
   const D = Math.PI/180;
   const applyTarget = (t)=>{ const o=off[t]; const g=G[t];
@@ -697,8 +720,8 @@ document.getElementById('bElec').addEventListener('click', ()=>{
     el('camRX').value=o.rx; el('camRY').value=o.ry; el('camRZ').value=o.rz; applyCam(); };
   el('camTarget').addEventListener('change', sync);
   el('camReset').addEventListener('click', ()=>{ off[el('camTarget').value]=cp(DEF[el('camTarget').value]); sync(); });
-  ['camera','cammount_top','cammount_bottom'].forEach(applyTarget);   // apply at load
-  sync();                                                             // reflect in UI
+  Object.keys(DEF).forEach(applyTarget);   // seat camera/mounts + tilt every antenna at load
+  sync();                                  // reflect the current dropdown target in the UI
 }
 let spinRate=0.4*60;                       // hélices en rotation par défaut
 document.getElementById('spinV').textContent='40%';
