@@ -487,7 +487,7 @@ function buildLens(){
     new THREE.MeshPhysicalMaterial({color:0x0a0a12, metalness:.15, roughness:.03,
       clearcoat:1, clearcoatRoughness:.03, iridescence:1, iridescenceIOR:1.9,
       iridescenceThicknessRange:[130,420]}));
-  glass.scale.set(1,0.6,1); glass.position.y=0.0030; grp.add(glass);          // shallow convex dome
+  glass.scale.set(1,0.32,1); glass.position.y=0.0026; grp.add(glass);         // nearly-flat glass
   return grp;
 }
 // procedural NANO analog camera body (à la Caddx/RunCam nano) — a small dark
@@ -529,25 +529,17 @@ const gCam = (()=>{ const g = group('camera');
   const gsk = new THREE.Group();
   gsk.add(rub); gsk.position.set(0, 10.6/1000, -1/1000);
   gsk.userData.base = gsk.position.clone(); G['gasket'] = gsk; g.add(gsk);
-  // TPU CRADLE — Flywoo-Wylde "D" front plate: a chunky TPU plate with a round
-  // lens bore (barrel passes through, no gaps) and two angular top horns, exactly
-  // like the printed mount. Adjustable ('bezel': position + size).
-  const mm=v=>v/1000, P=new THREE.Shape();
-  P.moveTo(mm(-11.5), mm(-10.5));
-  P.lineTo(mm(-11.5), mm(5.5));
-  P.lineTo(mm(-7.5),  mm(11.5));            // left horn
-  P.lineTo(mm(0),     mm(5.5));             // central valley
-  P.lineTo(mm(7.5),   mm(11.5));            // right horn
-  P.lineTo(mm(11.5),  mm(5.5));
-  P.lineTo(mm(11.5),  mm(-10.5));
-  P.closePath();
-  const bore=new THREE.Path(); bore.absarc(0,0, mm(6.3), 0, Math.PI*2, true); P.holes.push(bore);
-  const bezM=new THREE.Mesh(new THREE.ExtrudeGeometry(P,{depth:mm(5),bevelEnabled:true,
-    bevelThickness:mm(0.5), bevelSize:mm(0.5), bevelSegments:2, curveSegments:56}),
+  // TPU CRADLE — a slim closed tube that just WRAPS the lens barrel (compact,
+  // like the printed Flywoo-Wylde mount), no extra bulk. Adjustable ('bezel').
+  const bInner=0.0063, bOuter=0.0090, bDepth=0.0090;
+  const bsh=new THREE.Shape(); bsh.absarc(0,0,bOuter,0,Math.PI*2,false);
+  const bhl=new THREE.Path(); bhl.absarc(0,0,bInner,0,Math.PI*2,true); bsh.holes.push(bhl);
+  const bezM=new THREE.Mesh(new THREE.ExtrudeGeometry(bsh,{depth:bDepth,bevelEnabled:true,
+    bevelThickness:0.0005,bevelSize:0.0005,bevelSegments:2,curveSegments:64}),
     new THREE.MeshStandardMaterial({color:0x24272d, metalness:0.04, roughness:0.86}));
-  bezM.rotation.x = -Math.PI/2;                 // plate faces the nose (+Y)
+  bezM.rotation.x = -Math.PI/2;
   const bez = new THREE.Group();
-  bez.add(bezM); bez.position.set(0, 7.5/1000, -1/1000);   // bore around the barrel
+  bez.add(bezM); bez.position.set(0, 2.2/1000, -1/1000);   // wraps the barrel length
   bez.userData.base = bez.position.clone(); G['bezel'] = bez; g.add(bez);
   return g; })();
 // DJI O4 Lite air unit (VTX) — stacked ABOVE the FC on soft-mount grommets,
