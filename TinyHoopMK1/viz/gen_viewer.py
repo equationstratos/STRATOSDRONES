@@ -724,9 +724,22 @@ gRx.add(place(STLB64.rx_pcb, 0x0f3d0f, .2, .5,
   for (const s of [-1,1]){ const cup=new THREE.Mesh(new THREE.CylinderGeometry(0.0012,0.0012,0.0042,16),
       new THREE.MeshStandardMaterial({color:0xcaa63a, metalness:.9, roughness:.25}));
     cup.rotation.x=Math.PI/2; cup.position.set((xt[0]+s*2.2)/1000,(xt[1]-4.4)/1000,xt[2]/1000); gBatt.add(cup); }
-  // main power pair: pack rear -> down through the plate -> XT30, with slack
-  gBatt.add(lead([ 2.4, root[1], root[2]], [xt[0]+2.2, xt[1]+2, xt[2]+1], 1.3, RED, 5));
-  gBatt.add(lead([-2.4, root[1], root[2]], [xt[0]-2.2, xt[1]+2, xt[2]+1], 1.3, BLK, 5));
+  // main power pair — a REALISTIC service loop: thick silicone leads are stiff,
+  // so they can't hug the pack; they bow rearward on a large radius, crest, then
+  // drop back down through the plate slot into the XT30.
+  const bend=(pts,r,col)=>new THREE.Mesh(
+    new THREE.TubeGeometry(new THREE.CatmullRomCurve3(
+      pts.map(p=>new THREE.Vector3(p[0]/1000,p[1]/1000,p[2]/1000))), 44, r/1000, 12, false),
+    new THREE.MeshStandardMaterial({color:col, metalness:.05, roughness:.5}));
+  const mains=(x,col)=>bend([
+    [x,        bt[1]-26, bt[2]+3],   // exit the pack rear face
+    [x*1.25,   bt[1]-33, bt[2]+6],   // bow rearward + up (wire stiffness arc)
+    [x*1.25,   bt[1]-35, bt[2]-3],   // crest of the loop, clear of the pack
+    [x,        bt[1]-30, xt[2]+4],   // come back in, dropping toward the slot
+    [x,        xt[1]+1,  xt[2]+1]    // into the XT30
+  ], 1.35, col);
+  gBatt.add(mains( 2.4, RED));
+  gBatt.add(mains(-2.4, BLK));
   // white JST-XH balance plug (3S = 4-pin) + 4 thin balance wires
   const bal=new THREE.Mesh(new THREE.BoxGeometry(0.0075,0.0032,0.0040),
     new THREE.MeshStandardMaterial({color:0xededf0, metalness:.0, roughness:.7}));
