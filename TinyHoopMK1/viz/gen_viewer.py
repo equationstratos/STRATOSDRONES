@@ -470,6 +470,20 @@ for (const [x,y] of M.standoffs.frame) standoff(x,y, 3, 14, 0.0021);   // tall f
 for (const [x,y] of M.standoffs.board) standoff(x,y, 3,  3, 0.0021);   // short board posts
 const gCage = group('camcage'); { const m=carbonMesh(STLB64.camcage, CARBON);
   m.position.z=M.frame_z; gCage.add(m); }
+// camera-cage cross standoffs — the 2 GOLD anodized bars (top + bottom) that tie
+// the two carbon cage plates together, behind the TPU camera mounts (real JeNo
+// detail: visible once the TPU supports are hidden). Own toggle group.
+const gCageStd = group('cagestd');
+{ const gold=new THREE.MeshStandardMaterial({color:0xd8a520, metalness:.88, roughness:.26});
+  const bar=(y,z)=>{ const m=new THREE.Mesh(new THREE.CylinderGeometry(0.0016,0.0016,0.0168,32,1), gold);
+    m.rotation.z=Math.PI/2;                                   // axis along X (plate to plate)
+    m.position.set(0, y/1000, z/1000); gCageStd.add(m);
+    for (const s of [-1,1]){ const cap=new THREE.Mesh(                 // steel screw heads (inside the cage)
+        new THREE.CylinderGeometry(0.0021,0.0021,0.0014,20), aluMat);
+      cap.rotation.z=Math.PI/2; cap.position.set(s*8.0/1000, y/1000, z/1000); gCageStd.add(cap); } };
+  bar(49, 28.5);                                              // top bar (above the lens)
+  bar(53.5, 6);                                               // bottom bar (below the lens, forward)
+}
 // ---- realistic FPV lens assembly (shared): a Flywoo-Wylde-style M12 THREADED
 // BARREL with a CONVEX AR-coated dome (as on a DJI O4 with an aftermarket lens).
 // Lens axis = +Y (nose); the barrel base (y<0) plugs into the camera body. ----
@@ -779,6 +793,7 @@ const GROUPS = {
   top:      {label:'Plaque haute (JeNo, sans texte)', color:'#1a1d21'},
   standoffs:{label:'Entretoises', color:'#b9bcc2'},
   camcage:  {label:'Cage caméra (carbone)', color:'#1a1d21'},
+  cagestd:  {label:'Entretoises cage caméra (or)', color:'#d8a520'},
   camera:   {label:'Caméra DJI O4 Lite', color:'#121316'},
   airunit:  {label:'Air unit DJI O4 Lite (PCB nue)', color:'#11532e'},
   cammount_top:    {label:'Support caméra HAUT (TPU)', color:'#2b2f36'},
