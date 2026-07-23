@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>STRATOS DRONES - TinyHoop MK1 Builder</title>
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<link rel="stylesheet" href="css/build.css">
+
+</head>
+
+<body>
+
+<!-- ===========================
+     STRATOS BUILDER INTERFACE
+=========================== -->
+
+<div id="app">
+
+
+<!-- TOP BAR -->
+
+<header id="topbar">
+
+    <div class="logo">
+        STRATOS DRONES
+        <span>TinyHoop MK1 BUILDER</span>
+    </div>
+
+
+    <div class="actions">
+
+        <button id="buildButton">
+            BUILD
+        </button>
+
+        <button id="resetButton">
+            RESET
+        </button>
+
+        <button id="testButton">
+            TEST DRONE
+        </button>
+
+    </div>
+
+</header>
+
+
+
+<!-- THREE JS VIEW -->
+
+<canvas id="droneCanvas"></canvas>
+
+
+
+<!-- LEFT INVENTORY -->
+
+<section id="inventory">
+
+
+<h2>PARTS</h2>
+
+
+<div class="category">
+
+<h3>FRAME</h3>
+
+<div class="part"
+data-part="frame">
+
+Frame
+
+</div>
+
+</div>
+
+
+
+<div class="category">
+
+<h3>ELECTRONICS</h3>
+
+<div class="part"
+data-part="fc">
+
+Flight Controller
+
+</div>
+
+
+<div class="part"
+data-part="esc">
+
+ESC
+
+</div>
+
+
+<div class="part"
+data-part="vtx">
+
+VTX
+
+</div>
+
+
+<div class="part"
+data-part="rx">
+
+ELRS RX
+
+</div>
+
+
+<div class="part"
+data-part="gps">
+
+GPS
+
+</div>
+
+
+<div class="part"
+data-part="buzzer">
+
+Buzzer
+
+</div>
+
+
+<div class="part"
+data-part="capacitor">
+
+Capacitor
+
+</div>
+
+
+</div>
+
+
+
+
+<div class="category">
+
+<h3>MECHANICAL</h3>
+
+
+<div class="part"
+data-part="motor">
+
+Motors
+
+</div>
+
+
+<div class="part"
+data-part="prop">
+
+Propellers
+
+</div>
+
+
+<div class="part"
+data-part="battery">
+
+Battery
+
+</div>
+
+
+</div>
+
+
+</section>
+
+
+
+
+<!-- BUILD STATUS -->
+
+<section id="status">
+
+
+<div id="stepTitle">
+
+READY
+
+</div>
+
+
+<div id="stepDescription">
+
+Press BUILD to start assembly
+
+</div>
+
+
+
+<div id="progressBar">
+
+<div id="progress"></div>
+
+</div>
+
+
+</section>
+
+
+
+
+
+<!-- SOLDER WINDOW -->
+
+<section id="solderMode">
+
+
+<div class="solderHeader">
+
+SOLDERING MODE
+
+<button id="exitSolder">
+EXIT
+</button>
+
+</div>
+
+
+
+<div id="solderBoard">
+
+</div>
+
+
+
+<div id="connectionInfo">
+
+Select two pads to create a wire
+
+</div>
+
+
+</section>
+
+
+
+
+
+<!-- TEST RESULT -->
+
+<section id="testPanel">
+
+
+<h2>
+DRONE TEST
+</h2>
+
+
+<div id="testLog">
+
+Waiting...
+
+</div>
+
+
+<button id="closeTest">
+
+CLOSE
+
+</button>
+
+
+</section>
+
+
+
+<!-- SMOKE EFFECT -->
+
+<div id="smoke">
+
+</div>
+
+
+
+</div>
+
+
+
+
+<!-- LIBRARIES -->
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/examples/js/loaders/GLTFLoader.js"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/examples/js/controls/OrbitControls.js"></script>
+
+
+
+<!-- STRATOS ENGINE -->
+
+<script src="js/config.js"></script>
+
+<script src="js/scene.js"></script>
+
+<script src="js/partsManager.js"></script>
+
+<script src="js/buildManager.js"></script>
+
+<script src="js/snapSystem.js"></script>
+
+<script src="js/wiring.js"></script>
+
+<script src="js/solderMode.js"></script>
+
+<script src="js/testBench.js"></script>
+
+<script src="js/audio.js"></script>
+
+<script src="js/ui.js"></script>
+
+<script src="js/main.js"></script>
+
+
+
+</body>
+</html>
