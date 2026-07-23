@@ -49,8 +49,8 @@ MODEL = dict(name="FR4N10", sub="FPV programmable / essaim · 2,5\" · 2S-3S", w
                           cammount_top=[0,26,60], cammount_bottom=[0,20,52],
                           airunit=[0,0,-18], motors=[0,0,-40], props=[0,0,78],
                           elec=[0,0,-30], battery=[0,0,94], screws=[0,0,66],
-                          tpu=[0,0,-26], vtxant=[0,0,88],
-                          cap=[0,0,-8], extras=[0,0,-15]),
+                          tpu=[0,0,-26], vtxant=[0,0,88], cap=[0,0,-8],
+                          rx=[0,0,-15], gps=[0,0,-10], buzzer=[0,0,-12], cables=[0,0,-18]),
              specs=[("Entraxe", "~115 mm (wide-X)"), ("Hélices", "2,5\" Gemfan 2520"),
                     ("Moteurs", "1203-1303 · 2S-3S"),
                     ("ESC", "AIO BLHeli_S/Bluejay · DShot600"),
@@ -173,6 +173,7 @@ TEMPLATE = r"""<!DOCTYPE html>
         <option value="dji">DJI O4 Pro (antenne, STEP réel)</option>
         <option value="rhcp">RHCP LP A1 (STEP réel)</option>
         <option value="foxeer">Foxeer Lollipop 5,8 GHz (STEP réel)</option>
+        <option value="matchstick">TrueRC Singularity / Matchstick</option>
       </select>
       <div class="mini" style="margin-top:5px">Insérée dans le TPU arrière, tête vers le haut.</div>
     </div>
@@ -412,10 +413,12 @@ const gCam = (()=>{ const m=mesh(STLB64.o4cam, 0x30343b,.5,.35);  // dark-grey b
   const g = adjGroup('camera', m, 0, 42, 20);        // pivot at camera centre
   // soft rubber gasket around the lens — fills the gap between camera and the
   // TPU mount (matte black silicone O-ring); rides with the camera group
-  const rub = new THREE.Mesh(new THREE.TorusGeometry(0.0064, 0.0014, 14, 40),
+  // thin rubber gasket, radius grown so it REACHES the TPU mount (fills the gap)
+  // but the tube stays slim so it doesn't bulge into a "donut"
+  const rub = new THREE.Mesh(new THREE.TorusGeometry(0.0082, 0.0013, 14, 44),
     new THREE.MeshStandardMaterial({color:0x0b0b0d, metalness:0.0, roughness:0.97}));
   rub.rotation.x = Math.PI/2;                         // ring axis along +Y (lens)
-  rub.position.set(0, 12.0/1000, -1/1000);           // thin gasket at the lens front
+  rub.position.set(0, 11.6/1000, -1/1000);           // seats against the mount opening
   g.add(rub);
   return g; })();
 // DJI O4 Lite air unit (VTX) — stacked ABOVE the FC on soft-mount grommets,
@@ -499,9 +502,10 @@ for (const [x,y] of M.standoffs.board){
 // HEAD UP (only the chosen one is visible; dropdown in the sidebar).
 const gVtxAnt = group('vtxant');
 const vtxModels = {
-  dji:    place(STLB64.dji_pro_ant, 0x0f1114, .2, .5, M.elec.vtxant),  // DJI O4 Pro antenna
-  rhcp:   place(STLB64.rhcp_lp,     0x141414, .2, .5, M.elec.vtxant),  // RHCP LP A1 (STEP)
-  foxeer: place(STLB64.foxeer_lp,   0x141414, .2, .5, M.elec.vtxant),  // Foxeer Lollipop 5.8 (STEP)
+  dji:        place(STLB64.dji_pro_ant, 0x0f1114, .2, .5, M.elec.vtxant),  // DJI O4 Pro antenna
+  rhcp:       place(STLB64.rhcp_lp,     0x141414, .2, .5, M.elec.vtxant),  // RHCP LP A1 (STEP)
+  foxeer:     place(STLB64.foxeer_lp,   0x141414, .2, .5, M.elec.vtxant),  // Foxeer Lollipop 5.8 (STEP)
+  matchstick: place(STLB64.matchstick,  0x181818, .2, .5, M.elec.vtxant),  // TrueRC Singularity/Matchstick
 };
 // tilt back 28° to seat in the rear-bay receptacle, head up-and-back
 Object.values(vtxModels).forEach(m=>{ m.rotation.x = 0.49; m.visible=false; gVtxAnt.add(m); });
@@ -520,42 +524,39 @@ function wireTube(p0, p1, r, col){
   return new THREE.Mesh(new THREE.TubeGeometry(c,20,r/1000,8,false),
     new THREE.MeshStandardMaterial({color:col, metalness:.1, roughness:.55}));
 }
-// build extras: buzzer, GPS/compass, ELRS RX (PCB + antenna in TPU holder),
-// battery XT30 red/black leads to the ESC, and the 4 motor phase cables
-const gEx = group('extras');
-gEx.add(place(STLB64.buzzer, 0x141519, .3,  .5,  M.elec.buzzer));   // Ø8 buzzer
-gEx.add(place(STLB64.gps,    0x0a0c10, .2,  .5,  M.elec.gps));      // GPS/compass
-// ELRS RX: the PCB centred in the footprint, and the antenna threaded through
-// the rear-bay's horizontal sleeve so it exits STRAIGHT OUT THE BACK.
-gEx.add(place(STLB64.rx_holder, TPU, .1, .85, M.elec.rx));          // TPU tray, centred
-gEx.add(place(STLB64.rx_pcb, 0x0f3d0f, .2, .5,                      // RX board
-  [M.elec.rx[0], M.elec.rx[1], M.elec.rx[2]+1.6]));
+// each accessory is its OWN group now, so it can be shown/hidden one by one.
+const gBuz = group('buzzer');
+gBuz.add(place(STLB64.buzzer, 0x141519, .3, .5, M.elec.buzzer));    // Ø8 buzzer
+const gGps = group('gps');
+gGps.add(place(STLB64.gps, 0x0a0c10, .2, .5, M.elec.gps));          // GPS/compass
+// ELRS RX: the PCB centred in the footprint + the antenna out the rear-bay sleeve
+const gRx = group('rx');
+gRx.add(place(STLB64.rx_holder, TPU, .1, .85, M.elec.rx));          // TPU tray
+gRx.add(place(STLB64.rx_pcb, 0x0f3d0f, .2, .5,
+  [M.elec.rx[0], M.elec.rx[1], M.elec.rx[2]+1.6]));                 // RX board
 { const g = new THREE.Group();
-  g.add(mesh(STLB64.rx, 0x141414, .25, .5));                        // antenna only (bay = the sleeve)
+  g.add(mesh(STLB64.rx, 0x141414, .25, .5));
   g.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,1),
     new THREE.Vector3(0,-1,0.05).normalize());                     // horizontal, out the back
-  g.position.set(M.elec.rxant[0]/1000, M.elec.rxant[1]/1000, M.elec.rxant[2]/1000); gEx.add(g); }
-// realistic battery lead: a YELLOW XT30 (housing + gold pins) with thick
-// silicone RED(+) and BLACK(-) wires — pack tail -> XT30 -> ESC pads.
+  g.position.set(M.elec.rxant[0]/1000, M.elec.rxant[1]/1000, M.elec.rxant[2]/1000); gRx.add(g); }
+// ALL cables in one group: battery XT30 red/black leads + 4 motor phase cables
+const gCbl = group('cables');
 { const xt = M.elec.xt30, bt = M.elec.battery, brear = bt[1] - 26;
-  // XT30 yellow housing (rounded) + two gold pin bores
   const body = new THREE.Mesh(new THREE.BoxGeometry(0.0095,0.0075,0.0072),
     new THREE.MeshStandardMaterial({color:0xf2b400, metalness:.15, roughness:.45}));
-  body.position.set(xt[0]/1000, xt[1]/1000, xt[2]/1000); gEx.add(body);
+  body.position.set(xt[0]/1000, xt[1]/1000, xt[2]/1000); gCbl.add(body);   // XT30 yellow
   for (const s of [-1,1]){ const pin=new THREE.Mesh(new THREE.CylinderGeometry(0.0011,0.0011,0.004,12),
       new THREE.MeshStandardMaterial({color:0xcaa63a, metalness:.9, roughness:.25}));
-    pin.rotation.x=Math.PI/2; pin.position.set((xt[0]+s*2)/1000, (xt[1]-4)/1000, xt[2]/1000); gEx.add(pin); }
+    pin.rotation.x=Math.PI/2; pin.position.set((xt[0]+s*2)/1000, (xt[1]-4)/1000, xt[2]/1000); gCbl.add(pin); }
   const RED=0xd51f26, BLK=0x0c0c0e, r=1.15;
-  // battery pigtail (pack tail -> XT30)
-  gEx.add(wireTube([2, brear, bt[2]-2], [xt[0]+2, xt[1]+3, xt[2]+1], r, RED));
-  gEx.add(wireTube([-2, brear, bt[2]-2], [xt[0]-2, xt[1]+3, xt[2]+1], r, BLK));
-  // ESC lead (XT30 -> FC solder pads)
-  gEx.add(wireTube([xt[0]+2, xt[1]-4, xt[2]-1], [4, -6, 8], r, RED));
-  gEx.add(wireTube([xt[0]-2, xt[1]-4, xt[2]-1], [-4, -6, 8], r, BLK)); }
+  gCbl.add(wireTube([2, brear, bt[2]-2], [xt[0]+2, xt[1]+3, xt[2]+1], r, RED));    // pigtail +
+  gCbl.add(wireTube([-2, brear, bt[2]-2], [xt[0]-2, xt[1]+3, xt[2]+1], r, BLK));   // pigtail -
+  gCbl.add(wireTube([xt[0]+2, xt[1]-4, xt[2]-1], [4, -6, 8], r, RED));             // ESC +
+  gCbl.add(wireTube([xt[0]-2, xt[1]-4, xt[2]-1], [-4, -6, 8], r, BLK)); }          // ESC -
 for (const [mx, my] of M.motors){                                  // 4 phase cables
   const c = mesh(STLB64.cable, 0x2a2c30, .2, .6);
   c.position.set(mx/1000, my/1000, M.frame_z + 0.004);
-  c.scale.set(mx<0?-0.001:0.001, my<0?-0.001:0.001, 0.001); gEx.add(c); }
+  c.scale.set(mx<0?-0.001:0.001, my<0?-0.001:0.001, 0.001); gCbl.add(c); }
 
 // ---- part toggles + per-part colour pickers ----
 const GROUPS = {
@@ -575,7 +576,10 @@ const GROUPS = {
   screws:   {label:'Visserie M2 (moteurs + stack)', color:'#d6d9de'},
   vtxant:   {label:'Antenne VTX 5,8 GHz (sélecteur)', color:'#1c1c1e'},
   cap:      {label:'Condensateur 25 V 22 µF (support TPU)', color:'#1b3a8f'},
-  extras:   {label:'Buzzer · GPS · RX+TPU · câbles XT30', color:'#3a6ea5'},
+  rx:       {label:'Récepteur RX (PCB + antenne)', color:'#0f3d0f'},
+  gps:      {label:'GPS / compas', color:'#0a0c10'},
+  buzzer:   {label:'Buzzer', color:'#141519'},
+  cables:   {label:'Câbles (XT30 + phases moteurs)', color:'#d51f26'},
 };
 // remember each group's assembled position so the explode slider can offset it
 for (const k of Object.keys(GROUPS)){
@@ -1124,6 +1128,7 @@ def main():
                 "rx_holder": b64(os.path.join(STL, "rx_holder.stl")),
                 "rx_ant_tpu": b64(os.path.join(STL, "rx_ant_tpu.stl")),
                 "dji_pro_ant": b64(os.path.join(STL, "dji_pro_ant.stl")),
+                "matchstick": b64(os.path.join(STL, "ant_singularity.stl")),
                 "rhcp_lp": b64(os.path.join(STL, "rhcp_lp.stl")),
                 "foxeer_lp": b64(os.path.join(STL, "foxeer_lp.stl")),
                 "rear_bay": b64(os.path.join(STL, "rear_bay.stl")),
