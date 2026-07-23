@@ -37,7 +37,7 @@ MODEL = dict(name="FR4N10", sub="FPV programmable / essaim · 2,5\" · 2S-3S", w
              elec=dict(board=[0,0,4], battery=[0,4,24],
                        o4cam=[0,42,10], o4airunit=[0,0,10],
                        vtxant=[0,-30,7], rearbay=[0,-32,3], rxant=[0,-33,6],
-                       cap=[12,-22,4], buzzer=[11,-31,6], gps=[-9,-16,20.8],
+                       cap=[17,-24,9], buzzer=[11,-31,6], gps=[-4,-15,19],
                        rx=[0,-22,4], xt30=[0,-25,11], grommet=[0,0,11]),
              standoffs=dict(frame=_FRAME_STAND, board=_BOARD_STAND),
              # ALL screws: 16 motor-mount + 3 frame-standoff tops + 4 board tops
@@ -49,8 +49,8 @@ MODEL = dict(name="FR4N10", sub="FPV programmable / essaim · 2,5\" · 2S-3S", w
                           cammount_top=[0,26,60], cammount_bottom=[0,20,52],
                           airunit=[0,0,-18], motors=[0,0,-40], props=[0,0,78],
                           elec=[0,0,-30], battery=[0,0,94], screws=[0,0,66],
-                          tpu=[0,0,-26], vtxant=[0,0,88],
-                          cap=[0,0,-8], extras=[0,0,-15]),
+                          tpu=[0,0,-26], vtxant=[0,0,88], cap=[0,0,-8],
+                          rx=[0,0,-15], gps=[0,0,-10], buzzer=[0,0,-12], cables=[0,0,-18]),
              specs=[("Entraxe", "~115 mm (wide-X)"), ("Hélices", "2,5\" Gemfan 2520"),
                     ("Moteurs", "1203-1303 · 2S-3S"),
                     ("ESC", "AIO BLHeli_S/Bluejay · DShot600"),
@@ -86,7 +86,7 @@ TEMPLATE = r"""<!DOCTYPE html>
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>__NAME__-001 — visualisateur 3D + simulateur</title>
+<title>__NAME__-001 · 3D</title>
 <style>
   :root{--bg:#0b0e14;--panel:#12161d;--line:#262d38;--ink:#e6edf3;--mut:#8b949e;
         --acc:#2f6fed;--acc2:#63a4ff;--btn:#1b212b;--btnh:#262d38;--tip:rgba(11,14,20,.82);}
@@ -152,6 +152,7 @@ TEMPLATE = r"""<!DOCTYPE html>
     <header>
       <h1><b>__NAME__</b>-001 — 3D</h1>
       <p>__SUB__ · open source</p>
+      <p style="margin-top:4px;font-size:11px;color:#5db0ff">build __BUILD__ · panneau « Réglage antennes »</p>
     </header>
     <div class="sec">
       <h2>Vues</h2>
@@ -167,12 +168,24 @@ TEMPLATE = r"""<!DOCTYPE html>
       <div id="groups"></div>
     </div>
     <div class="sec">
+      <h2>Caméra</h2>
+      <select id="camSel" style="width:100%;background:var(--btn);color:var(--ink);
+        border:1px solid var(--line);border-radius:6px;padding:7px;font-size:12px">
+        <option value="dji">DJI O4 Lite (STEP réel)</option>
+        <option value="nano">Nano analogique (type Caddx/RunCam)</option>
+      </select>
+      <div class="mini" style="margin-top:5px">Lentille AR + bague métal réalistes ;
+        joint réglable dans « Réglage antennes &amp; joint ».</div>
+    </div>
+    <div class="sec">
       <h2>Antenne VTX (5,8 GHz)</h2>
       <select id="vtxSel" style="width:100%;background:var(--btn);color:var(--ink);
         border:1px solid var(--line);border-radius:6px;padding:7px;font-size:12px">
         <option value="dji">DJI O4 Pro (antenne, STEP réel)</option>
         <option value="rhcp">RHCP LP A1 (STEP réel)</option>
         <option value="foxeer">Foxeer Lollipop 5,8 GHz (STEP réel)</option>
+        <option value="matchstick">TrueRC Singularity / Matchstick</option>
+        <option value="microlp">Micro Lollipop U.FL (dôme plein)</option>
       </select>
       <div class="mini" style="margin-top:5px">Insérée dans le TPU arrière, tête vers le haut.</div>
     </div>
@@ -212,36 +225,45 @@ TEMPLATE = r"""<!DOCTYPE html>
         (clavier + scripts SDK).</div>
     </div>
     <div class="sec">
-      <h2>Réglage caméra / support</h2>
+      <h2>Réglage antennes &amp; joint</h2>
       <div class="mini" style="margin-bottom:8px">Choisis la pièce, aligne-la
-        avec les curseurs, puis <b>relève les valeurs</b> et donne-les moi.</div>
+        avec les curseurs (chacune se règle <b>indépendamment</b>), puis
+        <b>relève les valeurs</b> et donne-les moi.</div>
       <select id="camTarget" style="width:100%;background:var(--btn);color:var(--ink);
         border:1px solid var(--line);border-radius:6px;padding:6px;margin-bottom:8px">
-        <option value="camera">Caméra O4 Lite</option>
-        <option value="cammount_top">Support HAUT (TPU)</option>
-        <option value="cammount_bottom">Support BAS (TPU)</option>
+        <option value="vtx_dji">Antenne VTX — DJI O4</option>
+        <option value="vtx_rhcp">Antenne VTX — RHCP (déjà OK)</option>
+        <option value="vtx_foxeer">Antenne VTX — Foxeer Lollipop</option>
+        <option value="vtx_matchstick">Antenne VTX — Matchstick</option>
+        <option value="vtx_microlp">Antenne VTX — Micro Lollipop</option>
+        <option value="rxant">Antenne RX — ELRS</option>
+        <option value="gasket">Joint caoutchouc caméra</option>
+        <option value="bezel">Anneau TPU caméra (protection)</option>
       </select>
       <div style="display:flex;justify-content:space-between"><span>Latéral (X)</span>
         <span class="val" id="camXV">0.0 mm</span></div>
-      <input type="range" id="camX" min="-15" max="15" step="0.5" value="0"/>
+      <input type="range" id="camX" min="-60" max="60" step="0.5" value="0"/>
       <div style="display:flex;justify-content:space-between;margin-top:6px"><span>Profondeur (Y)</span>
         <span class="val" id="camYV">0.0 mm</span></div>
-      <input type="range" id="camY" min="-20" max="20" step="0.5" value="0"/>
+      <input type="range" id="camY" min="-60" max="60" step="0.5" value="0"/>
       <div style="display:flex;justify-content:space-between;margin-top:6px"><span>Vertical (Z)</span>
         <span class="val" id="camZV">0.0 mm</span></div>
-      <input type="range" id="camZ" min="-15" max="15" step="0.5" value="0"/>
+      <input type="range" id="camZ" min="-60" max="60" step="0.5" value="0"/>
       <div style="display:flex;justify-content:space-between;margin-top:6px"><span>Rotation X (°)</span>
         <span class="val" id="camRXV">0°</span></div>
-      <input type="range" id="camRX" min="-90" max="90" step="1" value="0"/>
+      <input type="range" id="camRX" min="-180" max="180" step="1" value="0"/>
       <div style="display:flex;justify-content:space-between;margin-top:6px"><span>Rotation Y (°)</span>
         <span class="val" id="camRYV">0°</span></div>
-      <input type="range" id="camRY" min="-90" max="90" step="1" value="0"/>
+      <input type="range" id="camRY" min="-180" max="180" step="1" value="0"/>
       <div style="display:flex;justify-content:space-between;margin-top:6px"><span>Rotation Z (°)</span>
         <span class="val" id="camRZV">0°</span></div>
-      <input type="range" id="camRZ" min="-90" max="90" step="1" value="0"/>
-      <div class="mini" style="margin-top:8px"><b id="camDelta">camera : X 0 · Y 0 · Z 0 · RX 0 · RY 0 · RZ 0</b>
+      <input type="range" id="camRZ" min="-180" max="180" step="1" value="0"/>
+      <div style="display:flex;justify-content:space-between;margin-top:6px"><span>Taille (%)</span>
+        <span class="val" id="camSV">100%</span></div>
+      <input type="range" id="camS" min="30" max="200" step="1" value="100"/>
+      <div class="mini" style="margin-top:8px"><b id="camDelta">vtx_dji : X 0 · Y 0 · Z 0 · RX 28 · RY 0 · RZ 0 · S 100</b>
         — copie-moi cette ligne.</div>
-      <button id="camReset" style="width:100%;margin-top:8px">Réinitialiser cette pièce</button>
+      <button id="camReset" style="width:100%;margin-top:8px">Réinitialiser cette antenne</button>
     </div>
     <div class="sec">
       <h2>Spécifications (cible)</h2>
@@ -365,11 +387,51 @@ function mesh(b64, color, metal, rough, opts){
   m.scale.setScalar(0.001);          // mm -> m
   return m;
 }
+// ---- procedural PBR textures (canvas, NO external files) --------------------
+// Real 2x2 twill carbon weave baked into a normal map + a roughness map.
+function carbonMaps(){
+  const S=256, N=8;                    // N tows across -> repeats every UV unit
+  const cn=document.createElement('canvas'); cn.width=cn.height=S;
+  const cr=document.createElement('canvas'); cr.width=cr.height=S;
+  const n=cn.getContext('2d'), r=cr.getContext('2d');
+  n.fillStyle='#8080ff'; n.fillRect(0,0,S,S);            // flat normal base
+  r.fillStyle='#6f6f6f'; r.fillRect(0,0,S,S);            // mid roughness base
+  const t=S/N;
+  for(let j=0;j<N;j++){ for(let i=0;i<N;i++){
+    const horiz = (((i+j)>>1) & 1)===0;                  // 2x2 twill float direction
+    const x0=i*t, y0=j*t;
+    const g = horiz ? n.createLinearGradient(x0,y0, x0, y0+t)
+                    : n.createLinearGradient(x0,y0, x0+t, y0);
+    g.addColorStop(0,'#8f8fff'); g.addColorStop(.5,'#8080ff'); g.addColorStop(1,'#7373ff');
+    n.fillStyle=g; n.fillRect(x0,y0,t,t);                // per-tow micro-tilt
+    const rg = horiz ? r.createLinearGradient(x0,y0, x0, y0+t)
+                     : r.createLinearGradient(x0,y0, x0+t, y0);
+    rg.addColorStop(0,'#8a8a8a'); rg.addColorStop(.5,'#5f5f5f'); rg.addColorStop(1,'#828282');
+    r.fillStyle=rg; r.fillRect(x0,y0,t,t);               // woven sheen bands
+  }}
+  const mk=(cv,lin)=>{ const tx=new THREE.CanvasTexture(cv);
+    tx.wrapS=tx.wrapT=THREE.RepeatWrapping; if(lin) tx.colorSpace=THREE.NoColorSpace; return tx; };
+  return { normal: mk(cn,true), rough: mk(cr,true) };
+}
+const CARBON_TEX = carbonMaps();
+// planar top-down UVs (mm) so the weave tiles at a real ~5.5 mm pitch on plates
+function planarUV(g, pitch){ g.computeBoundingBox();
+  const p=g.attributes.position, uv=new Float32Array(p.count*2);
+  for(let i=0;i<p.count;i++){ uv[i*2]=p.getX(i)/pitch; uv[i*2+1]=p.getY(i)/pitch; }
+  g.setAttribute('uv', new THREE.BufferAttribute(uv,2)); }
+// woven-carbon mesh for the flat plates (real weave, subtle gloss)
+function carbonMesh(b64, color){
+  const g=geo(b64); planarUV(g, 5.5);
+  const mat=new THREE.MeshStandardMaterial({color, metalness:.22, roughness:.46,
+    normalMap:CARBON_TEX.normal, normalScale:new THREE.Vector2(.4,.4),
+    roughnessMap:CARBON_TEX.rough});
+  const m=new THREE.Mesh(g, mat); m.scale.setScalar(0.001); return m;
+}
 
 // ---- the drone: ONE group whose origin is the ground under its centre ----
 // (the playground moves/clones this group; feet touch z=0)
 const frameRoot = new THREE.Group(); scene.add(frameRoot);
-const G = {};
+const G = {}; try { window.G = G; window.THREE = THREE; } catch(_){}   // exposed for measurement/debug
 function group(name){ const g = new THREE.Group(); G[name]=g; frameRoot.add(g); return g; }
 // a group whose ORIGIN is a chosen pivot (mm) so sliders can translate AND
 // rotate the part about its own centre; the mesh is re-offset to stay in place.
@@ -392,31 +454,113 @@ function place(b64, colr, met, rgh, off){
 // each explodes on its own: bottom plate, camera cage, standoffs, camera.
 // The top plate is REPLACED by our STRATOS top (same envelope) per the brief.
 const TPU = 0x2b2f36;
-const gBottom = group('bottom'); { const m=mesh(STLB64.frame_bottom, CARBON,.3,.5);
+const gBottom = group('bottom'); { const m=carbonMesh(STLB64.frame_bottom, CARBON);
   m.position.z=M.frame_z; gBottom.add(m); }
-const gTop = group('top'); { const m=mesh(STLB64.frame_top, CARBON,.3,.5);
+const gTop = group('top'); { const m=carbonMesh(STLB64.frame_top, CARBON);
   m.position.z=M.frame_z; gTop.add(m); }        // STRATOS top plate
-// clean aluminium standoffs: 3 tall frame posts (z3→17) + 4 short board posts
+// clean aluminium standoffs — SMOOTH turned posts (procedural, 40 segments)
+// instead of the faceted STL: 3 tall frame posts (z3→17) + 4 short board posts.
 const gStand = group('standoffs');
-for (const [x,y] of M.standoffs.frame){ const s=mesh(STLB64.standoff, 0xc2c5cb,.9,.3);
-  s.position.set(x/1000, y/1000, 0.003); gStand.add(s); }
-for (const [x,y] of M.standoffs.board){ const s=mesh(STLB64.standoff, 0xc2c5cb,.9,.3);
-  s.position.set(x/1000, y/1000, 0.003); s.scale.set(0.001,0.001,0.001*3/14); gStand.add(s); }
-const gCage = group('camcage'); { const m=mesh(STLB64.camcage, CARBON,.3,.5);
+const aluMat = new THREE.MeshStandardMaterial({color:0xc2c5cb, metalness:.92, roughness:.26});
+function standoff(x,y,base,h,r){
+  const m=new THREE.Mesh(new THREE.CylinderGeometry(r,r,h/1000,40,1), aluMat);
+  m.rotation.x=Math.PI/2; m.position.set(x/1000, y/1000, (base+h/2)/1000);   // vertical
+  gStand.add(m); return m; }
+for (const [x,y] of M.standoffs.frame) standoff(x,y, 3, 14, 0.0021);   // tall frame posts
+for (const [x,y] of M.standoffs.board) standoff(x,y, 3,  3, 0.0021);   // short board posts
+const gCage = group('camcage'); { const m=carbonMesh(STLB64.camcage, CARBON);
   m.position.z=M.frame_z; gCage.add(m); }
-// DJI O4 Lite camera head, seated in the TPU mount at the nose (real STEP).
-// Grey body + a glossy lens disc so it actually reads inside the dark cage.
-const gCam = (()=>{ const m=mesh(STLB64.o4cam, 0x30343b,.5,.35);  // dark-grey body
-  m.rotation.z = Math.PI/2;                          // lens faces +Y (nose)
-  m.position.set(M.elec.o4cam[0]/1000, M.elec.o4cam[1]/1000, M.elec.o4cam[2]/1000);
-  const g = adjGroup('camera', m, 0, 42, 20);        // pivot at camera centre
-  // soft rubber gasket around the lens — fills the gap between camera and the
-  // TPU mount (matte black silicone O-ring); rides with the camera group
-  const rub = new THREE.Mesh(new THREE.TorusGeometry(0.0064, 0.0014, 14, 40),
+// camera-cage cross standoffs — the 2 GOLD anodized bars (top + bottom) that tie
+// the two carbon cage plates together, behind the TPU camera mounts (real JeNo
+// detail: visible once the TPU supports are hidden). Own toggle group.
+const gCageStd = group('cagestd');
+{ const gold=new THREE.MeshStandardMaterial({color:0xd8a520, metalness:.88, roughness:.26});
+  const bar=(y,z)=>{ const m=new THREE.Mesh(new THREE.CylinderGeometry(0.0016,0.0016,0.0168,32,1), gold);
+    m.rotation.z=Math.PI/2;                                   // axis along X (plate to plate)
+    m.position.set(0, y/1000, z/1000); gCageStd.add(m);
+    for (const s of [-1,1]){ const cap=new THREE.Mesh(                 // steel screw heads (inside the cage)
+        new THREE.CylinderGeometry(0.0021,0.0021,0.0014,20), aluMat);
+      cap.rotation.z=Math.PI/2; cap.position.set(s*8.0/1000, y/1000, z/1000); gCageStd.add(cap); } };
+  bar(45, 29);                                                // top bar (replaces the cropped STL bar)
+  bar(55, 8);                                                 // bottom bar (replaces the cropped STL bar)
+}
+// ---- realistic FPV lens assembly (shared): a Flywoo-Wylde-style M12 THREADED
+// BARREL with a CONVEX AR-coated dome (as on a DJI O4 with an aftermarket lens).
+// Lens axis = +Y (nose); the barrel base (y<0) plugs into the camera body. ----
+function buildLens(){
+  const grp=new THREE.Group();
+  const blk=new THREE.MeshStandardMaterial({color:0x0c0c0f, metalness:.4, roughness:.42});
+  // main threaded barrel (M12) protruding forward
+  const barrel=new THREE.Mesh(new THREE.CylinderGeometry(0.0056,0.0059,0.0110,48), blk);
+  barrel.position.y=-0.0030; grp.add(barrel);
+  const thr=new THREE.MeshStandardMaterial({color:0x18181b, metalness:.45, roughness:.5});
+  for(let i=0;i<7;i++){ const gr=new THREE.Mesh(new THREE.TorusGeometry(0.00585,0.00042,10,48), thr);
+    gr.rotation.x=Math.PI/2; gr.position.y=-0.0078+i*0.0015; grp.add(gr); }   // thread grooves
+  // dark metallic front rim holding the glass
+  const rim=new THREE.Mesh(new THREE.CylinderGeometry(0.0061,0.0059,0.0020,48),
+    new THREE.MeshStandardMaterial({color:0x2b2e33, metalness:.75, roughness:.32}));
+  rim.position.y=0.0026; grp.add(rim);
+  // CONVEX domed glass (fisheye), AR-coated with iridescent sheen
+  const glass=new THREE.Mesh(new THREE.SphereGeometry(0.0052,48,30,0,Math.PI*2,0,Math.PI*0.46),
+    new THREE.MeshPhysicalMaterial({color:0x0a0a12, metalness:.15, roughness:.03,
+      clearcoat:1, clearcoatRoughness:.03, iridescence:1, iridescenceIOR:1.9,
+      iridescenceThicknessRange:[130,420]}));
+  glass.scale.set(1,0.32,1); glass.position.y=0.0026; grp.add(glass);         // nearly-flat glass
+  return grp;
+}
+// procedural NANO analog camera body (à la Caddx/RunCam nano) — a small dark
+// housing + sensor board sitting BEHIND the shared lens; front faces +Y.
+function buildNanoCam(){
+  const grp=new THREE.Group();
+  const body=new THREE.Mesh(new THREE.BoxGeometry(0.0140,0.0120,0.0140),
+    new THREE.MeshStandardMaterial({color:0x141519, metalness:.35, roughness:.55}));
+  grp.add(body);
+  const pcb=new THREE.Mesh(new THREE.BoxGeometry(0.0132,0.0012,0.0132),
+    new THREE.MeshStandardMaterial({color:0x11532e, metalness:.2, roughness:.6}));
+  pcb.position.y=-0.0068; grp.add(pcb);                       // sensor board at the back
+  return grp;
+}
+// Camera at the nose — SELECTABLE (DJI O4 Lite STEP or nano analog), with the
+// realistic shared lens + the adjustable rubber gasket.
+const camModels = {}; let camCur = 'dji';
+const gCam = (()=>{ const g = group('camera');
+  g.position.set(0, 42/1000, 20/1000);               // pivot at camera centre
+  g.userData.base = g.position.clone();
+  // DJI O4 Lite STEP body (dark, closer to the real black housing)
+  const dji=mesh(STLB64.o4cam, 0x24272c,.5,.4); dji.rotation.z=Math.PI/2;
+  dji.position.set(0, 0, -10/1000);                  // = o4cam world minus pivot
+  const djiG=new THREE.Group(); djiG.add(dji); camModels.dji=djiG; g.add(djiG);
+  // nano analog body, seated just behind the shared lens
+  const nanoG=buildNanoCam(); nanoG.position.set(0, 3.5/1000, -1/1000);
+  nanoG.visible=false; camModels.nano=nanoG; g.add(nanoG);
+  // shared realistic lens at the lens centre (in front of whichever body)
+  const lens=buildLens(); lens.position.set(0, 11.4/1000, -1/1000); g.add(lens);
+  // rubber seal — a FLAT ring that fills the whole gap between the camera and
+  // the top/bottom TPU supports (no empty space), yet stays inside the cage
+  // (outer < 9.1 mm). Adjustable (own group 'gasket').
+  const gInner=0.0062, gOuter=0.0090, gThick=0.0007;
+  const shp=new THREE.Shape(); shp.absarc(0,0,gOuter,0,Math.PI*2,false);
+  const gh=new THREE.Path(); gh.absarc(0,0,gInner,0,Math.PI*2,true); shp.holes.push(gh);
+  const rub=new THREE.Mesh(new THREE.ExtrudeGeometry(shp,{depth:gThick,bevelEnabled:true,
+    bevelThickness:0.00014,bevelSize:0.00014,bevelSegments:1,curveSegments:56}),
     new THREE.MeshStandardMaterial({color:0x0b0b0d, metalness:0.0, roughness:0.97}));
-  rub.rotation.x = Math.PI/2;                         // ring axis along +Y (lens)
-  rub.position.set(0, 12.0/1000, -1/1000);           // thin gasket at the lens front
-  g.add(rub);
+  rub.rotation.x = -Math.PI/2;
+  const gsk = new THREE.Group();
+  gsk.add(rub); gsk.position.set(0, 10.6/1000, -1/1000);
+  gsk.userData.base = gsk.position.clone(); G['gasket'] = gsk; g.add(gsk);
+  // TPU CRADLE — a slim closed tube that just WRAPS the lens barrel (compact,
+  // like the printed Flywoo-Wylde mount); sized to stay INSIDE the carbon cage
+  // (no side overhang). Adjustable ('bezel').
+  const bInner=0.0063, bOuter=0.0078, bDepth=0.0090;
+  const bsh=new THREE.Shape(); bsh.absarc(0,0,bOuter,0,Math.PI*2,false);
+  const bhl=new THREE.Path(); bhl.absarc(0,0,bInner,0,Math.PI*2,true); bsh.holes.push(bhl);
+  const bezM=new THREE.Mesh(new THREE.ExtrudeGeometry(bsh,{depth:bDepth,bevelEnabled:true,
+    bevelThickness:0.0005,bevelSize:0.0005,bevelSegments:2,curveSegments:64}),
+    new THREE.MeshStandardMaterial({color:0x24272d, metalness:0.04, roughness:0.86}));
+  bezM.rotation.x = -Math.PI/2;
+  const bez = new THREE.Group();
+  bez.add(bezM); bez.position.set(0, 2.2/1000, -1/1000);   // wraps the barrel length
+  bez.userData.base = bez.position.clone(); G['bezel'] = bez; g.add(bez);
   return g; })();
 // DJI O4 Lite air unit (VTX) — stacked ABOVE the FC on soft-mount grommets,
 // aligned on the same 25.5@45° pattern, with a ribbon cable down to the camera.
@@ -486,7 +630,32 @@ boardCustom.rotation.z = Math.PI/4; boardCustom.visible = false; gElec.add(board
 const boardGhf = place(STLB64.ghf411, 0x14161b, .35, .45, M.elec.board);
 boardGhf.rotation.z = Math.PI/4; gElec.add(boardGhf);   // 45° = real JeNo AIO mount, default
 const gBatt = group('battery');
-gBatt.add(place(STLB64.battery, 0x22262d, .1, .55, M.elec.battery));
+// DOGCOM 560 mAh 3S pack — a clean procedural box with a printed label texture
+// (silver foil top, black band, gold DOGCOM + yellow specs). No moulded text
+// spilling off the block. Sized/placed on the real STL envelope (28x52.5x18.5).
+{ const W=568,H=200, cv=document.createElement('canvas'); cv.width=W; cv.height=H;
+  const x=cv.getContext('2d');
+  x.fillStyle='#b7bac0'; x.fillRect(0,0,W,H);                      // silver base
+  x.fillStyle='#0c0c0e'; x.fillRect(0,H*0.30,W,H*0.70);           // black label band
+  const grd=x.createLinearGradient(0,0,0,H*0.30); grd.addColorStop(0,'#cfd2d6'); grd.addColorStop(1,'#a7aab0');
+  x.fillStyle=grd; x.fillRect(0,0,W,H*0.30);
+  x.fillStyle='#e6b53c'; x.font='italic bold 84px Arial'; x.textBaseline='middle';
+  x.fillText('DOGCOM', W*0.135, H*0.60);                          // gold brand
+  x.fillStyle='#f4d64a'; x.font='bold 34px Arial'; x.fillText('560', W*0.70, H*0.47);
+  x.font='bold 24px Arial'; x.fillText('MAH', W*0.815, H*0.47);
+  x.fillStyle='#dcdcde'; x.font='bold 18px Arial'; x.fillText('11.1V 3S  ·  60C', W*0.70, H*0.66);
+  x.fillStyle='#8d8d90'; x.font='12px Arial'; x.fillText('www.titltop.com', W*0.135, H*0.86);
+  x.fillStyle='#e6b53c'; x.beginPath(); x.ellipse(W*0.065,H*0.55,24,20,0,0,Math.PI*2); x.fill();
+  x.fillStyle='#0c0c0e'; x.font='bold 18px Arial'; x.fillText('DC', W*0.038, H*0.58);   // bee badge
+  const lab=new THREE.CanvasTexture(cv); lab.colorSpace=THREE.SRGBColorSpace; lab.anisotropy=8;
+  lab.center.set(0.5,0.5); lab.rotation=Math.PI/2;                // align text along the pack length
+  const labMat=new THREE.MeshStandardMaterial({map:lab, metalness:.2, roughness:.5});
+  const silver=new THREE.MeshStandardMaterial({color:0xc4c6ca, metalness:.55, roughness:.32});
+  const ends =new THREE.MeshStandardMaterial({color:0x9a9da2, metalness:.45, roughness:.4});
+  const base =new THREE.MeshStandardMaterial({color:0x6a6d72, metalness:.4,  roughness:.45});
+  const bm=new THREE.Mesh(new THREE.BoxGeometry(0.028,0.0525,0.0185),
+    [labMat,labMat,ends,ends,silver,base]);                        // +X,-X,+Y,-Y,+Z,-Z
+  bm.position.set(0, 3.75/1000, 33.2/1000); gBatt.add(bm); }
 // M2 screws on the real standoffs + camera plates
 const gScrew = group('screws');
 for (const s of M.screws){ const sc = place(STLB64.screw, 0xd6d9de, .9, .25, s);
@@ -497,15 +666,53 @@ for (const [x,y] of M.standoffs.board){
   gScrew.add(sc); }
 // 5.8 GHz VTX antenna in the rear TPU mount — SELECTABLE among 3 real models,
 // HEAD UP (only the chosen one is visible; dropdown in the sidebar).
-const gVtxAnt = group('vtxant');
+const gVtxAnt = group('vtxant');                         // parent: toggle + colour
+// Each model gets its OWN pivot group at the antenna base so the fine-adjust
+// panel can translate/rotate them ONE BY ONE (moving the DJI must not move the
+// RHCP, which is already well seated). Only one group is visible at a time.
+function vtxPivot(key, m){
+  const g = new THREE.Group();
+  g.position.set(M.elec.vtxant[0]/1000, M.elec.vtxant[1]/1000,
+                 M.frame_z + M.elec.vtxant[2]/1000);     // origin = antenna base
+  g.add(m);                                              // mesh sits at group origin
+  g.userData.base = g.position.clone();
+  g.visible = false; G['vtx_'+key] = g; gVtxAnt.add(g);
+  return g;
+}
+// Procedural MICRO lollipop (U.FL) — a SOLID rounded dome on a thin coax
+// pigtail, the compact type best suited to a 2.5". Built full so the head is
+// never hollow. Base at z=0, dome up (+Z), in metres.
+function buildMicroLollipop(){
+  const grp = new THREE.Group();
+  const red = new THREE.MeshStandardMaterial({color:0xc4161c, metalness:.15, roughness:.33});
+  const blk = new THREE.MeshStandardMaterial({color:0x0c0c0e, metalness:.2,  roughness:.6});
+  const cyl = (r0,r1,h,z,mat)=>{ const m=new THREE.Mesh(
+      new THREE.CylinderGeometry(r0,r1,h,20), mat);
+    m.rotation.x=Math.PI/2; m.position.z=z; grp.add(m); return m; };  // axis -> Z
+  cyl(0.0006,0.0006,0.015,0.0075, blk);                 // thin U.FL coax pigtail
+  cyl(0.0019,0.0019,0.004,0.0170, blk);                 // heatshrink neck
+  cyl(0.0034,0.0030,0.0016,0.0197, red);                // red base collar of the bulb
+  const dome=new THREE.Mesh(new THREE.SphereGeometry(0.0036,22,18), red);  // SOLID bulb
+  dome.scale.set(1,1,1.18); dome.position.z=0.0225; grp.add(dome);         // rounded head
+  return grp;
+}
 const vtxModels = {
-  dji:    place(STLB64.dji_pro_ant, 0x0f1114, .2, .5, M.elec.vtxant),  // DJI O4 Pro antenna
-  rhcp:   place(STLB64.rhcp_lp,     0x141414, .2, .5, M.elec.vtxant),  // RHCP LP A1 (STEP)
-  foxeer: place(STLB64.foxeer_lp,   0x141414, .2, .5, M.elec.vtxant),  // Foxeer Lollipop 5.8 (STEP)
+  dji:        vtxPivot('dji',        mesh(STLB64.dji_pro_ant, 0x0f1114, .2, .5)),  // DJI O4 Pro antenna
+  rhcp:       vtxPivot('rhcp',       mesh(STLB64.rhcp_lp,     0x141414, .2, .5)),  // RHCP LP A1 (STEP)
+  foxeer:     vtxPivot('foxeer',     mesh(STLB64.foxeer_lp,   0x141414, .2, .5)),  // Foxeer Lollipop 5.8
+  matchstick: vtxPivot('matchstick', mesh(STLB64.matchstick,  0x181818, .2, .5)),  // TrueRC Singularity
+  microlp:    vtxPivot('microlp',    buildMicroLollipop()),                        // solid micro lollipop
 };
-// tilt back 28° to seat in the rear-bay receptacle, head up-and-back
-Object.values(vtxModels).forEach(m=>{ m.rotation.x = 0.49; m.visible=false; gVtxAnt.add(m); });
 let vtxCur='dji'; vtxModels[vtxCur].visible=true;         // default: the DJI antenna
+// (the 28° seating tilt is carried by the fine-adjust DEF below, applied at load)
+// Show ONE VTX model and keep BOTH dropdowns (model + fine-adjust) in step, so
+// picking an antenna to adjust always makes that same antenna visible.
+function showVtxModel(key){
+  if (!vtxModels[key]) return;
+  if (vtxModels[vtxCur]) vtxModels[vtxCur].visible = false;
+  vtxCur = key; vtxModels[key].visible = true;
+  const s = document.getElementById('vtxSel'); if (s) s.value = key;
+}
 // LiPo capacitor (25 V 22 µF, Ø6×12) SEATED IN ITS PRINTED TPU HOLDER
 const gCap = group('cap');
 gCap.add(place(STLB64.cap_holder, TPU, .1, .85, M.elec.cap));       // TPU snap-clip
@@ -520,42 +727,90 @@ function wireTube(p0, p1, r, col){
   return new THREE.Mesh(new THREE.TubeGeometry(c,20,r/1000,8,false),
     new THREE.MeshStandardMaterial({color:col, metalness:.1, roughness:.55}));
 }
-// build extras: buzzer, GPS/compass, ELRS RX (PCB + antenna in TPU holder),
-// battery XT30 red/black leads to the ESC, and the 4 motor phase cables
-const gEx = group('extras');
-gEx.add(place(STLB64.buzzer, 0x141519, .3,  .5,  M.elec.buzzer));   // Ø8 buzzer
-gEx.add(place(STLB64.gps,    0x0a0c10, .2,  .5,  M.elec.gps));      // GPS/compass
-// ELRS RX: the PCB centred in the footprint, and the antenna threaded through
-// the rear-bay's horizontal sleeve so it exits STRAIGHT OUT THE BACK.
-gEx.add(place(STLB64.rx_holder, TPU, .1, .85, M.elec.rx));          // TPU tray, centred
-gEx.add(place(STLB64.rx_pcb, 0x0f3d0f, .2, .5,                      // RX board
-  [M.elec.rx[0], M.elec.rx[1], M.elec.rx[2]+1.6]));
-{ const g = new THREE.Group();
-  g.add(mesh(STLB64.rx, 0x141414, .25, .5));                        // antenna only (bay = the sleeve)
-  g.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,1),
-    new THREE.Vector3(0,-1,0.05).normalize());                     // horizontal, out the back
-  g.position.set(M.elec.rxant[0]/1000, M.elec.rxant[1]/1000, M.elec.rxant[2]/1000); gEx.add(g); }
-// realistic battery lead: a YELLOW XT30 (housing + gold pins) with thick
-// silicone RED(+) and BLACK(-) wires — pack tail -> XT30 -> ESC pads.
-{ const xt = M.elec.xt30, bt = M.elec.battery, brear = bt[1] - 26;
-  // XT30 yellow housing (rounded) + two gold pin bores
-  const body = new THREE.Mesh(new THREE.BoxGeometry(0.0095,0.0075,0.0072),
+// each accessory is its OWN group now, so it can be shown/hidden one by one.
+const gBuz = group('buzzer');
+gBuz.add(place(STLB64.buzzer, 0x141519, .3, .5, M.elec.buzzer));    // Ø8 buzzer
+const gGps = group('gps');
+gGps.add(place(STLB64.gps, 0x0a0c10, .2, .5, M.elec.gps));          // GPS/compass
+// ELRS RX: the PCB centred in the footprint + the antenna out the rear-bay sleeve
+const gRx = group('rx');
+gRx.add(place(STLB64.rx_holder, TPU, .1, .85, M.elec.rx));          // TPU tray
+gRx.add(place(STLB64.rx_pcb, 0x0f3d0f, .2, .5,
+  [M.elec.rx[0], M.elec.rx[1], M.elec.rx[2]+1.6]));                 // RX board
+// RX antenna in its OWN pivot group (base = sleeve exit) so it too is fine-
+// adjustable one-by-one; the ~87° tilt (horizontal, out the back) is the DEF.
+{ const g = group('rxant');
+  g.add(mesh(STLB64.rx, 0x141414, .25, .5));                       // mesh at group origin
+  g.position.set(M.elec.rxant[0]/1000, M.elec.rxant[1]/1000,
+                 M.frame_z + M.elec.rxant[2]/1000);
+  g.userData.base = g.position.clone(); gRx.add(g); }              // reparent under RX toggle
+// BATTERY HARNESS — added to the BATTERY group so it shows/hides WITH the pack.
+// Clean DOGCOM-style leads: a red+black pair to an XT30 + a white JST-XH balance
+// plug, rooted right at the (cropped) rear face of the pack so they connect.
+{ const xt = M.elec.xt30, bt = M.elec.battery;
+  const RED=0xcf2128, BLK=0x121214;
+  const lead=(p0,p1,r,col,sag)=>{
+    const m=[(p0[0]+p1[0])/2,(p0[1]+p1[1])/2,Math.max(p0[2],p1[2])+(sag||0)];
+    const c=new THREE.CatmullRomCurve3([new THREE.Vector3(p0[0]/1000,p0[1]/1000,p0[2]/1000),
+      new THREE.Vector3(m[0]/1000,m[1]/1000,m[2]/1000),
+      new THREE.Vector3(p1[0]/1000,p1[1]/1000,p1[2]/1000)]);
+    return new THREE.Mesh(new THREE.TubeGeometry(c,28,r/1000,12,false),
+      new THREE.MeshStandardMaterial({color:col,metalness:.05,roughness:.5})); };
+  const root=[0, bt[1]-26, bt[2]+4];              // pack rear face (after crop)
+  const body=new THREE.Mesh(new THREE.BoxGeometry(0.0090,0.0080,0.0070),
     new THREE.MeshStandardMaterial({color:0xf2b400, metalness:.15, roughness:.45}));
-  body.position.set(xt[0]/1000, xt[1]/1000, xt[2]/1000); gEx.add(body);
-  for (const s of [-1,1]){ const pin=new THREE.Mesh(new THREE.CylinderGeometry(0.0011,0.0011,0.004,12),
+  body.position.set(xt[0]/1000, xt[1]/1000, xt[2]/1000); gBatt.add(body);   // XT30
+  for (const s of [-1,1]){ const cup=new THREE.Mesh(new THREE.CylinderGeometry(0.0012,0.0012,0.0042,16),
       new THREE.MeshStandardMaterial({color:0xcaa63a, metalness:.9, roughness:.25}));
-    pin.rotation.x=Math.PI/2; pin.position.set((xt[0]+s*2)/1000, (xt[1]-4)/1000, xt[2]/1000); gEx.add(pin); }
-  const RED=0xd51f26, BLK=0x0c0c0e, r=1.15;
-  // battery pigtail (pack tail -> XT30)
-  gEx.add(wireTube([2, brear, bt[2]-2], [xt[0]+2, xt[1]+3, xt[2]+1], r, RED));
-  gEx.add(wireTube([-2, brear, bt[2]-2], [xt[0]-2, xt[1]+3, xt[2]+1], r, BLK));
-  // ESC lead (XT30 -> FC solder pads)
-  gEx.add(wireTube([xt[0]+2, xt[1]-4, xt[2]-1], [4, -6, 8], r, RED));
-  gEx.add(wireTube([xt[0]-2, xt[1]-4, xt[2]-1], [-4, -6, 8], r, BLK)); }
-for (const [mx, my] of M.motors){                                  // 4 phase cables
-  const c = mesh(STLB64.cable, 0x2a2c30, .2, .6);
-  c.position.set(mx/1000, my/1000, M.frame_z + 0.004);
-  c.scale.set(mx<0?-0.001:0.001, my<0?-0.001:0.001, 0.001); gEx.add(c); }
+    cup.rotation.x=Math.PI/2; cup.position.set((xt[0]+s*2.2)/1000,(xt[1]-4.4)/1000,xt[2]/1000); gBatt.add(cup); }
+  // main power pair — a REALISTIC service loop: thick silicone leads are stiff,
+  // so they can't hug the pack; they bow rearward on a large radius, crest, then
+  // drop back down through the plate slot into the XT30.
+  const bend=(pts,r,col)=>new THREE.Mesh(
+    new THREE.TubeGeometry(new THREE.CatmullRomCurve3(
+      pts.map(p=>new THREE.Vector3(p[0]/1000,p[1]/1000,p[2]/1000))), 44, r/1000, 12, false),
+    new THREE.MeshStandardMaterial({color:col, metalness:.05, roughness:.5}));
+  const mains=(x,col)=>bend([
+    [x,        bt[1]-26, bt[2]+3],   // exit the pack rear face
+    [x*1.25,   bt[1]-33, bt[2]+6],   // bow rearward + up (wire stiffness arc)
+    [x*1.25,   bt[1]-35, bt[2]-3],   // crest of the loop, clear of the pack
+    [x,        bt[1]-30, xt[2]+4],   // come back in, dropping toward the slot
+    [x,        xt[1]+1,  xt[2]+1]    // into the XT30
+  ], 1.35, col);
+  gBatt.add(mains( 2.4, RED));
+  gBatt.add(mains(-2.4, BLK));
+  // white JST-XH balance plug (3S = 4-pin) + 4 thin balance wires
+  const bal=new THREE.Mesh(new THREE.BoxGeometry(0.0075,0.0032,0.0040),
+    new THREE.MeshStandardMaterial({color:0xededf0, metalness:.0, roughness:.7}));
+  bal.position.set(6.5/1000,(bt[1]-23)/1000,(bt[2]+3)/1000); gBatt.add(bal);
+  const bcol=[BLK,RED,0xe0a828,0x2b8a2b];         // black, red, yellow, green
+  for (let i=0;i<4;i++) gBatt.add(lead([3.2, root[1], root[2]],
+    [4.7+i*1.2, bt[1]-23, bt[2]+3], 0.42, bcol[i], 1.2+i*0.3));
+}
+// motor phase cables — their OWN toggle group ('cables'): 3 phase wires per
+// motor routed along the arm to the FC, each arm capped by a TPU guard so the
+// prop can't slice them.
+const gCbl = group('cables');
+{ const armTube=(p0,p1,r,col)=>{
+    const c=new THREE.CatmullRomCurve3([new THREE.Vector3(p0[0]/1000,p0[1]/1000,p0[2]/1000),
+      new THREE.Vector3((p0[0]+p1[0])/2000,(p0[1]+p1[1])/2000,((p0[2]+p1[2])/2+0.8)/1000),
+      new THREE.Vector3(p1[0]/1000,p1[1]/1000,p1[2]/1000)]);
+    return new THREE.Mesh(new THREE.TubeGeometry(c,20,r/1000,8,false),
+      new THREE.MeshStandardMaterial({color:col,metalness:.12,roughness:.5})); };
+  for (const [mx,my] of M.motors){
+    const L=Math.hypot(mx,my), px=-my/L, py=mx/L;            // perp to the arm
+    const mb=[mx-mx/L*7, my-my/L*7, 5];                      // just inboard of the bell
+    const fc=[mx*0.30, my*0.30, 6];                          // FC solder pads
+    for (let i=-1;i<=1;i++){                                 // 3 phase wires
+      const s=[mb[0]+px*i*1.4, mb[1]+py*i*1.4, mb[2]];
+      const e=[fc[0]+px*i*1.4, fc[1]+py*i*1.4, fc[2]];
+      gCbl.add(armTube(s,e,0.65, 0x17181b)); }
+    const gx=mx*0.62, gy=my*0.62;                            // TPU cable guard, mid-arm
+    const guard=new THREE.Mesh(new THREE.BoxGeometry(0.0075,0.0052,0.0034),
+      new THREE.MeshStandardMaterial({color:0x2b2f36,metalness:.05,roughness:.85}));
+    guard.position.set(gx/1000, gy/1000, 6.2/1000); guard.rotation.z=Math.atan2(my,mx);
+    gCbl.add(guard); }
+}
 
 // ---- part toggles + per-part colour pickers ----
 const GROUPS = {
@@ -563,6 +818,7 @@ const GROUPS = {
   top:      {label:'Plaque haute (JeNo, sans texte)', color:'#1a1d21'},
   standoffs:{label:'Entretoises', color:'#b9bcc2'},
   camcage:  {label:'Cage caméra (carbone)', color:'#1a1d21'},
+  cagestd:  {label:'Entretoises cage caméra (or)', color:'#d8a520'},
   camera:   {label:'Caméra DJI O4 Lite', color:'#121316'},
   airunit:  {label:'Air unit DJI O4 Lite (PCB nue)', color:'#11532e'},
   cammount_top:    {label:'Support caméra HAUT (TPU)', color:'#2b2f36'},
@@ -571,11 +827,14 @@ const GROUPS = {
   motors:   {label:'Moteurs 1104 (Readytosky)', color:'#3a3d43'},
   props:    {label:'Hélices 2,5" (2520)',  color:'#d8721e'},
   elec:     {label:'Carte AIO (STRATOS / GHF411)', color:'#0b6b39'},
-  battery:  {label:'Batterie 3S 560 mAh (DOGCOM)', color:'#22262d'},
+  battery:  {label:'Batterie 3S 560 mAh (DOGCOM)', color:'#83868c'},
   screws:   {label:'Visserie M2 (moteurs + stack)', color:'#d6d9de'},
   vtxant:   {label:'Antenne VTX 5,8 GHz (sélecteur)', color:'#1c1c1e'},
   cap:      {label:'Condensateur 25 V 22 µF (support TPU)', color:'#1b3a8f'},
-  extras:   {label:'Buzzer · GPS · RX+TPU · câbles XT30', color:'#3a6ea5'},
+  rx:       {label:'Récepteur RX (PCB + antenne)', color:'#0f3d0f'},
+  gps:      {label:'GPS / compas', color:'#0a0c10'},
+  buzzer:   {label:'Buzzer', color:'#141519'},
+  cables:   {label:'Câbles moteurs (phases)', color:'#2a2c30'},
 };
 // remember each group's assembled position so the explode slider can offset it
 for (const k of Object.keys(GROUPS)){
@@ -650,51 +909,77 @@ function applyElec(std){                    // std = show the real GHF411
 }
 let stdElec=true;                            // default: show the FC you provided
 applyElec(stdElec);
-// VTX antenna model selector — swap which of the 3 meshes is visible
+// VTX antenna model selector — swap which mesh is visible AND point the
+// fine-adjust panel at the same antenna (so its sliders act on what you see).
 { const sel=document.getElementById('vtxSel'); if(sel){ sel.value=vtxCur;
-  sel.addEventListener('change',e=>{ if(vtxModels[vtxCur])vtxModels[vtxCur].visible=false;
-    vtxCur=e.target.value; if(vtxModels[vtxCur])vtxModels[vtxCur].visible=true; }); } }
+  sel.addEventListener('change',e=>{ showVtxModel(e.target.value);
+    if (window.__pickAntenna) window.__pickAntenna('vtx_'+e.target.value); }); } }
+// camera model selector — swap DJI STEP body vs nano analog body
+{ const sel=document.getElementById('camSel'); if(sel){ sel.value=camCur;
+  sel.addEventListener('change',e=>{ if(camModels[camCur])camModels[camCur].visible=false;
+    camCur=e.target.value; if(camModels[camCur])camModels[camCur].visible=true; }); } }
 document.getElementById('bElec').addEventListener('click', ()=>{
   stdElec=!stdElec; applyElec(stdElec);
 });
 // ---- per-part fine-adjust: translate + rotate the chosen part about its pivot ----
 // DEF = the alignment the owner dialled in; it is applied at load and is the
 // "reset" target, so the nose is correctly seated out of the box.
-{ const DEF = { camera:         {x:0, y:0,   z:-6,   rx:27, ry:0, rz:0},
+// The camera + mounts keep their dialled-in seating (applied at load, not
+// user-editable here anymore); the panel now drives the antennas one-by-one.
+{ const DEF = { camera:         {x:0, y:-5,  z:-6,   rx:27, ry:0, rz:0},
                 cammount_top:   {x:0, y:-2,  z:-1,   rx:-6, ry:0, rz:0},
-                cammount_bottom:{x:0, y:4.5, z:-1.5, rx:-5, ry:0, rz:0} };
+                cammount_bottom:{x:0, y:4.5, z:-1.5, rx:-5, ry:0, rz:0},
+                vtx_dji:        {x:0, y:-29,   z:48.5, rx:-147, ry:0, rz:0},
+                vtx_rhcp:       {x:0, y:0,     z:0,    rx:28,   ry:0, rz:0},
+                vtx_foxeer:     {x:0, y:0,     z:0,    rx:28,   ry:0, rz:0},
+                vtx_matchstick: {x:0, y:0,   z:0,    rx:28, ry:0, rz:0},
+                vtx_microlp:    {x:0, y:0,   z:0,    rx:28, ry:0, rz:0},
+                rxant:          {x:0, y:0,   z:0,    rx:87, ry:0, rz:0},
+                gasket:         {x:0, y:-1,  z:1,    rx:-27, ry:0, rz:0, s:100},
+                bezel:          {x:0, y:0,   z:0,    rx:0,  ry:0, rz:0, s:100} };
   const cp = o => Object.assign({}, o);
-  const off = { camera:cp(DEF.camera), cammount_top:cp(DEF.cammount_top),
-                cammount_bottom:cp(DEF.cammount_bottom) };
+  const off = {}; for (const k in DEF) off[k] = cp(DEF[k]);
+  const SEAT = ['camera','cammount_top','cammount_bottom'];   // applied, not in the dropdown
   const el = id => document.getElementById(id);
   const D = Math.PI/180;
   const applyTarget = (t)=>{ const o=off[t]; const g=G[t];
     if (g){ const b = g.userData.base || new THREE.Vector3();
       g.position.set(b.x + o.x/1000, b.y + o.y/1000, b.z + o.z/1000);
       g.rotation.set(o.rx*D, o.ry*D, o.rz*D);
+      g.scale.setScalar((o.s==null?100:o.s)/100);      // size slider
       g.userData.home = g.position.clone(); } };
   const applyCam = ()=>{
     const t = el('camTarget').value; const o = off[t]; applyTarget(t);
+    const s = (o.s==null?100:o.s);
     el('camXV').textContent = o.x.toFixed(1)+' mm';
     el('camYV').textContent = o.y.toFixed(1)+' mm';
     el('camZV').textContent = o.z.toFixed(1)+' mm';
     el('camRXV').textContent = o.rx+'°';
     el('camRYV').textContent = o.ry+'°';
     el('camRZV').textContent = o.rz+'°';
+    el('camSV').textContent = s+'%';
     el('camDelta').textContent = t+' : X '+o.x+' · Y '+o.y+' · Z '+o.z
-      +' · RX '+o.rx+' · RY '+o.ry+' · RZ '+o.rz;
+      +' · RX '+o.rx+' · RY '+o.ry+' · RZ '+o.rz+' · S '+s;
   };
   const bind = (id, k)=> el(id).addEventListener('input', e=>{
     off[el('camTarget').value][k] = +e.target.value; applyCam(); });
   bind('camX','x'); bind('camY','y'); bind('camZ','z');
-  bind('camRX','rx'); bind('camRY','ry'); bind('camRZ','rz');
+  bind('camRX','rx'); bind('camRY','ry'); bind('camRZ','rz'); bind('camS','s');
   const sync = ()=>{ const o=off[el('camTarget').value];
     el('camX').value=o.x; el('camY').value=o.y; el('camZ').value=o.z;
-    el('camRX').value=o.rx; el('camRY').value=o.ry; el('camRZ').value=o.rz; applyCam(); };
-  el('camTarget').addEventListener('change', sync);
+    el('camRX').value=o.rx; el('camRY').value=o.ry; el('camRZ').value=o.rz;
+    el('camS').value=(o.s==null?100:o.s); applyCam(); };
+  // changing the fine-adjust target also DISPLAYS that antenna (VTX targets),
+  // so you always see the one your sliders are moving.
+  const onPick = ()=>{ const t = el('camTarget').value;
+    if (t.indexOf('vtx_')===0 && typeof showVtxModel==='function') showVtxModel(t.slice(4));
+    sync(); };
+  el('camTarget').addEventListener('change', onPick);
+  // let the model dropdown drive this panel too (see vtxSel handler above)
+  window.__pickAntenna = (t)=>{ const s=el('camTarget'); if(s){ s.value=t; sync(); } };
   el('camReset').addEventListener('click', ()=>{ off[el('camTarget').value]=cp(DEF[el('camTarget').value]); sync(); });
-  ['camera','cammount_top','cammount_bottom'].forEach(applyTarget);   // apply at load
-  sync();                                                             // reflect in UI
+  Object.keys(DEF).forEach(applyTarget);   // seat camera/mounts + tilt every antenna at load
+  sync();                                  // reflect the current dropdown target in the UI
 }
 let spinRate=0.4*60;                       // hélices en rotation par défaut
 document.getElementById('spinV').textContent='40%';
@@ -1082,8 +1367,11 @@ startLoop();
 def main():
     specs = "".join(f'<tr><td>{k}</td><td class="v">{v}</td></tr>'
                     for k, v in MODEL["specs"])
+    import datetime
+    build = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
     html = (TEMPLATE
             .replace("__IMPORTMAP__", importmap())
+            .replace("__BUILD__", build)
             .replace("__NAME__", MODEL["name"])
             .replace("__SUB__", MODEL["sub"])
             .replace("__SPECS__", specs)
@@ -1124,6 +1412,7 @@ def main():
                 "rx_holder": b64(os.path.join(STL, "rx_holder.stl")),
                 "rx_ant_tpu": b64(os.path.join(STL, "rx_ant_tpu.stl")),
                 "dji_pro_ant": b64(os.path.join(STL, "dji_pro_ant.stl")),
+                "matchstick": b64(os.path.join(STL, "ant_singularity.stl")),
                 "rhcp_lp": b64(os.path.join(STL, "rhcp_lp.stl")),
                 "foxeer_lp": b64(os.path.join(STL, "foxeer_lp.stl")),
                 "rear_bay": b64(os.path.join(STL, "rear_bay.stl")),
