@@ -152,6 +152,7 @@ TEMPLATE = r"""<!DOCTYPE html>
     <header>
       <h1><b>__NAME__</b>-001 — 3D</h1>
       <p>__SUB__ · open source</p>
+      <p style="margin-top:4px;font-size:11px;color:#5db0ff">build __BUILD__ · panneau « Réglage antennes »</p>
     </header>
     <div class="sec">
       <h2>Vues</h2>
@@ -1109,8 +1110,11 @@ startLoop();
 def main():
     specs = "".join(f'<tr><td>{k}</td><td class="v">{v}</td></tr>'
                     for k, v in MODEL["specs"])
+    import datetime
+    build = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
     html = (TEMPLATE
             .replace("__IMPORTMAP__", importmap())
+            .replace("__BUILD__", build)
             .replace("__NAME__", MODEL["name"])
             .replace("__SUB__", MODEL["sub"])
             .replace("__SPECS__", specs)
