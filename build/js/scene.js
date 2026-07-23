@@ -1,56 +1,43 @@
 /* =====================================================
    STRATOS DRONES
    TinyHoop MK1 BUILDER
-   Three.js Scene Engine
+   SCENE ENGINE
 ===================================================== */
 
 
-let scene;
-let camera;
-let renderer;
-let controls;
+var scene;
 
-let droneRoot;
+var camera;
 
-let workshopObjects = [];
+var renderer;
 
+var controls;
 
-
+var droneRoot;
 
 
-/* =====================================================
-                INITIALISATION SCENE
-===================================================== */
+
 
 
 function initScene(){
 
 
-
-    const canvas =
-    document.getElementById(
-        "droneCanvas"
+    console.log(
+        "Creating 3D scene"
     );
 
 
 
-    scene =
-    new THREE.Scene();
-
+    scene = new THREE.Scene();
 
 
     scene.background =
     new THREE.Color(
-        0x101214
+        0x111111
     );
 
 
 
-
-
-    /*
-        CAMERA
-    */
 
 
     camera =
@@ -72,8 +59,10 @@ function initScene(){
     camera.position.set(
 
         0,
-        120,
-        220
+
+        250,
+
+        350
 
     );
 
@@ -81,9 +70,13 @@ function initScene(){
 
 
 
-    /*
-        RENDERER
-    */
+
+
+    var canvas =
+    document.getElementById(
+        "droneCanvas"
+    );
+
 
 
     renderer =
@@ -97,17 +90,19 @@ function initScene(){
 
 
 
-    renderer.setPixelRatio(
-        window.devicePixelRatio
-    );
-
-
-
     renderer.setSize(
 
         window.innerWidth,
 
         window.innerHeight
+
+    );
+
+
+
+    renderer.setPixelRatio(
+
+        window.devicePixelRatio
 
     );
 
@@ -119,79 +114,95 @@ function initScene(){
 
 
 
-    /*
-        CAMERA CONTROLS
-    */
-
-
-    controls =
-    new THREE.OrbitControls(
-
-        camera,
-
-        renderer.domElement
-
-    );
-
-
-    controls.target.set(
-
-        0,
-        0,
-        0
-
-    );
-
-
-    controls.update();
-
-
-
 
 
     /*
-        LIGHTING
+       Orbit Controls
     */
+
+
+    if(THREE.OrbitControls)
+
+    {
+
+
+        controls =
+        new THREE.OrbitControls(
+
+            camera,
+
+            renderer.domElement
+
+        );
+
+
+        controls.enableDamping=true;
+
+
+        controls.target.set(
+
+            0,
+
+            0,
+
+            0
+
+        );
+
+
+        controls.update();
+
+
+    }
+
+    else
+
+    {
+
+        console.error(
+
+            "OrbitControls missing"
+
+        );
+
+    }
+
+
+
+
+
 
 
     createLights();
 
 
 
-
-    /*
-        WORKSHOP
-    */
-
-
-    createEngineerMat();
-
-
-
-    createGrid();
-
-
-
-
-
-    /*
-        EMPTY DRONE ROOT
-
-    */
-
-
     droneRoot =
     new THREE.Group();
 
 
+
     droneRoot.name =
-    "TinyHoop_ROOT";
+    "TinyHoop_MK1";
+
 
 
     scene.add(
+
         droneRoot
+
     );
 
+
+
+
+
+    createFloor();
+
+
+
+
+    animate();
 
 
 
@@ -206,12 +217,6 @@ function initScene(){
 
 
 
-
-
-    animate();
-
-
-
 }
 
 
@@ -221,21 +226,17 @@ function initScene(){
 
 
 
-/* =====================================================
-                 LIGHTS
-===================================================== */
-
 
 function createLights(){
 
 
 
-    const ambient =
+    var ambient =
     new THREE.AmbientLight(
 
         0xffffff,
 
-        0.6
+        1.5
 
     );
 
@@ -247,59 +248,39 @@ function createLights(){
 
 
 
-    const mainLight =
+
+    var light =
     new THREE.DirectionalLight(
 
         0xffffff,
 
-        1
-
-    );
-
-
-    mainLight.position.set(
-
-        80,
-        150,
-        100
+        2
 
     );
 
 
 
-    mainLight.castShadow=true;
+    light.position.set(
+
+        200,
+
+        400,
+
+        200
+
+    );
+
+
+
+    light.castShadow=true;
+
 
 
     scene.add(
-        mainLight
-    );
 
-
-
-
-
-    const fill =
-    new THREE.PointLight(
-
-        0x00aaff,
-
-        0.5,
-
-        300
+        light
 
     );
-
-
-    fill.position.set(
-
-        -80,
-        80,
-        -100
-
-    );
-
-
-    scene.add(fill);
 
 
 
@@ -311,40 +292,36 @@ function createLights(){
 
 
 
-/* =====================================================
-              ENGINEER BUILD MAT
-===================================================== */
 
 
-function createEngineerMat(){
+function createFloor(){
 
 
 
-    const geometry =
+    var geometry =
     new THREE.PlaneGeometry(
 
-        600,
+        1000,
 
-        400
+        1000
 
     );
 
 
 
-    const material =
+    var material =
     new THREE.MeshStandardMaterial({
 
         color:
-        0x202020,
-
-        roughness:
-        0.8
+        0x181818
 
     });
 
 
 
-    const mat =
+
+
+    var floor =
     new THREE.Mesh(
 
         geometry,
@@ -355,70 +332,24 @@ function createEngineerMat(){
 
 
 
-    mat.rotation.x =
+    floor.rotation.x =
     -Math.PI/2;
 
 
 
-    mat.position.y =
-    -5;
+    floor.position.y =
+    -10;
 
 
 
-    mat.receiveShadow=true;
+    scene.add(
 
-
-
-    scene.add(mat);
-
-
-
-    workshopObjects.push(mat);
-
-
-
-}
-
-
-
-
-
-
-
-
-/* =====================================================
-                  GRID
-===================================================== */
-
-
-function createGrid(){
-
-
-
-    const grid =
-    new THREE.GridHelper(
-
-        600,
-
-        60,
-
-        0x555555,
-
-        0x222222
+        floor
 
     );
 
 
 
-    grid.position.y =
-    -4.9;
-
-
-
-    scene.add(grid);
-
-
-
 }
 
 
@@ -429,91 +360,33 @@ function createGrid(){
 
 
 
-/* =====================================================
-             LOAD DRONE MODEL
-===================================================== */
-
-
-function loadDroneModel(){
+function animate(){
 
 
 
-    if(!THREE.GLTFLoader)
+    requestAnimationFrame(
+
+        animate
+
+    );
+
+
+
+    if(controls)
+
     {
 
-        console.warn(
-            "GLTF Loader missing"
-        );
-
-        return;
+        controls.update();
 
     }
 
 
 
+    renderer.render(
 
-    const loader =
-    new THREE.GLTFLoader();
+        scene,
 
-
-
-    loader.load(
-
-        STRATOS_CONFIG.modelPath,
-
-
-        function(gltf){
-
-
-
-            droneRoot.add(
-
-                gltf.scene
-
-            );
-
-
-
-            gltf.scene.scale.set(
-
-                1,
-                1,
-                1
-
-            );
-
-
-
-            console.log(
-
-            "Drone model loaded"
-
-            );
-
-
-        },
-
-
-
-        undefined,
-
-
-
-        function(error){
-
-
-            console.warn(
-
-            "Model not found yet",
-
-            error
-
-            );
-
-
-        }
-
-
+        camera
 
     );
 
@@ -527,11 +400,6 @@ function loadDroneModel(){
 
 
 
-
-
-/* =====================================================
-               WINDOW RESIZE
-===================================================== */
 
 
 function resizeScene(){
@@ -539,6 +407,7 @@ function resizeScene(){
 
 
     camera.aspect =
+
     window.innerWidth /
     window.innerHeight;
 
@@ -566,30 +435,19 @@ function resizeScene(){
 
 
 
-/* =====================================================
-                RENDER LOOP
-===================================================== */
+
+function loadDroneModel(){
 
 
-function animate(){
+    console.log(
 
-
-    requestAnimationFrame(
-        animate
-    );
-
-
-
-    renderer.render(
-
-        scene,
-
-        camera
+        "No GLB loaded yet"
 
     );
 
 
 }
+
 
 
 
