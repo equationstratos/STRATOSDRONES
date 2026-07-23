@@ -466,24 +466,28 @@ for (const [x,y] of M.standoffs.board){ const s=mesh(STLB64.standoff, 0xc2c5cb,.
   s.position.set(x/1000, y/1000, 0.003); s.scale.set(0.001,0.001,0.001*3/14); gStand.add(s); }
 const gCage = group('camcage'); { const m=carbonMesh(STLB64.camcage, CARBON);
   m.position.z=M.frame_z; gCage.add(m); }
-// ---- realistic FPV lens assembly (shared): black barrel + knurled metallic
-// retaining ring + AR-coated glossy glass dome (the reddish sheen of real
-// nano-cam glass). Lens axis = +Y (nose); centred at the group origin. ----
+// ---- realistic FPV lens assembly (shared): a Flywoo-Wylde-style M12 THREADED
+// BARREL with a CONVEX AR-coated dome (as on a DJI O4 with an aftermarket lens).
+// Lens axis = +Y (nose); the barrel base (y<0) plugs into the camera body. ----
 function buildLens(){
   const grp=new THREE.Group();
-  const blk=new THREE.MeshStandardMaterial({color:0x090909, metalness:.35, roughness:.5});
-  const barrel=new THREE.Mesh(new THREE.CylinderGeometry(0.0053,0.0056,0.0075,40), blk);
-  barrel.position.y=-0.0022; grp.add(barrel);                 // cylinder axis = Y
-  const bez=new THREE.Mesh(new THREE.CylinderGeometry(0.0050,0.0052,0.0018,40), blk);
-  bez.position.y=0.0013; grp.add(bez);                        // front bezel face
-  const ring=new THREE.Mesh(new THREE.TorusGeometry(0.0052,0.00095,20,48),
-    new THREE.MeshStandardMaterial({color:0x9aa1a9, metalness:.95, roughness:.26}));
-  ring.rotation.x=Math.PI/2; ring.position.y=0.0018; grp.add(ring);   // knurled metal ring
-  const glass=new THREE.Mesh(new THREE.SphereGeometry(0.0040,40,26,0,Math.PI*2,0,Math.PI*0.5),
-    new THREE.MeshPhysicalMaterial({color:0x08080e, metalness:.1, roughness:.04,
+  const blk=new THREE.MeshStandardMaterial({color:0x0c0c0f, metalness:.4, roughness:.42});
+  // main threaded barrel (M12) protruding forward
+  const barrel=new THREE.Mesh(new THREE.CylinderGeometry(0.0056,0.0059,0.0110,48), blk);
+  barrel.position.y=-0.0030; grp.add(barrel);
+  const thr=new THREE.MeshStandardMaterial({color:0x18181b, metalness:.45, roughness:.5});
+  for(let i=0;i<7;i++){ const gr=new THREE.Mesh(new THREE.TorusGeometry(0.00585,0.00042,10,48), thr);
+    gr.rotation.x=Math.PI/2; gr.position.y=-0.0078+i*0.0015; grp.add(gr); }   // thread grooves
+  // dark metallic front rim holding the glass
+  const rim=new THREE.Mesh(new THREE.CylinderGeometry(0.0061,0.0059,0.0020,48),
+    new THREE.MeshStandardMaterial({color:0x2b2e33, metalness:.75, roughness:.32}));
+  rim.position.y=0.0026; grp.add(rim);
+  // CONVEX domed glass (fisheye), AR-coated with iridescent sheen
+  const glass=new THREE.Mesh(new THREE.SphereGeometry(0.0052,48,30,0,Math.PI*2,0,Math.PI*0.46),
+    new THREE.MeshPhysicalMaterial({color:0x0a0a12, metalness:.15, roughness:.03,
       clearcoat:1, clearcoatRoughness:.03, iridescence:1, iridescenceIOR:1.9,
-      iridescenceThicknessRange:[130,400]}));                 // AR coating shimmer
-  glass.position.y=0.0018; grp.add(glass);                    // AR-coated dome, opens +Y
+      iridescenceThicknessRange:[130,420]}));
+  glass.scale.set(1,0.6,1); glass.position.y=0.0030; grp.add(glass);          // shallow convex dome
   return grp;
 }
 // procedural NANO analog camera body (à la Caddx/RunCam nano) — a small dark
@@ -513,9 +517,9 @@ const gCam = (()=>{ const g = group('camera');
   nanoG.visible=false; camModels.nano=nanoG; g.add(nanoG);
   // shared realistic lens at the lens centre (in front of whichever body)
   const lens=buildLens(); lens.position.set(0, 11.4/1000, -1/1000); g.add(lens);
-  // THIN rubber gasket — a slim flat contour ring around the lens (no beignet),
-  // tight against the camera; adjustable (own group 'gasket').
-  const gInner=0.0068, gOuter=0.0082, gThick=0.0008;
+  // SLIM O-ring seal — a fine rubber ring hugging the barrel (consolidates &
+  // seals, not bulky); adjustable (own group 'gasket').
+  const gInner=0.0060, gOuter=0.0067, gThick=0.0006;
   const shp=new THREE.Shape(); shp.absarc(0,0,gOuter,0,Math.PI*2,false);
   const gh=new THREE.Path(); gh.absarc(0,0,gInner,0,Math.PI*2,true); shp.holes.push(gh);
   const rub=new THREE.Mesh(new THREE.ExtrudeGeometry(shp,{depth:gThick,bevelEnabled:true,
@@ -523,20 +527,27 @@ const gCam = (()=>{ const g = group('camera');
     new THREE.MeshStandardMaterial({color:0x0b0b0d, metalness:0.0, roughness:0.97}));
   rub.rotation.x = -Math.PI/2;
   const gsk = new THREE.Group();
-  gsk.add(rub); gsk.position.set(0, 11.4/1000, -1/1000);
+  gsk.add(rub); gsk.position.set(0, 10.6/1000, -1/1000);
   gsk.userData.base = gsk.position.clone(); G['gasket'] = gsk; g.add(gsk);
-  // CLOSED TPU collar ring — completely encircles the camera front with NO gaps
-  // (so debris/dirt can't get in on a crash). Hugs just outside the thin joint
-  // and reaches the mount. Adjustable (own group 'bezel': position + size).
-  const bInner=0.0082, bOuter=0.0122, bDepth=0.0030;
-  const bsh=new THREE.Shape(); bsh.absarc(0,0,bOuter,0,Math.PI*2,false);
-  const bhl=new THREE.Path(); bhl.absarc(0,0,bInner,0,Math.PI*2,true); bsh.holes.push(bhl);
-  const bezM=new THREE.Mesh(new THREE.ExtrudeGeometry(bsh,{depth:bDepth,bevelEnabled:true,
-    bevelThickness:0.0004,bevelSize:0.0004,bevelSegments:2,curveSegments:72}),
+  // TPU CRADLE — Flywoo-Wylde "D" front plate: a chunky TPU plate with a round
+  // lens bore (barrel passes through, no gaps) and two angular top horns, exactly
+  // like the printed mount. Adjustable ('bezel': position + size).
+  const mm=v=>v/1000, P=new THREE.Shape();
+  P.moveTo(mm(-11.5), mm(-10.5));
+  P.lineTo(mm(-11.5), mm(5.5));
+  P.lineTo(mm(-7.5),  mm(11.5));            // left horn
+  P.lineTo(mm(0),     mm(5.5));             // central valley
+  P.lineTo(mm(7.5),   mm(11.5));            // right horn
+  P.lineTo(mm(11.5),  mm(5.5));
+  P.lineTo(mm(11.5),  mm(-10.5));
+  P.closePath();
+  const bore=new THREE.Path(); bore.absarc(0,0, mm(6.3), 0, Math.PI*2, true); P.holes.push(bore);
+  const bezM=new THREE.Mesh(new THREE.ExtrudeGeometry(P,{depth:mm(5),bevelEnabled:true,
+    bevelThickness:mm(0.5), bevelSize:mm(0.5), bevelSegments:2, curveSegments:56}),
     new THREE.MeshStandardMaterial({color:0x24272d, metalness:0.04, roughness:0.86}));
-  bezM.rotation.x = -Math.PI/2;
+  bezM.rotation.x = -Math.PI/2;                 // plate faces the nose (+Y)
   const bez = new THREE.Group();
-  bez.add(bezM); bez.position.set(0, 10.4/1000, -1/1000);
+  bez.add(bezM); bez.position.set(0, 7.5/1000, -1/1000);   // bore around the barrel
   bez.userData.base = bez.position.clone(); G['bezel'] = bez; g.add(bez);
   return g; })();
 // DJI O4 Lite air unit (VTX) — stacked ABOVE the FC on soft-mount grommets,
@@ -837,7 +848,7 @@ document.getElementById('bElec').addEventListener('click', ()=>{
                 vtx_matchstick: {x:0, y:0,   z:0,    rx:28, ry:0, rz:0},
                 vtx_microlp:    {x:0, y:0,   z:0,    rx:28, ry:0, rz:0},
                 rxant:          {x:0, y:0,   z:0,    rx:87, ry:0, rz:0},
-                gasket:         {x:0, y:-1,  z:1,    rx:0,  ry:0, rz:0, s:85},
+                gasket:         {x:0, y:-1,  z:1,    rx:0,  ry:0, rz:0, s:100},
                 bezel:          {x:0, y:0,   z:0,    rx:0,  ry:0, rz:0, s:100} };
   const cp = o => Object.assign({}, o);
   const off = {}; for (const k in DEF) off[k] = cp(DEF[k]);
