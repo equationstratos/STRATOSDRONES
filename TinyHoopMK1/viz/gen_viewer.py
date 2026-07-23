@@ -37,7 +37,7 @@ MODEL = dict(name="FR4N10", sub="FPV programmable / essaim · 2,5\" · 2S-3S", w
              elec=dict(board=[0,0,4], battery=[0,4,24],
                        o4cam=[0,42,10], o4airunit=[0,0,10],
                        vtxant=[0,-30,7], rearbay=[0,-32,3], rxant=[0,-33,6],
-                       cap=[12,-22,4], buzzer=[11,-31,6], gps=[-9,-16,20.8],
+                       cap=[17,-24,9], buzzer=[11,-31,6], gps=[-4,-15,19],
                        rx=[0,-22,4], xt30=[0,-25,11], grommet=[0,0,11]),
              standoffs=dict(frame=_FRAME_STAND, board=_BOARD_STAND),
              # ALL screws: 16 motor-mount + 3 frame-standoff tops + 4 board tops
@@ -720,9 +720,9 @@ gRx.add(place(STLB64.rx_pcb, 0x0f3d0f, .2, .5,
   for (const s of [-1,1]){ const cup=new THREE.Mesh(new THREE.CylinderGeometry(0.0012,0.0012,0.0042,16),
       new THREE.MeshStandardMaterial({color:0xcaa63a, metalness:.9, roughness:.25}));
     cup.rotation.x=Math.PI/2; cup.position.set((xt[0]+s*2.2)/1000,(xt[1]-4.4)/1000,xt[2]/1000); gBatt.add(cup); }
-  // main power pair: pack rear -> XT30
-  gBatt.add(lead([ 2.4, root[1], root[2]], [xt[0]+2.2, xt[1]+3, xt[2]+1], 1.3, RED, 2));
-  gBatt.add(lead([-2.4, root[1], root[2]], [xt[0]-2.2, xt[1]+3, xt[2]+1], 1.3, BLK, 2));
+  // main power pair: pack rear -> down through the plate -> XT30, with slack
+  gBatt.add(lead([ 2.4, root[1], root[2]], [xt[0]+2.2, xt[1]+2, xt[2]+1], 1.3, RED, 5));
+  gBatt.add(lead([-2.4, root[1], root[2]], [xt[0]-2.2, xt[1]+2, xt[2]+1], 1.3, BLK, 5));
   // white JST-XH balance plug (3S = 4-pin) + 4 thin balance wires
   const bal=new THREE.Mesh(new THREE.BoxGeometry(0.0075,0.0032,0.0040),
     new THREE.MeshStandardMaterial({color:0xededf0, metalness:.0, roughness:.7}));
@@ -731,12 +731,30 @@ gRx.add(place(STLB64.rx_pcb, 0x0f3d0f, .2, .5,
   for (let i=0;i<4;i++) gBatt.add(lead([3.2, root[1], root[2]],
     [4.7+i*1.2, bt[1]-23, bt[2]+3], 0.42, bcol[i], 1.2+i*0.3));
 }
-// motor phase cables — their OWN toggle group ('cables')
+// motor phase cables — their OWN toggle group ('cables'): 3 phase wires per
+// motor routed along the arm to the FC, each arm capped by a TPU guard so the
+// prop can't slice them.
 const gCbl = group('cables');
-for (const [mx, my] of M.motors){                                  // 4 phase cables
-  const c = mesh(STLB64.cable, 0x2a2c30, .2, .6);
-  c.position.set(mx/1000, my/1000, M.frame_z + 0.004);
-  c.scale.set(mx<0?-0.001:0.001, my<0?-0.001:0.001, 0.001); gCbl.add(c); }
+{ const armTube=(p0,p1,r,col)=>{
+    const c=new THREE.CatmullRomCurve3([new THREE.Vector3(p0[0]/1000,p0[1]/1000,p0[2]/1000),
+      new THREE.Vector3((p0[0]+p1[0])/2000,(p0[1]+p1[1])/2000,((p0[2]+p1[2])/2+0.8)/1000),
+      new THREE.Vector3(p1[0]/1000,p1[1]/1000,p1[2]/1000)]);
+    return new THREE.Mesh(new THREE.TubeGeometry(c,20,r/1000,8,false),
+      new THREE.MeshStandardMaterial({color:col,metalness:.12,roughness:.5})); };
+  for (const [mx,my] of M.motors){
+    const L=Math.hypot(mx,my), px=-my/L, py=mx/L;            // perp to the arm
+    const mb=[mx-mx/L*7, my-my/L*7, 5];                      // just inboard of the bell
+    const fc=[mx*0.30, my*0.30, 6];                          // FC solder pads
+    for (let i=-1;i<=1;i++){                                 // 3 phase wires
+      const s=[mb[0]+px*i*1.4, mb[1]+py*i*1.4, mb[2]];
+      const e=[fc[0]+px*i*1.4, fc[1]+py*i*1.4, fc[2]];
+      gCbl.add(armTube(s,e,0.65, 0x17181b)); }
+    const gx=mx*0.62, gy=my*0.62;                            // TPU cable guard, mid-arm
+    const guard=new THREE.Mesh(new THREE.BoxGeometry(0.0075,0.0052,0.0034),
+      new THREE.MeshStandardMaterial({color:0x2b2f36,metalness:.05,roughness:.85}));
+    guard.position.set(gx/1000, gy/1000, 6.2/1000); guard.rotation.z=Math.atan2(my,mx);
+    gCbl.add(guard); }
+}
 
 // ---- part toggles + per-part colour pickers ----
 const GROUPS = {
