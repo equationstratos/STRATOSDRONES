@@ -431,7 +431,7 @@ function carbonMesh(b64, color){
 // ---- the drone: ONE group whose origin is the ground under its centre ----
 // (the playground moves/clones this group; feet touch z=0)
 const frameRoot = new THREE.Group(); scene.add(frameRoot);
-const G = {};
+const G = {}; try { window.G = G; window.THREE = THREE; } catch(_){}   // exposed for measurement/debug
 function group(name){ const g = new THREE.Group(); G[name]=g; frameRoot.add(g); return g; }
 // a group whose ORIGIN is a chosen pivot (mm) so sliders can translate AND
 // rotate the part about its own centre; the mesh is re-offset to stay in place.
@@ -530,8 +530,9 @@ const gCam = (()=>{ const g = group('camera');
   gsk.add(rub); gsk.position.set(0, 10.6/1000, -1/1000);
   gsk.userData.base = gsk.position.clone(); G['gasket'] = gsk; g.add(gsk);
   // TPU CRADLE — a slim closed tube that just WRAPS the lens barrel (compact,
-  // like the printed Flywoo-Wylde mount), no extra bulk. Adjustable ('bezel').
-  const bInner=0.0063, bOuter=0.0090, bDepth=0.0090;
+  // like the printed Flywoo-Wylde mount); sized to stay INSIDE the carbon cage
+  // (no side overhang). Adjustable ('bezel').
+  const bInner=0.0063, bOuter=0.0078, bDepth=0.0090;
   const bsh=new THREE.Shape(); bsh.absarc(0,0,bOuter,0,Math.PI*2,false);
   const bhl=new THREE.Path(); bhl.absarc(0,0,bInner,0,Math.PI*2,true); bsh.holes.push(bhl);
   const bezM=new THREE.Mesh(new THREE.ExtrudeGeometry(bsh,{depth:bDepth,bevelEnabled:true,
@@ -831,7 +832,7 @@ document.getElementById('bElec').addEventListener('click', ()=>{
 // "reset" target, so the nose is correctly seated out of the box.
 // The camera + mounts keep their dialled-in seating (applied at load, not
 // user-editable here anymore); the panel now drives the antennas one-by-one.
-{ const DEF = { camera:         {x:0, y:0,   z:-6,   rx:27, ry:0, rz:0},
+{ const DEF = { camera:         {x:0, y:-3,  z:-6,   rx:27, ry:0, rz:0},
                 cammount_top:   {x:0, y:-2,  z:-1,   rx:-6, ry:0, rz:0},
                 cammount_bottom:{x:0, y:4.5, z:-1.5, rx:-5, ry:0, rz:0},
                 vtx_dji:        {x:0, y:-29,   z:48.5, rx:-147, ry:0, rz:0},
