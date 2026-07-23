@@ -1,178 +1,233 @@
 <!DOCTYPE html>
 <html lang="fr">
+
 <head>
+
 <meta charset="UTF-8">
-<title>STRATOS DRONES - TinyHoop MK1 Builder</title>
+
+<title>
+STRATOS DRONES - TinyHoop MK1 Builder
+</title>
+
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+
 <link rel="stylesheet" href="css/build.css">
+
+
+<style>
+
+html,body{
+
+    margin:0;
+    padding:0;
+    width:100%;
+    height:100%;
+    overflow:hidden;
+    background:#111;
+
+}
+
+
+#droneCanvas{
+
+    position:absolute;
+    width:100%;
+    height:100%;
+    display:block;
+
+}
+
+
+#app{
+
+    width:100%;
+    height:100%;
+}
+
+
+
+</style>
+
 
 </head>
 
+
+
+
+
 <body>
 
-<!-- ===========================
-     STRATOS BUILDER INTERFACE
-=========================== -->
 
 <div id="app">
 
 
-<!-- TOP BAR -->
 
-<header id="topbar">
+<!-- =================================================
+                THREE CANVAS
+================================================= -->
 
-    <div class="logo">
-        STRATOS DRONES
-        <span>TinyHoop MK1 BUILDER</span>
-    </div>
-
-
-    <div class="actions">
-
-        <button id="buildButton">
-            BUILD
-        </button>
-
-        <button id="resetButton">
-            RESET
-        </button>
-
-        <button id="testButton">
-            TEST DRONE
-        </button>
-
-    </div>
-
-</header>
-
-
-
-<!-- THREE JS VIEW -->
 
 <canvas id="droneCanvas"></canvas>
 
 
 
-<!-- LEFT INVENTORY -->
+
+
+
+<!-- =================================================
+                TOP BAR
+================================================= -->
+
+
+<header id="topbar">
+
+
+<div class="logo">
+
+STRATOS DRONES
+
+<br>
+
+<span>
+TinyHoop MK1 BUILDER
+</span>
+
+</div>
+
+
+
+
+<div class="actions">
+
+
+<button id="buildButton">
+
+BUILD
+
+</button>
+
+
+<button id="resetButton">
+
+RESET
+
+</button>
+
+
+<button id="testButton">
+
+TEST DRONE
+
+</button>
+
+
+</div>
+
+
+
+</header>
+
+
+
+
+
+
+
+
+<!-- =================================================
+                INVENTORY
+================================================= -->
+
 
 <section id="inventory">
 
 
-<h2>PARTS</h2>
-
-
-<div class="category">
-
-<h3>FRAME</h3>
-
-<div class="part"
-data-part="frame">
-
-Frame
-
-</div>
-
-</div>
+<h2>
+PARTS
+</h2>
 
 
 
 <div class="category">
 
-<h3>ELECTRONICS</h3>
+<h3>
+FRAME
+</h3>
 
-<div class="part"
-data-part="fc">
 
+<div class="part">
+Carbon Frame
+</div>
+
+
+</div>
+
+
+
+
+
+
+<div class="category">
+
+<h3>
+ELECTRONICS
+</h3>
+
+
+<div class="part">
 Flight Controller
-
 </div>
 
 
-<div class="part"
-data-part="esc">
-
+<div class="part">
 ESC
-
 </div>
 
 
-<div class="part"
-data-part="vtx">
-
+<div class="part">
 VTX
-
 </div>
 
 
-<div class="part"
-data-part="rx">
-
+<div class="part">
 ELRS RX
-
 </div>
 
 
-<div class="part"
-data-part="gps">
-
+<div class="part">
 GPS
-
-</div>
-
-
-<div class="part"
-data-part="buzzer">
-
-Buzzer
-
-</div>
-
-
-<div class="part"
-data-part="capacitor">
-
-Capacitor
-
 </div>
 
 
 </div>
+
+
 
 
 
 
 <div class="category">
 
-<h3>MECHANICAL</h3>
+
+<h3>
+HARDWARE
+</h3>
 
 
-<div class="part"
-data-part="motor">
-
+<div class="part">
 Motors
-
 </div>
 
 
-<div class="part"
-data-part="prop">
-
-Propellers
-
-</div>
-
-
-<div class="part"
-data-part="battery">
-
+<div class="part">
 Battery
-
 </div>
 
 
 </div>
+
 
 
 </section>
@@ -180,31 +235,46 @@ Battery
 
 
 
-<!-- BUILD STATUS -->
+
+
+
+
+
+<!-- =================================================
+                 STATUS
+================================================= -->
+
 
 <section id="status">
 
 
 <div id="stepTitle">
 
-READY
+STARTING
 
 </div>
+
 
 
 <div id="stepDescription">
 
-Press BUILD to start assembly
+Loading simulator...
 
 </div>
+
 
 
 
 <div id="progressBar">
 
-<div id="progress"></div>
+
+<div id="progress">
 
 </div>
+
+
+</div>
+
 
 
 </section>
@@ -213,18 +283,30 @@ Press BUILD to start assembly
 
 
 
-<!-- SOLDER WINDOW -->
 
-<section id="solderMode">
+
+
+
+<!-- =================================================
+              SOLDER WINDOW
+================================================= -->
+
+
+<section id="solderMode" style="display:none;">
 
 
 <div class="solderHeader">
 
-SOLDERING MODE
+
+SOLDER MODE
+
 
 <button id="exitSolder">
+
 EXIT
+
 </button>
+
 
 </div>
 
@@ -238,9 +320,10 @@ EXIT
 
 <div id="connectionInfo">
 
-Select two pads to create a wire
+Connect electronic pads
 
 </div>
+
 
 
 </section>
@@ -249,13 +332,22 @@ Select two pads to create a wire
 
 
 
-<!-- TEST RESULT -->
 
-<section id="testPanel">
+
+
+
+<!-- =================================================
+                TEST WINDOW
+================================================= -->
+
+
+<section id="testPanel" style="display:none;">
 
 
 <h2>
+
 DRONE TEST
+
 </h2>
 
 
@@ -277,54 +369,94 @@ CLOSE
 
 
 
+
+
+
+
+
 <!-- SMOKE EFFECT -->
 
-<div id="smoke">
+
+<div id="smoke" style="display:none;">
 
 </div>
 
 
 
+
+
 </div>
 
 
 
 
-<!-- LIBRARIES -->
-
-<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
-
-<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/examples/js/loaders/GLTFLoader.js"></script>
-
-<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/examples/js/controls/OrbitControls.js"></script>
 
 
 
-<!-- STRATOS ENGINE -->
+
+
+<!-- =================================================
+                THREE JS
+================================================= -->
+
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.149.0/build/three.min.js"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.149.0/examples/js/controls/OrbitControls.js"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.149.0/examples/js/loaders/GLTFLoader.js"></script>
+
+
+
+
+
+
+
+<!-- =================================================
+             STRATOS ENGINE
+================================================= -->
+
 
 <script src="js/config.js"></script>
 
+
 <script src="js/scene.js"></script>
+
+
+<script src="js/workshop.js"></script>
+
 
 <script src="js/partsManager.js"></script>
 
-<script src="js/buildManager.js"></script>
 
 <script src="js/snapSystem.js"></script>
 
+
+<script src="js/buildManager.js"></script>
+
+
 <script src="js/wiring.js"></script>
+
 
 <script src="js/solderMode.js"></script>
 
+
 <script src="js/testBench.js"></script>
+
 
 <script src="js/audio.js"></script>
 
+
 <script src="js/ui.js"></script>
+
 
 <script src="js/main.js"></script>
 
 
 
+
+
 </body>
+
+
 </html>
