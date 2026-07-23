@@ -35,7 +35,8 @@ MODEL = dict(name="FR4N10", sub="FPV programmable / essaim · 2,5\" · 2S-3S", w
              motors=[[46.6,34.1],[-46.6,34.1],[-46.6,-34.1],[46.6,-34.1]],
              prop_z=0.0135, motor_z=0.003, frame_z=0.0,
              elec=dict(board=[0,0,4], battery=[0,4,24],
-                       o4cam=[0,42,10], o4airunit=[0,0,13], o4antenna=[0,-47,41],
+                       o4cam=[0,42,10], o4airunit=[0,0,10], o4antenna=[0,-47,41],
+                       vtxant=[0,-31,5],
                        cap=[12,-22,4], buzzer=[11,-31,6], gps=[-9,-16,20.8],
                        rx=[-11,-29,4], xt30=[0,-25,15], grommet=[0,0,11]),
              standoffs=dict(frame=_FRAME_STAND, board=_BOARD_STAND),
@@ -48,8 +49,8 @@ MODEL = dict(name="FR4N10", sub="FPV programmable / essaim · 2,5\" · 2S-3S", w
                           cammount_top=[0,26,60], cammount_bottom=[0,20,52],
                           airunit=[0,0,-18], motors=[0,0,-40], props=[0,0,78],
                           elec=[0,0,-30], battery=[0,0,94], screws=[0,0,66],
-                          tpu=[0,0,-26], antenna=[0,0,90], cap=[0,0,-8],
-                          extras=[0,0,-15]),
+                          tpu=[0,0,-26], antenna=[0,0,90], vtxant=[0,0,86],
+                          cap=[0,0,-8], extras=[0,0,-15]),
              specs=[("Entraxe", "~115 mm (wide-X)"), ("Hélices", "2,5\" Gemfan 2520"),
                     ("Moteurs", "1203-1303 · 2S-3S"),
                     ("ESC", "AIO BLHeli_S/Bluejay · DShot600"),
@@ -485,6 +486,11 @@ for (const [x,y] of M.standoffs.board){
 const gAnt = group('antenna');
 { const a = place(STLB64.o4antenna, 0x101216, .2, .5, M.elec.o4antenna);
   a.rotation.x = -1.12; gAnt.add(a); }   // connector down, whip up-and-back
+// analog 5.8 GHz VTX "lollipop" antenna, inserted in the rear TPU mount — the
+// classic FPV look (dome on top). Its own toggle so it can be hidden.
+const gVtxAnt = group('vtxant');
+{ const l = place(STLB64.lollipop, 0x1c1c1e, .2, .5, M.elec.vtxant);
+  l.rotation.x = 0.42; gVtxAnt.add(l); }  // ~24° back, seated in the TPU tube
 // LiPo capacitor (25 V 22 µF, Ø6×12) SEATED IN ITS PRINTED TPU HOLDER
 const gCap = group('cap');
 gCap.add(place(STLB64.cap_holder, TPU, .1, .85, M.elec.cap));       // TPU snap-clip
@@ -510,18 +516,22 @@ gEx.add(place(STLB64.rx_holder, TPU, .1, .85, M.elec.rx));          // TPU tray
 gEx.add(place(STLB64.rx_pcb, 0x0f3d0f, .2, .5,                      // RX board
   [M.elec.rx[0], M.elec.rx[1], M.elec.rx[2]+1.6]));
 { const g = new THREE.Group();
-  g.add(mesh(STLB64.rx_ant_tpu, 0xdadade, .1, .85));               // white TPU sleeve
-  g.add(mesh(STLB64.rx, 0x141414, .25, .5));                        // the antenna, mast +Z
+  g.add(mesh(STLB64.rx_ant_tpu, 0xdadade, .1, .85));               // short white TPU sleeve
+  g.add(mesh(STLB64.rx, 0x141414, .25, .5));                        // the (shortened) antenna
   g.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,1),
     new THREE.Vector3(0,-1,0.06).normalize());                     // horizontal, out the back
-  g.position.set(0, -33/1000, 6/1000); gEx.add(g); }               // centred at the rear
+  g.position.set(0, -30/1000, 6/1000); gEx.add(g); }               // close to the frame
 // battery XT30 connector + red(+)/black(-) leads down to the ESC pads
 { const xt = M.elec.xt30;
   const conn = new THREE.Mesh(new THREE.BoxGeometry(0.009,0.007,0.006),
     new THREE.MeshStandardMaterial({color:0xf0b000, metalness:.2, roughness:.5}));
   conn.position.set(xt[0]/1000, xt[1]/1000, xt[2]/1000); gEx.add(conn);
-  gEx.add(wireTube([xt[0]+2, xt[1], xt[2]-1], [4, -6, 8], 0.85, 0xd21f1f));   // red +
-  gEx.add(wireTube([xt[0]-2, xt[1], xt[2]-1], [-4, -6, 8], 0.85, 0x111214)); }// black -
+  gEx.add(wireTube([xt[0]+2, xt[1], xt[2]-1], [4, -6, 8], 0.85, 0xd21f1f));   // red +  (ESC)
+  gEx.add(wireTube([xt[0]-2, xt[1], xt[2]-1], [-4, -6, 8], 0.85, 0x111214));  // black - (ESC)
+  // battery pigtail: the pack's own red/black lead down to this XT30
+  const bt = M.elec.battery, brear = bt[1] - 26;                    // pack tail (rear)
+  gEx.add(wireTube([xt[0]+2, xt[1]+2, xt[2]+1], [ 2, brear, bt[2]-4], 0.9, 0xd21f1f));
+  gEx.add(wireTube([xt[0]-2, xt[1]+2, xt[2]+1], [-2, brear, bt[2]-4], 0.9, 0x111214)); }
 for (const [mx, my] of M.motors){                                  // 4 phase cables
   const c = mesh(STLB64.cable, 0x2a2c30, .2, .6);
   c.position.set(mx/1000, my/1000, M.frame_z + 0.004);
@@ -544,6 +554,7 @@ const GROUPS = {
   battery:  {label:'Batterie 3S 560 mAh (DOGCOM)', color:'#22262d'},
   screws:   {label:'Visserie M2 (moteurs + stack)', color:'#d6d9de'},
   antenna:  {label:'Antenne DJI O4 (unique, dans le TPU)', color:'#101216'},
+  vtxant:   {label:'Antenne VTX lollipop 5,8 GHz (TPU)', color:'#1c1c1e'},
   cap:      {label:'Condensateur 25 V 22 µF (support TPU)', color:'#1b3a8f'},
   extras:   {label:'Buzzer · GPS · RX+TPU · câbles XT30', color:'#3a6ea5'},
 };
@@ -1089,6 +1100,7 @@ def main():
                 "rx_pcb": b64(os.path.join(STL, "rx_pcb.stl")),
                 "rx_holder": b64(os.path.join(STL, "rx_holder.stl")),
                 "rx_ant_tpu": b64(os.path.join(STL, "rx_ant_tpu.stl")),
+                "lollipop": b64(os.path.join(STL, "antenna_lollipop.stl")),
                 "cable": b64(os.path.join(STL, "motor_cable.stl")),
             }, separators=(",", ":"))))
     with open(OUT, "w") as f:
