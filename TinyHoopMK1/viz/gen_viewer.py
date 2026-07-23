@@ -458,12 +458,16 @@ const gBottom = group('bottom'); { const m=carbonMesh(STLB64.frame_bottom, CARBO
   m.position.z=M.frame_z; gBottom.add(m); }
 const gTop = group('top'); { const m=carbonMesh(STLB64.frame_top, CARBON);
   m.position.z=M.frame_z; gTop.add(m); }        // STRATOS top plate
-// clean aluminium standoffs: 3 tall frame posts (z3→17) + 4 short board posts
+// clean aluminium standoffs — SMOOTH turned posts (procedural, 40 segments)
+// instead of the faceted STL: 3 tall frame posts (z3→17) + 4 short board posts.
 const gStand = group('standoffs');
-for (const [x,y] of M.standoffs.frame){ const s=mesh(STLB64.standoff, 0xc2c5cb,.9,.3);
-  s.position.set(x/1000, y/1000, 0.003); gStand.add(s); }
-for (const [x,y] of M.standoffs.board){ const s=mesh(STLB64.standoff, 0xc2c5cb,.9,.3);
-  s.position.set(x/1000, y/1000, 0.003); s.scale.set(0.001,0.001,0.001*3/14); gStand.add(s); }
+const aluMat = new THREE.MeshStandardMaterial({color:0xc2c5cb, metalness:.92, roughness:.26});
+function standoff(x,y,base,h,r){
+  const m=new THREE.Mesh(new THREE.CylinderGeometry(r,r,h/1000,40,1), aluMat);
+  m.rotation.x=Math.PI/2; m.position.set(x/1000, y/1000, (base+h/2)/1000);   // vertical
+  gStand.add(m); return m; }
+for (const [x,y] of M.standoffs.frame) standoff(x,y, 3, 14, 0.0021);   // tall frame posts
+for (const [x,y] of M.standoffs.board) standoff(x,y, 3,  3, 0.0021);   // short board posts
 const gCage = group('camcage'); { const m=carbonMesh(STLB64.camcage, CARBON);
   m.position.z=M.frame_z; gCage.add(m); }
 // ---- realistic FPV lens assembly (shared): a Flywoo-Wylde-style M12 THREADED
