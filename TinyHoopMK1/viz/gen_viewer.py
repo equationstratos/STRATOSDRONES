@@ -701,13 +701,11 @@ gRx.add(place(STLB64.rx_pcb, 0x0f3d0f, .2, .5,
   g.position.set(M.elec.rxant[0]/1000, M.elec.rxant[1]/1000,
                  M.frame_z + M.elec.rxant[2]/1000);
   g.userData.base = g.position.clone(); gRx.add(g); }              // reparent under RX toggle
-// battery harness (clean) + 4 motor phase cables — all in one toggle group.
-// Modelled on the real DOGCOM pack: a tidy red+black main lead to an XT30 and
-// a white JST-XH balance connector, no tangle.
-const gCbl = group('cables');
+// BATTERY HARNESS — added to the BATTERY group so it shows/hides WITH the pack.
+// Clean DOGCOM-style leads: a red+black pair to an XT30 + a white JST-XH balance
+// plug, rooted right at the (cropped) rear face of the pack so they connect.
 { const xt = M.elec.xt30, bt = M.elec.battery;
   const RED=0xcf2128, BLK=0x121214;
-  // one smooth swept lead p0->p1 (mm) with a gentle sag, r = radius (mm)
   const lead=(p0,p1,r,col,sag)=>{
     const m=[(p0[0]+p1[0])/2,(p0[1]+p1[1])/2,Math.max(p0[2],p1[2])+(sag||0)];
     const c=new THREE.CatmullRomCurve3([new THREE.Vector3(p0[0]/1000,p0[1]/1000,p0[2]/1000),
@@ -715,25 +713,26 @@ const gCbl = group('cables');
       new THREE.Vector3(p1[0]/1000,p1[1]/1000,p1[2]/1000)]);
     return new THREE.Mesh(new THREE.TubeGeometry(c,28,r/1000,12,false),
       new THREE.MeshStandardMaterial({color:col,metalness:.05,roughness:.5})); };
-  const root=[0, bt[1]-24, bt[2]+1];              // leads exit the pack's rear end
-  // XT30 female: yellow body + 2 gold cups (facing the board)
+  const root=[0, bt[1]-26, bt[2]+4];              // pack rear face (after crop)
   const body=new THREE.Mesh(new THREE.BoxGeometry(0.0090,0.0080,0.0070),
     new THREE.MeshStandardMaterial({color:0xf2b400, metalness:.15, roughness:.45}));
-  body.position.set(xt[0]/1000, xt[1]/1000, xt[2]/1000); gCbl.add(body);
+  body.position.set(xt[0]/1000, xt[1]/1000, xt[2]/1000); gBatt.add(body);   // XT30
   for (const s of [-1,1]){ const cup=new THREE.Mesh(new THREE.CylinderGeometry(0.0012,0.0012,0.0042,16),
       new THREE.MeshStandardMaterial({color:0xcaa63a, metalness:.9, roughness:.25}));
-    cup.rotation.x=Math.PI/2; cup.position.set((xt[0]+s*2.2)/1000,(xt[1]-4.4)/1000,xt[2]/1000); gCbl.add(cup); }
-  // main power pair: pack rear -> XT30 (thick, gentle curve, side by side)
-  gCbl.add(lead([ 2.4, root[1], root[2]], [xt[0]+2.2, xt[1]+3, xt[2]+1], 1.3, RED, 3));
-  gCbl.add(lead([-2.4, root[1], root[2]], [xt[0]-2.2, xt[1]+3, xt[2]+1], 1.3, BLK, 3));
+    cup.rotation.x=Math.PI/2; cup.position.set((xt[0]+s*2.2)/1000,(xt[1]-4.4)/1000,xt[2]/1000); gBatt.add(cup); }
+  // main power pair: pack rear -> XT30
+  gBatt.add(lead([ 2.4, root[1], root[2]], [xt[0]+2.2, xt[1]+3, xt[2]+1], 1.3, RED, 2));
+  gBatt.add(lead([-2.4, root[1], root[2]], [xt[0]-2.2, xt[1]+3, xt[2]+1], 1.3, BLK, 2));
   // white JST-XH balance plug (3S = 4-pin) + 4 thin balance wires
   const bal=new THREE.Mesh(new THREE.BoxGeometry(0.0075,0.0032,0.0040),
     new THREE.MeshStandardMaterial({color:0xededf0, metalness:.0, roughness:.7}));
-  bal.position.set(6.5/1000,(bt[1]-20)/1000,(bt[2]+2)/1000); gCbl.add(bal);
+  bal.position.set(6.5/1000,(bt[1]-23)/1000,(bt[2]+3)/1000); gBatt.add(bal);
   const bcol=[BLK,RED,0xe0a828,0x2b8a2b];         // black, red, yellow, green
-  for (let i=0;i<4;i++) gCbl.add(lead([3.2, root[1], root[2]+2],
-    [4.7+i*1.2, bt[1]-20, bt[2]+2], 0.42, bcol[i], 1.5+i*0.4));
+  for (let i=0;i<4;i++) gBatt.add(lead([3.2, root[1], root[2]],
+    [4.7+i*1.2, bt[1]-23, bt[2]+3], 0.42, bcol[i], 1.2+i*0.3));
 }
+// motor phase cables — their OWN toggle group ('cables')
+const gCbl = group('cables');
 for (const [mx, my] of M.motors){                                  // 4 phase cables
   const c = mesh(STLB64.cable, 0x2a2c30, .2, .6);
   c.position.set(mx/1000, my/1000, M.frame_z + 0.004);
@@ -760,7 +759,7 @@ const GROUPS = {
   rx:       {label:'Récepteur RX (PCB + antenne)', color:'#0f3d0f'},
   gps:      {label:'GPS / compas', color:'#0a0c10'},
   buzzer:   {label:'Buzzer', color:'#141519'},
-  cables:   {label:'Câbles (XT30 + phases moteurs)', color:'#d51f26'},
+  cables:   {label:'Câbles moteurs (phases)', color:'#2a2c30'},
 };
 // remember each group's assembled position so the explode slider can offset it
 for (const k of Object.keys(GROUPS)){
