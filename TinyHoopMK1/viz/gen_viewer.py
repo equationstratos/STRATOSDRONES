@@ -630,7 +630,32 @@ boardCustom.rotation.z = Math.PI/4; boardCustom.visible = false; gElec.add(board
 const boardGhf = place(STLB64.ghf411, 0x14161b, .35, .45, M.elec.board);
 boardGhf.rotation.z = Math.PI/4; gElec.add(boardGhf);   // 45° = real JeNo AIO mount, default
 const gBatt = group('battery');
-gBatt.add(place(STLB64.battery, 0x83868c, .35, .45, M.elec.battery));   // silver LiPo foil
+// DOGCOM 560 mAh 3S pack — a clean procedural box with a printed label texture
+// (silver foil top, black band, gold DOGCOM + yellow specs). No moulded text
+// spilling off the block. Sized/placed on the real STL envelope (28x52.5x18.5).
+{ const W=568,H=200, cv=document.createElement('canvas'); cv.width=W; cv.height=H;
+  const x=cv.getContext('2d');
+  x.fillStyle='#b7bac0'; x.fillRect(0,0,W,H);                      // silver base
+  x.fillStyle='#0c0c0e'; x.fillRect(0,H*0.30,W,H*0.70);           // black label band
+  const grd=x.createLinearGradient(0,0,0,H*0.30); grd.addColorStop(0,'#cfd2d6'); grd.addColorStop(1,'#a7aab0');
+  x.fillStyle=grd; x.fillRect(0,0,W,H*0.30);
+  x.fillStyle='#e6b53c'; x.font='italic bold 84px Arial'; x.textBaseline='middle';
+  x.fillText('DOGCOM', W*0.135, H*0.60);                          // gold brand
+  x.fillStyle='#f4d64a'; x.font='bold 34px Arial'; x.fillText('560', W*0.70, H*0.47);
+  x.font='bold 24px Arial'; x.fillText('MAH', W*0.815, H*0.47);
+  x.fillStyle='#dcdcde'; x.font='bold 18px Arial'; x.fillText('11.1V 3S  ·  60C', W*0.70, H*0.66);
+  x.fillStyle='#8d8d90'; x.font='12px Arial'; x.fillText('www.titltop.com', W*0.135, H*0.86);
+  x.fillStyle='#e6b53c'; x.beginPath(); x.ellipse(W*0.065,H*0.55,24,20,0,0,Math.PI*2); x.fill();
+  x.fillStyle='#0c0c0e'; x.font='bold 18px Arial'; x.fillText('DC', W*0.038, H*0.58);   // bee badge
+  const lab=new THREE.CanvasTexture(cv); lab.colorSpace=THREE.SRGBColorSpace; lab.anisotropy=8;
+  lab.center.set(0.5,0.5); lab.rotation=Math.PI/2;                // align text along the pack length
+  const labMat=new THREE.MeshStandardMaterial({map:lab, metalness:.2, roughness:.5});
+  const silver=new THREE.MeshStandardMaterial({color:0xc4c6ca, metalness:.55, roughness:.32});
+  const ends =new THREE.MeshStandardMaterial({color:0x9a9da2, metalness:.45, roughness:.4});
+  const base =new THREE.MeshStandardMaterial({color:0x6a6d72, metalness:.4,  roughness:.45});
+  const bm=new THREE.Mesh(new THREE.BoxGeometry(0.028,0.0525,0.0185),
+    [labMat,labMat,ends,ends,silver,base]);                        // +X,-X,+Y,-Y,+Z,-Z
+  bm.position.set(0, 3.75/1000, 33.2/1000); gBatt.add(bm); }
 // M2 screws on the real standoffs + camera plates
 const gScrew = group('screws');
 for (const s of M.screws){ const sc = place(STLB64.screw, 0xd6d9de, .9, .25, s);
