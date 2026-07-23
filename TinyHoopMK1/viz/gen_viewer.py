@@ -175,6 +175,7 @@ TEMPLATE = r"""<!DOCTYPE html>
         <option value="rhcp">RHCP LP A1 (STEP réel)</option>
         <option value="foxeer">Foxeer Lollipop 5,8 GHz (STEP réel)</option>
         <option value="matchstick">TrueRC Singularity / Matchstick</option>
+        <option value="microlp">Micro Lollipop U.FL (dôme plein)</option>
       </select>
       <div class="mini" style="margin-top:5px">Insérée dans le TPU arrière, tête vers le haut.</div>
     </div>
@@ -224,6 +225,7 @@ TEMPLATE = r"""<!DOCTYPE html>
         <option value="vtx_rhcp">Antenne VTX — RHCP (déjà OK)</option>
         <option value="vtx_foxeer">Antenne VTX — Foxeer Lollipop</option>
         <option value="vtx_matchstick">Antenne VTX — Matchstick</option>
+        <option value="vtx_microlp">Antenne VTX — Micro Lollipop</option>
         <option value="rxant">Antenne RX — ELRS</option>
       </select>
       <div style="display:flex;justify-content:space-between"><span>Latéral (X)</span>
@@ -415,14 +417,17 @@ const gCam = (()=>{ const m=mesh(STLB64.o4cam, 0x30343b,.5,.35);  // dark-grey b
   m.rotation.z = Math.PI/2;                          // lens faces +Y (nose)
   m.position.set(M.elec.o4cam[0]/1000, M.elec.o4cam[1]/1000, M.elec.o4cam[2]/1000);
   const g = adjGroup('camera', m, 0, 42, 20);        // pivot at camera centre
-  // soft rubber gasket around the lens — fills the gap between camera and the
-  // TPU mount (matte black silicone O-ring); rides with the camera group
-  // thin rubber gasket, radius grown so it REACHES the TPU mount (fills the gap)
-  // but the tube stays slim so it doesn't bulge into a "donut"
-  const rub = new THREE.Mesh(new THREE.TorusGeometry(0.0082, 0.0013, 14, 44),
+  // soft rubber gasket around the lens — a FLAT washer (not a torus), so it
+  // sits flush and reaches the TPU mount edge WITHOUT bulging into a "beignet".
+  // Ring from the lens barrel (inner) out to the mount opening (outer).
+  const gOuter=0.0110, gInner=0.0064, gThick=0.0010;
+  const shp=new THREE.Shape(); shp.absarc(0,0,gOuter,0,Math.PI*2,false);
+  const gh=new THREE.Path(); gh.absarc(0,0,gInner,0,Math.PI*2,true); shp.holes.push(gh);
+  const rub=new THREE.Mesh(new THREE.ExtrudeGeometry(shp,{depth:gThick,bevelEnabled:true,
+    bevelThickness:0.00018,bevelSize:0.00018,bevelSegments:1,curveSegments:56}),
     new THREE.MeshStandardMaterial({color:0x0b0b0d, metalness:0.0, roughness:0.97}));
-  rub.rotation.x = Math.PI/2;                         // ring axis along +Y (lens)
-  rub.position.set(0, 11.6/1000, -1/1000);           // seats against the mount opening
+  rub.rotation.x = -Math.PI/2;                        // flat face toward the nose (+Y)
+  rub.position.set(0, 11.4/1000, -1/1000);            // seated flat against the mount
   g.add(rub);
   return g; })();
 // DJI O4 Lite air unit (VTX) — stacked ABOVE the FC on soft-mount grommets,
@@ -517,11 +522,29 @@ function vtxPivot(key, m){
   g.visible = false; G['vtx_'+key] = g; gVtxAnt.add(g);
   return g;
 }
+// Procedural MICRO lollipop (U.FL) — a SOLID rounded dome on a thin coax
+// pigtail, the compact type best suited to a 2.5". Built full so the head is
+// never hollow. Base at z=0, dome up (+Z), in metres.
+function buildMicroLollipop(){
+  const grp = new THREE.Group();
+  const red = new THREE.MeshStandardMaterial({color:0xc4161c, metalness:.15, roughness:.33});
+  const blk = new THREE.MeshStandardMaterial({color:0x0c0c0e, metalness:.2,  roughness:.6});
+  const cyl = (r0,r1,h,z,mat)=>{ const m=new THREE.Mesh(
+      new THREE.CylinderGeometry(r0,r1,h,20), mat);
+    m.rotation.x=Math.PI/2; m.position.z=z; grp.add(m); return m; };  // axis -> Z
+  cyl(0.0006,0.0006,0.015,0.0075, blk);                 // thin U.FL coax pigtail
+  cyl(0.0019,0.0019,0.004,0.0170, blk);                 // heatshrink neck
+  cyl(0.0034,0.0030,0.0016,0.0197, red);                // red base collar of the bulb
+  const dome=new THREE.Mesh(new THREE.SphereGeometry(0.0036,22,18), red);  // SOLID bulb
+  dome.scale.set(1,1,1.18); dome.position.z=0.0225; grp.add(dome);         // rounded head
+  return grp;
+}
 const vtxModels = {
   dji:        vtxPivot('dji',        mesh(STLB64.dji_pro_ant, 0x0f1114, .2, .5)),  // DJI O4 Pro antenna
   rhcp:       vtxPivot('rhcp',       mesh(STLB64.rhcp_lp,     0x141414, .2, .5)),  // RHCP LP A1 (STEP)
   foxeer:     vtxPivot('foxeer',     mesh(STLB64.foxeer_lp,   0x141414, .2, .5)),  // Foxeer Lollipop 5.8
   matchstick: vtxPivot('matchstick', mesh(STLB64.matchstick,  0x181818, .2, .5)),  // TrueRC Singularity
+  microlp:    vtxPivot('microlp',    buildMicroLollipop()),                        // solid micro lollipop
 };
 let vtxCur='dji'; vtxModels[vtxCur].visible=true;         // default: the DJI antenna
 // (the 28° seating tilt is carried by the fine-adjust DEF below, applied at load)
@@ -699,6 +722,7 @@ document.getElementById('bElec').addEventListener('click', ()=>{
                 vtx_rhcp:       {x:0, y:0,     z:0,    rx:28,   ry:0, rz:0},
                 vtx_foxeer:     {x:0, y:0,     z:0,    rx:28,   ry:0, rz:0},
                 vtx_matchstick: {x:0, y:0,   z:0,    rx:28, ry:0, rz:0},
+                vtx_microlp:    {x:0, y:0,   z:0,    rx:28, ry:0, rz:0},
                 rxant:          {x:0, y:0,   z:0,    rx:87, ry:0, rz:0} };
   const cp = o => Object.assign({}, o);
   const off = {}; for (const k in DEF) off[k] = cp(DEF[k]);
