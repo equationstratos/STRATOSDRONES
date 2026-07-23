@@ -1,20 +1,15 @@
 /* =====================================================
    STRATOS DRONES
    TinyHoop MK1 BUILDER
-   Parts Manager
+   PARTS MANAGER FIXED
 ===================================================== */
 
 
-let droneParts = [];
+var droneParts = [];
 
-let selectedPart = null;
-
-
+var selectedPart = null;
 
 
-/* =====================================================
-                 INIT
-===================================================== */
 
 
 function initPartsManager(){
@@ -36,11 +31,6 @@ function initPartsManager(){
 
 
 
-/* =====================================================
-             CREATE ALL COMPONENTS
-===================================================== */
-
-
 function createAllParts(){
 
 
@@ -48,87 +38,74 @@ function createAllParts(){
     createPart(
         "FRAME",
         "frame",
-        -80,
-        0,
-        -40
+        -120,
+        20,
+        -80
     );
-
 
 
     createPart(
         "FLIGHT CONTROLLER",
         "fc",
-        0,
-        5,
-        -40
+        -40,
+        20,
+        -80
     );
-
 
 
     createPart(
         "ESC",
         "esc",
-        30,
-        5,
-        -40
+        40,
+        20,
+        -80
     );
-
 
 
     createPart(
         "VTX",
         "vtx",
-        60,
-        5,
-        -40
+        120,
+        20,
+        -80
     );
 
 
 
     createPart(
-        "ELRS RX",
+        "RX ELRS",
         "rx",
-        -60,
-        5,
+        -100,
+        20,
         40
     );
-
 
 
     createPart(
         "GPS",
         "gps",
         0,
-        5,
+        20,
         40
     );
-
 
 
     createPart(
         "BUZZER",
         "buzzer",
-        40,
-        5,
-        40
-    );
-
-
-
-    createPart(
-        "CAPACITOR",
-        "capacitor",
         80,
-        5,
+        20,
         40
     );
 
 
 
-
-    for(let i=0;i<4;i++)
+    for(
+        var i=0;
+        i<4;
+        i++
+    )
     {
-
 
         createPart(
 
@@ -136,32 +113,24 @@ function createAllParts(){
 
             "motor",
 
-            -100+i*50,
+            -120+(i*80),
 
-            10,
+            20,
 
-            100
+            120
 
         );
-
 
     }
 
 
 
-
     createPart(
-
         "BATTERY",
-
         "battery",
-
         0,
-
-        5,
-
-        120
-
+        20,
+        180
     );
 
 
@@ -174,11 +143,6 @@ function createAllParts(){
 
 
 
-
-
-/* =====================================================
-               CREATE OBJECT
-===================================================== */
 
 
 function createPart(
@@ -197,65 +161,80 @@ z
 
 
 
-    let geometry;
+    var geometry;
 
 
 
-    switch(type)
+    if(type=="motor")
+    {
+
+
+        geometry =
+        new THREE.CylinderGeometry(
+
+            12,
+
+            12,
+
+            8,
+
+            32
+
+        );
+
+
+    }
+
+    else if(type=="battery")
+    {
+
+
+        geometry =
+        new THREE.BoxGeometry(
+
+            50,
+
+            15,
+
+            25
+
+        );
+
+
+    }
+
+    else if(type=="frame")
+    {
+
+
+        geometry =
+        new THREE.BoxGeometry(
+
+            90,
+
+            5,
+
+            70
+
+        );
+
+
+    }
+
+    else
 
     {
 
 
-        case "motor":
-
-        geometry =
-        new THREE.CylinderGeometry(
-            8,
-            8,
-            8,
-            32
-        );
-
-        break;
-
-
-
-
-        case "battery":
-
         geometry =
         new THREE.BoxGeometry(
-            30,
+
+            25,
+
             10,
-            15
-        );
 
-        break;
+            25
 
-
-
-
-        case "frame":
-
-        geometry =
-        new THREE.BoxGeometry(
-            60,
-            5,
-            60
-        );
-
-        break;
-
-
-
-
-        default:
-
-        geometry =
-        new THREE.BoxGeometry(
-            20,
-            5,
-            20
         );
 
 
@@ -265,17 +244,13 @@ z
 
 
 
-
-
-    let material =
+    var material =
     new THREE.MeshStandardMaterial({
 
-        color:
-        0x555555,
+        color:getPartColor(type),
 
+        roughness:0.5
 
-        roughness:
-        .6
 
     });
 
@@ -283,7 +258,7 @@ z
 
 
 
-    let mesh =
+    var mesh =
     new THREE.Mesh(
 
         geometry,
@@ -291,6 +266,7 @@ z
         material
 
     );
+
 
 
 
@@ -310,6 +286,7 @@ z
 
 
 
+
     mesh.userData={
 
         name:name,
@@ -318,9 +295,7 @@ z
 
         installed:false
 
-
     };
-
 
 
 
@@ -333,6 +308,18 @@ z
 
 
 
+    console.log(
+
+        "PART CREATED:",
+
+        name,
+
+        mesh.position
+
+    );
+
+
+
 }
 
 
@@ -343,9 +330,56 @@ z
 
 
 
-/* =====================================================
-              SORT ON ENGINEER MAT
-===================================================== */
+function getPartColor(type){
+
+
+
+    switch(type)
+
+    {
+
+        case "frame":
+            return 0x222222;
+
+
+        case "motor":
+            return 0x888888;
+
+
+        case "battery":
+            return 0xff9900;
+
+
+        case "fc":
+            return 0x00aa00;
+
+
+        case "esc":
+            return 0x0066ff;
+
+
+        case "vtx":
+            return 0xff0000;
+
+
+        case "rx":
+            return 0xffffff;
+
+
+        default:
+            return 0x555555;
+
+    }
+
+
+}
+
+
+
+
+
+
+
 
 
 function sortPartsOnBench(){
@@ -353,53 +387,37 @@ function sortPartsOnBench(){
 
 
     console.log(
-
-        "Arranging parts..."
-
+        "Sorting components..."
     );
 
 
 
     droneParts.forEach(
 
-        (part,index)=>{
+        function(part,index){
 
 
-            let column =
-            index % 5;
-
-
-            let row =
-            Math.floor(
-                index / 5
-            );
+            var x =
+            -150 + 
+            ((index%5)*70);
 
 
 
-            let targetX =
-            -120 + column*60;
+            var z =
+            -40 +
+            (Math.floor(index/5)*70);
 
 
 
-            let targetZ =
-            -50 + row*60;
+            part.position.set(
 
+                x,
 
+                20,
 
-
-
-            animatePartMove(
-
-                part,
-
-                targetX,
-
-                5,
-
-                targetZ
+                z
 
             );
-
 
 
         }
@@ -408,128 +426,8 @@ function sortPartsOnBench(){
     );
 
 
-
 }
 
-
-
-
-
-
-
-
-
-/* =====================================================
-                MOVE ANIMATION
-===================================================== */
-
-
-function animatePartMove(
-
-object,
-
-x,
-
-y,
-
-z
-
-){
-
-
-
-    let start =
-    object.position.clone();
-
-
-
-    let target =
-    new THREE.Vector3(
-
-        x,
-
-        y,
-
-        z
-
-    );
-
-
-
-    let progress=0;
-
-
-
-    function move(){
-
-
-
-        progress +=0.03;
-
-
-
-        object.position.lerpVectors(
-
-            start,
-
-            target,
-
-            progress
-
-        );
-
-
-
-        if(progress<1)
-
-        {
-
-            requestAnimationFrame(move);
-
-        }
-
-
-
-    }
-
-
-
-    move();
-
-
-
-}
-
-
-
-
-
-
-
-
-
-/* =====================================================
-               SELECT PART
-===================================================== */
-
-
-function selectPart(part){
-
-
-    selectedPart =
-    part;
-
-
-    console.log(
-
-        "Selected:",
-
-        part.userData.name
-
-    );
-
-
-}
 
 
 
@@ -546,5 +444,5 @@ window.sortPartsOnBench =
 sortPartsOnBench;
 
 
-window.selectPart =
-selectPart;
+window.droneParts =
+droneParts;
