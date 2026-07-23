@@ -1,7 +1,7 @@
 /* =====================================================
    STRATOS DRONES
    TinyHoop MK1 BUILDER
-   Assembly Manager
+   Assembly Manager FIXED
 ===================================================== */
 
 
@@ -9,15 +9,8 @@ let currentStep = 0;
 
 let assemblyStarted = false;
 
-let assemblyParts = [];
 
 
-
-
-
-/* =====================================================
-              INITIALISATION
-===================================================== */
 
 
 function initBuildManager(){
@@ -42,24 +35,19 @@ function initBuildManager(){
 
 
 
-/* =====================================================
-                 START BUILD
-===================================================== */
-
 
 function startAssembly(){
 
 
     if(assemblyStarted)
+
     return;
 
 
 
-    assemblyStarted = true;
+    assemblyStarted=true;
 
-
-
-    currentStep = 0;
+    currentStep=0;
 
 
 
@@ -73,17 +61,12 @@ function startAssembly(){
 
 
 
-
     setTimeout(()=>{
-
 
         explodeDrone();
 
 
-
     },500);
-
-
 
 
 }
@@ -96,12 +79,15 @@ function startAssembly(){
 
 
 
-/* =====================================================
-              EXPLODE VIEW
-===================================================== */
-
-
 function explodeDrone(){
+
+
+
+    console.log(
+
+        "Exploding drone"
+
+    );
 
 
 
@@ -115,22 +101,36 @@ function explodeDrone(){
 
 
 
-    console.log(
 
-        "Exploding drone"
-
-    );
-
-
+    /*
+       IMPORTANT
+       Use partsManager system
+    */
 
 
-    if(window.sortPartsOnBench)
+    if(
+
+        window.sortPartsOnBench
+
+    )
 
     {
 
 
         sortPartsOnBench();
 
+
+    }
+
+    else
+
+    {
+
+        console.warn(
+
+            "Parts sorter missing"
+
+        );
 
     }
 
@@ -144,7 +144,7 @@ function explodeDrone(){
         nextBuildStep();
 
 
-    },2000);
+    },1500);
 
 
 
@@ -158,16 +158,38 @@ function explodeDrone(){
 
 
 
-/* =====================================================
-                BUILD STEPS
-===================================================== */
-
-
 function nextBuildStep(){
 
 
 
-    if(currentStep >= STRATOS_CONFIG.buildSteps.length)
+    if(
+
+        typeof STRATOS_CONFIG === "undefined"
+
+    )
+
+    {
+
+        console.warn(
+
+            "Config missing"
+
+        );
+
+
+        return;
+
+    }
+
+
+
+
+
+    if(
+
+        currentStep >= STRATOS_CONFIG.buildSteps.length
+
+    )
 
     {
 
@@ -184,7 +206,9 @@ function nextBuildStep(){
 
 
 
+
     let step =
+
     STRATOS_CONFIG.buildSteps[currentStep];
 
 
@@ -193,17 +217,9 @@ function nextBuildStep(){
 
     updateStatus(
 
-        "STEP "
-        +
-        step.id
-        +
-        " : "
-        +
-        step.name,
-
+        "STEP "+step.id+" : "+step.name,
 
         step.description
-
 
     );
 
@@ -219,10 +235,7 @@ function nextBuildStep(){
 
 
 
-
     currentStep++;
-
-
 
 
 }
@@ -235,13 +248,7 @@ function nextBuildStep(){
 
 
 
-/* =====================================================
-             COMPLETE BUILD
-===================================================== */
-
-
 function finishAssembly(){
-
 
 
     updateStatus(
@@ -271,16 +278,12 @@ function finishAssembly(){
 
 
 
-/* =====================================================
-               PROGRESS BAR
-===================================================== */
-
-
 function updateProgress(value){
 
 
 
     let bar =
+
     document.getElementById(
 
         "progress"
@@ -290,39 +293,14 @@ function updateProgress(value){
 
 
     if(!bar)
+
     return;
 
 
 
-
-    let percent;
-
-
-
-    if(value <= 10)
-
-    {
-
-        percent =
-        value * 10;
-
-    }
-
-    else
-
-    {
-
-        percent =
-        value;
-
-    }
-
-
-
     bar.style.width =
-    percent
-    +
-    "%";
+
+    value+"%";
 
 
 
@@ -334,11 +312,6 @@ function updateProgress(value){
 
 
 
-
-
-/* =====================================================
-                 RESET
-===================================================== */
 
 
 function resetBuild(){
@@ -354,7 +327,6 @@ function resetBuild(){
 
 
     currentStep=0;
-
 
     assemblyStarted=false;
 
@@ -382,87 +354,6 @@ function resetBuild(){
 
 
 
-
-
-/* =====================================================
-             WORKSHOP SORT
-===================================================== */
-
-
-function sortPartsOnBench(){
-
-
-
-    /*
-        Future connection
-        with partsManager.js
-
-    */
-
-
-    console.log(
-
-        "Sorting components..."
-
-    );
-
-
-
-    let positions=[
-
-
-
-        {
-            name:"FRAME",
-            x:-80,
-            z:-50
-        },
-
-
-        {
-            name:"ELECTRONICS",
-            x:0,
-            z:-50
-        },
-
-
-        {
-            name:"MOTORS",
-            x:80,
-            z:-50
-        },
-
-
-        {
-            name:"BATTERY",
-            x:0,
-            z:80
-        }
-
-
-    ];
-
-
-
-    console.log(
-
-        positions
-
-    );
-
-
-}
-
-
-
-
-
-
-
-
-/* =====================================================
-EXPORT
-===================================================== */
 
 
 window.initBuildManager =
