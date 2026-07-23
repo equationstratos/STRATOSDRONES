@@ -520,7 +520,7 @@ const gCam = (()=>{ const g = group('camera');
   // rubber seal — a FLAT ring that fills the whole gap between the camera and
   // the top/bottom TPU supports (no empty space), yet stays inside the cage
   // (outer < 9.1 mm). Adjustable (own group 'gasket').
-  const gInner=0.0062, gOuter=0.0088, gThick=0.0007;
+  const gInner=0.0062, gOuter=0.0090, gThick=0.0007;
   const shp=new THREE.Shape(); shp.absarc(0,0,gOuter,0,Math.PI*2,false);
   const gh=new THREE.Path(); gh.absarc(0,0,gInner,0,Math.PI*2,true); shp.holes.push(gh);
   const rub=new THREE.Mesh(new THREE.ExtrudeGeometry(shp,{depth:gThick,bevelEnabled:true,
