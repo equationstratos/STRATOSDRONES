@@ -238,6 +238,7 @@ TEMPLATE = r"""<!DOCTYPE html>
         <option value="vtx_microlp">Antenne VTX — Micro Lollipop</option>
         <option value="rxant">Antenne RX — ELRS</option>
         <option value="gasket">Joint caoutchouc caméra</option>
+        <option value="bezel">Anneau TPU caméra (protection)</option>
       </select>
       <div style="display:flex;justify-content:space-between"><span>Latéral (X)</span>
         <span class="val" id="camXV">0.0 mm</span></div>
@@ -512,18 +513,31 @@ const gCam = (()=>{ const g = group('camera');
   nanoG.visible=false; camModels.nano=nanoG; g.add(nanoG);
   // shared realistic lens at the lens centre (in front of whichever body)
   const lens=buildLens(); lens.position.set(0, 11.4/1000, -1/1000); g.add(lens);
-  // soft rubber gasket — FLAT washer, sits INSIDE the TPU mount opening
-  // (camera -> gasket -> support), adjustable (own group 'gasket').
-  const gOuter=0.0090, gInner=0.0062, gThick=0.0010;
+  // THIN rubber gasket — a slim flat contour ring around the lens (no beignet),
+  // tight against the camera; adjustable (own group 'gasket').
+  const gInner=0.0068, gOuter=0.0082, gThick=0.0008;
   const shp=new THREE.Shape(); shp.absarc(0,0,gOuter,0,Math.PI*2,false);
   const gh=new THREE.Path(); gh.absarc(0,0,gInner,0,Math.PI*2,true); shp.holes.push(gh);
   const rub=new THREE.Mesh(new THREE.ExtrudeGeometry(shp,{depth:gThick,bevelEnabled:true,
-    bevelThickness:0.00018,bevelSize:0.00018,bevelSegments:1,curveSegments:56}),
+    bevelThickness:0.00014,bevelSize:0.00014,bevelSegments:1,curveSegments:56}),
     new THREE.MeshStandardMaterial({color:0x0b0b0d, metalness:0.0, roughness:0.97}));
   rub.rotation.x = -Math.PI/2;
   const gsk = new THREE.Group();
   gsk.add(rub); gsk.position.set(0, 11.4/1000, -1/1000);
   gsk.userData.base = gsk.position.clone(); G['gasket'] = gsk; g.add(gsk);
+  // CLOSED TPU collar ring — completely encircles the camera front with NO gaps
+  // (so debris/dirt can't get in on a crash). Hugs just outside the thin joint
+  // and reaches the mount. Adjustable (own group 'bezel': position + size).
+  const bInner=0.0082, bOuter=0.0122, bDepth=0.0030;
+  const bsh=new THREE.Shape(); bsh.absarc(0,0,bOuter,0,Math.PI*2,false);
+  const bhl=new THREE.Path(); bhl.absarc(0,0,bInner,0,Math.PI*2,true); bsh.holes.push(bhl);
+  const bezM=new THREE.Mesh(new THREE.ExtrudeGeometry(bsh,{depth:bDepth,bevelEnabled:true,
+    bevelThickness:0.0004,bevelSize:0.0004,bevelSegments:2,curveSegments:72}),
+    new THREE.MeshStandardMaterial({color:0x24272d, metalness:0.04, roughness:0.86}));
+  bezM.rotation.x = -Math.PI/2;
+  const bez = new THREE.Group();
+  bez.add(bezM); bez.position.set(0, 10.4/1000, -1/1000);
+  bez.userData.base = bez.position.clone(); G['bezel'] = bez; g.add(bez);
   return g; })();
 // DJI O4 Lite air unit (VTX) — stacked ABOVE the FC on soft-mount grommets,
 // aligned on the same 25.5@45° pattern, with a ribbon cable down to the camera.
@@ -823,7 +837,8 @@ document.getElementById('bElec').addEventListener('click', ()=>{
                 vtx_matchstick: {x:0, y:0,   z:0,    rx:28, ry:0, rz:0},
                 vtx_microlp:    {x:0, y:0,   z:0,    rx:28, ry:0, rz:0},
                 rxant:          {x:0, y:0,   z:0,    rx:87, ry:0, rz:0},
-                gasket:         {x:0, y:-1,  z:1,    rx:0,  ry:0, rz:0, s:85} };
+                gasket:         {x:0, y:-1,  z:1,    rx:0,  ry:0, rz:0, s:85},
+                bezel:          {x:0, y:0,   z:0,    rx:0,  ry:0, rz:0, s:100} };
   const cp = o => Object.assign({}, o);
   const off = {}; for (const k in DEF) off[k] = cp(DEF[k]);
   const SEAT = ['camera','cammount_top','cammount_bottom'];   // applied, not in the dropdown
