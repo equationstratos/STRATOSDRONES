@@ -504,22 +504,17 @@ function wireTube(p0, p1, r, col){
 const gEx = group('extras');
 gEx.add(place(STLB64.buzzer, 0x141519, .3,  .5,  M.elec.buzzer));   // Ø8 buzzer
 gEx.add(place(STLB64.gps,    0x0a0c10, .2,  .5,  M.elec.gps));      // GPS/compass
-// ELRS RX: the PCB in its TPU tray; the iFlight T-antennas laid HORIZONTAL in
-// white TPU sleeve-tubes, splayed in a V at the rear (as on the real JeNo).
+// ELRS RX: the PCB in its TPU tray, and a SINGLE T-antenna laid HORIZONTAL
+// straight out the back in one white TPU sleeve-tube (centred at the rear).
 gEx.add(place(STLB64.rx_holder, TPU, .1, .85, M.elec.rx));          // TPU tray
 gEx.add(place(STLB64.rx_pcb, 0x0f3d0f, .2, .5,                      // RX board
   [M.elec.rx[0], M.elec.rx[1], M.elec.rx[2]+1.6]));
-function rxAntUnit(pos, dir){                                       // sleeve + antenna
-  const g = new THREE.Group();
+{ const g = new THREE.Group();
   g.add(mesh(STLB64.rx_ant_tpu, 0xdadade, .1, .85));               // white TPU sleeve
-  g.add(mesh(STLB64.rx, 0x141414, .25, .5));                        // antenna, mast +Z
+  g.add(mesh(STLB64.rx, 0x141414, .25, .5));                        // the antenna, mast +Z
   g.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,1),
-    dir.clone().normalize());                                      // aim the mast
-  g.position.set(pos[0]/1000, pos[1]/1000, pos[2]/1000);
-  return g;
-}
-gEx.add(rxAntUnit([ 7,-31,7], new THREE.Vector3( 0.75,-0.9, 0.22)));  // right-back
-gEx.add(rxAntUnit([-7,-31,7], new THREE.Vector3(-0.75,-0.9, 0.22)));  // left-back
+    new THREE.Vector3(0,-1,0.06).normalize());                     // horizontal, out the back
+  g.position.set(0, -33/1000, 6/1000); gEx.add(g); }               // centred at the rear
 // battery XT30 connector + red(+)/black(-) leads down to the ESC pads
 { const xt = M.elec.xt30;
   const conn = new THREE.Mesh(new THREE.BoxGeometry(0.009,0.007,0.006),
