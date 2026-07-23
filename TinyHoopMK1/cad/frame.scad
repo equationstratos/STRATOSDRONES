@@ -307,19 +307,19 @@ module gps_module() {
 module rx_antenna() {
     color("#1f6f6a") cylinder(d=3.4, h=6.5, $fn=18);          // u.FL / heatshrink base
     color("#c8a24a") translate([0,0,-2]) cylinder(d=2.0, h=2, $fn=12);  // gold pin
-    color("#161616") translate([0,0,6.5]) cylinder(d=1.6, h=47, $fn=14); // coax mast
-    color("#222222") translate([0,0,53.5]) sphere(d=3.2, $fn=18);       // T junction
-    color("#161616") translate([0,0,53.5]) rotate([0,90,0])            // horizontal element
-        cylinder(d=1.6, h=34, center=true, $fn=14);
+    color("#161616") translate([0,0,6.5]) cylinder(d=1.6, h=24, $fn=14); // SHORT coax mast
+    color("#222222") translate([0,0,30.5]) sphere(d=3.2, $fn=18);       // T junction
+    color("#161616") translate([0,0,30.5]) rotate([0,90,0])            // horizontal element
+        cylinder(d=1.6, h=24, center=true, $fn=14);
     for (sx=[-1,1]) color("#333333")                          // moulded end sleeves
-        translate([sx*16,0,53.5]) rotate([0,90,0]) cylinder(d=2.4, h=4, center=true, $fn=12);
+        translate([sx*11,0,30.5]) rotate([0,90,0]) cylinder(d=2.4, h=4, center=true, $fn=12);
 }
 
 /* White TPU antenna SLEEVE-TUBE (JeNo style) — the coax slides all the way
  * through; the tube is mounted so the antenna lies HORIZONTAL, only the tip
  * sticking out. Printed in white TPU (hence white on the drone). */
 module rx_ant_tpu() {
-    h = 30; od = 5.4; id = 2.0;
+    h = 18; od = 5.4; id = 2.0;   // short sleeve: antenna stays close to the frame
     color("#e8e8ea") difference() {
         union() {
             cylinder(d=od, h=h, $fn=28);                          // sleeve tube
