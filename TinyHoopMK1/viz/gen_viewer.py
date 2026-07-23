@@ -168,6 +168,16 @@ TEMPLATE = r"""<!DOCTYPE html>
       <div id="groups"></div>
     </div>
     <div class="sec">
+      <h2>Caméra</h2>
+      <select id="camSel" style="width:100%;background:var(--btn);color:var(--ink);
+        border:1px solid var(--line);border-radius:6px;padding:7px;font-size:12px">
+        <option value="dji">DJI O4 Lite (STEP réel)</option>
+        <option value="nano">Nano analogique (type Caddx/RunCam)</option>
+      </select>
+      <div class="mini" style="margin-top:5px">Lentille AR + bague métal réalistes ;
+        joint réglable dans « Réglage antennes &amp; joint ».</div>
+    </div>
+    <div class="sec">
       <h2>Antenne VTX (5,8 GHz)</h2>
       <select id="vtxSel" style="width:100%;background:var(--btn);color:var(--ink);
         border:1px solid var(--line);border-radius:6px;padding:7px;font-size:12px">
@@ -415,24 +425,61 @@ for (const [x,y] of M.standoffs.board){ const s=mesh(STLB64.standoff, 0xc2c5cb,.
   s.position.set(x/1000, y/1000, 0.003); s.scale.set(0.001,0.001,0.001*3/14); gStand.add(s); }
 const gCage = group('camcage'); { const m=mesh(STLB64.camcage, CARBON,.3,.5);
   m.position.z=M.frame_z; gCage.add(m); }
-// DJI O4 Lite camera head, seated in the TPU mount at the nose (real STEP).
-// Grey body + a glossy lens disc so it actually reads inside the dark cage.
-const gCam = (()=>{ const m=mesh(STLB64.o4cam, 0x30343b,.5,.35);  // dark-grey body
-  m.rotation.z = Math.PI/2;                          // lens faces +Y (nose)
-  m.position.set(M.elec.o4cam[0]/1000, M.elec.o4cam[1]/1000, M.elec.o4cam[2]/1000);
-  const g = adjGroup('camera', m, 0, 42, 20);        // pivot at camera centre
-  // soft rubber gasket around the lens — a FLAT washer (not a torus), so it
-  // sits flush WITHOUT bulging into a "beignet". Sized to sit INSIDE the TPU
-  // mount opening (camera -> gasket -> support). Adjustable via the Réglage
-  // panel (its own group 'gasket': position + size sliders).
+// ---- realistic FPV lens assembly (shared): black barrel + knurled metallic
+// retaining ring + AR-coated glossy glass dome (the reddish sheen of real
+// nano-cam glass). Lens axis = +Y (nose); centred at the group origin. ----
+function buildLens(){
+  const grp=new THREE.Group();
+  const blk=new THREE.MeshStandardMaterial({color:0x090909, metalness:.35, roughness:.5});
+  const barrel=new THREE.Mesh(new THREE.CylinderGeometry(0.0053,0.0056,0.0075,40), blk);
+  barrel.position.y=-0.0022; grp.add(barrel);                 // cylinder axis = Y
+  const bez=new THREE.Mesh(new THREE.CylinderGeometry(0.0050,0.0052,0.0018,40), blk);
+  bez.position.y=0.0013; grp.add(bez);                        // front bezel face
+  const ring=new THREE.Mesh(new THREE.TorusGeometry(0.0052,0.00095,20,48),
+    new THREE.MeshStandardMaterial({color:0x9aa1a9, metalness:.95, roughness:.26}));
+  ring.rotation.x=Math.PI/2; ring.position.y=0.0018; grp.add(ring);   // knurled metal ring
+  const glass=new THREE.Mesh(new THREE.SphereGeometry(0.0040,40,26,0,Math.PI*2,0,Math.PI*0.5),
+    new THREE.MeshStandardMaterial({color:0x1a1026, metalness:.92, roughness:.05}));
+  glass.position.y=0.0018; grp.add(glass);                    // AR-coated dome, opens +Y
+  return grp;
+}
+// procedural NANO analog camera body (à la Caddx/RunCam nano) — a small dark
+// housing + sensor board sitting BEHIND the shared lens; front faces +Y.
+function buildNanoCam(){
+  const grp=new THREE.Group();
+  const body=new THREE.Mesh(new THREE.BoxGeometry(0.0140,0.0120,0.0140),
+    new THREE.MeshStandardMaterial({color:0x141519, metalness:.35, roughness:.55}));
+  grp.add(body);
+  const pcb=new THREE.Mesh(new THREE.BoxGeometry(0.0132,0.0012,0.0132),
+    new THREE.MeshStandardMaterial({color:0x11532e, metalness:.2, roughness:.6}));
+  pcb.position.y=-0.0068; grp.add(pcb);                       // sensor board at the back
+  return grp;
+}
+// Camera at the nose — SELECTABLE (DJI O4 Lite STEP or nano analog), with the
+// realistic shared lens + the adjustable rubber gasket.
+const camModels = {}; let camCur = 'dji';
+const gCam = (()=>{ const g = group('camera');
+  g.position.set(0, 42/1000, 20/1000);               // pivot at camera centre
+  g.userData.base = g.position.clone();
+  // DJI O4 Lite STEP body (dark, closer to the real black housing)
+  const dji=mesh(STLB64.o4cam, 0x24272c,.5,.4); dji.rotation.z=Math.PI/2;
+  dji.position.set(0, 0, -10/1000);                  // = o4cam world minus pivot
+  const djiG=new THREE.Group(); djiG.add(dji); camModels.dji=djiG; g.add(djiG);
+  // nano analog body, seated just behind the shared lens
+  const nanoG=buildNanoCam(); nanoG.position.set(0, 3.5/1000, -1/1000);
+  nanoG.visible=false; camModels.nano=nanoG; g.add(nanoG);
+  // shared realistic lens at the lens centre (in front of whichever body)
+  const lens=buildLens(); lens.position.set(0, 11.4/1000, -1/1000); g.add(lens);
+  // soft rubber gasket — FLAT washer, sits INSIDE the TPU mount opening
+  // (camera -> gasket -> support), adjustable (own group 'gasket').
   const gOuter=0.0090, gInner=0.0062, gThick=0.0010;
   const shp=new THREE.Shape(); shp.absarc(0,0,gOuter,0,Math.PI*2,false);
   const gh=new THREE.Path(); gh.absarc(0,0,gInner,0,Math.PI*2,true); shp.holes.push(gh);
   const rub=new THREE.Mesh(new THREE.ExtrudeGeometry(shp,{depth:gThick,bevelEnabled:true,
     bevelThickness:0.00018,bevelSize:0.00018,bevelSegments:1,curveSegments:56}),
     new THREE.MeshStandardMaterial({color:0x0b0b0d, metalness:0.0, roughness:0.97}));
-  rub.rotation.x = -Math.PI/2;                        // flat face toward the nose (+Y)
-  const gsk = new THREE.Group();                      // own group so it is adjustable
+  rub.rotation.x = -Math.PI/2;
+  const gsk = new THREE.Group();
   gsk.add(rub); gsk.position.set(0, 11.4/1000, -1/1000);
   gsk.userData.base = gsk.position.clone(); G['gasket'] = gsk; g.add(gsk);
   return g; })();
@@ -713,6 +760,10 @@ applyElec(stdElec);
 { const sel=document.getElementById('vtxSel'); if(sel){ sel.value=vtxCur;
   sel.addEventListener('change',e=>{ showVtxModel(e.target.value);
     if (window.__pickAntenna) window.__pickAntenna('vtx_'+e.target.value); }); } }
+// camera model selector — swap DJI STEP body vs nano analog body
+{ const sel=document.getElementById('camSel'); if(sel){ sel.value=camCur;
+  sel.addEventListener('change',e=>{ if(camModels[camCur])camModels[camCur].visible=false;
+    camCur=e.target.value; if(camModels[camCur])camModels[camCur].visible=true; }); } }
 document.getElementById('bElec').addEventListener('click', ()=>{
   stdElec=!stdElec; applyElec(stdElec);
 });
@@ -730,7 +781,7 @@ document.getElementById('bElec').addEventListener('click', ()=>{
                 vtx_matchstick: {x:0, y:0,   z:0,    rx:28, ry:0, rz:0},
                 vtx_microlp:    {x:0, y:0,   z:0,    rx:28, ry:0, rz:0},
                 rxant:          {x:0, y:0,   z:0,    rx:87, ry:0, rz:0},
-                gasket:         {x:0, y:0,   z:0,    rx:0,  ry:0, rz:0, s:100} };
+                gasket:         {x:0, y:-1,  z:1,    rx:0,  ry:0, rz:0, s:85} };
   const cp = o => Object.assign({}, o);
   const off = {}; for (const k in DEF) off[k] = cp(DEF[k]);
   const SEAT = ['camera','cammount_top','cammount_bottom'];   // applied, not in the dropdown
