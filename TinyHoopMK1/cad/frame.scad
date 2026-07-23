@@ -462,6 +462,30 @@ module antenna_lollipop() {
     }
 }
 
+/* 5.8 GHz VTX antennas (U.FL) — three real popular models, all standing with
+ * the ACTIVE HEAD UP so they seat in the rear TPU tube head-first. */
+
+// TrueRC Singularity / Matchstick — ultra-thin, a slim white "matchstick" tip.
+module ant_singularity() {
+    color("#c9a24a") cylinder(d=2.3, h=3, $fn=16);                  // u.FL plug
+    color("#151515") translate([0,0,3]) cylinder(d=1.1, h=30, $fn=12);  // ultra-thin coax
+    color("#e6e6e6") translate([0,0,33]) cylinder(d=1.5, h=10, $fn=14); // matchstick element
+    color("#151515") translate([0,0,43]) sphere(d=1.5, $fn=10);
+}
+// FlyFishRC Osprey — short coax with a small flat teardrop element.
+module ant_osprey() {
+    color("#c9a24a") cylinder(d=2.3, h=3, $fn=16);                  // u.FL plug
+    color("#151515") translate([0,0,3]) cylinder(d=1.5, h=20, $fn=14);  // coax
+    color("#101010") translate([0,0,24]) scale([1,0.42,1.7]) sphere(d=9, $fn=26); // teardrop head
+}
+// Foxeer Lollipop 4 (U.FL) — the classic round-dome pagoda-ish lollipop.
+module ant_lollipop4() {
+    color("#c9a24a") cylinder(d=2.5, h=3, $fn=16);                  // u.FL plug
+    color("#151515") translate([0,0,3]) cylinder(d=2.2, h=16, $fn=16);  // mast
+    color("#171717") translate([0,0,19]) { cylinder(d=3.0, h=3.5, $fn=18);  // stem
+        translate([0,0,3.5]) scale([1,1,0.82]) sphere(d=11, $fn=30); }      // dome
+}
+
 /* DJI O4-Lite-style air unit — small finned box with two coax antennas. */
 module o4_airunit() {
     color("#17181c") rrect3(21, 13, 1.6, 12);                 // body
@@ -532,6 +556,9 @@ else if (PART == "jeno_top")       jeno_top();
 else if (PART == "standoff_post")  standoff_post();
 else if (PART == "vtx_module")     vtx_module();
 else if (PART == "antenna_lollipop") antenna_lollipop();
+else if (PART == "ant_singularity") ant_singularity();
+else if (PART == "ant_osprey")     ant_osprey();
+else if (PART == "ant_lollipop4")  ant_lollipop4();
 else if (PART == "o4_airunit")     o4_airunit();
 else if (PART == "capacitor")      capacitor();
 else if (PART == "buzzer")         buzzer();

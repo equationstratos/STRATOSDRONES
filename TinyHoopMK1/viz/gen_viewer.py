@@ -49,7 +49,7 @@ MODEL = dict(name="FR4N10", sub="FPV programmable / essaim · 2,5\" · 2S-3S", w
                           cammount_top=[0,26,60], cammount_bottom=[0,20,52],
                           airunit=[0,0,-18], motors=[0,0,-40], props=[0,0,78],
                           elec=[0,0,-30], battery=[0,0,94], screws=[0,0,66],
-                          tpu=[0,0,-26], antenna=[0,0,90], vtxant=[0,0,86],
+                          tpu=[0,0,-26], vtxant=[0,0,88],
                           cap=[0,0,-8], extras=[0,0,-15]),
              specs=[("Entraxe", "~115 mm (wide-X)"), ("Hélices", "2,5\" Gemfan 2520"),
                     ("Moteurs", "1203-1303 · 2S-3S"),
@@ -165,6 +165,16 @@ TEMPLATE = r"""<!DOCTYPE html>
     <div class="sec">
       <h2>Composants</h2>
       <div id="groups"></div>
+    </div>
+    <div class="sec">
+      <h2>Antenne VTX (5,8 GHz)</h2>
+      <select id="vtxSel" style="width:100%;background:var(--btn);color:var(--ink);
+        border:1px solid var(--line);border-radius:6px;padding:7px;font-size:12px">
+        <option value="lollipop4">Foxeer Lollipop 4 (U.FL)</option>
+        <option value="osprey">FlyFishRC Osprey (U.FL)</option>
+        <option value="singularity">TrueRC Singularity / Matchstick (U.FL)</option>
+      </select>
+      <div class="mini" style="margin-top:5px">Insérée dans le TPU arrière, tête vers le haut.</div>
     </div>
     <div class="sec">
       <h2>Électronique</h2>
@@ -480,17 +490,16 @@ for (const s of M.screws){ const sc = place(STLB64.screw, 0xd6d9de, .9, .25, s);
 for (const [x,y] of M.standoffs.board){
   const sc = place(STLB64.screw, 0xd6d9de, .9, .25, [x, y, M.elec.o4airunit[2]+3]);
   gScrew.add(sc); }
-// the SINGLE DJI O4 Lite antenna (real STEP), seated in the rear TPU mount the
-// RIGHT way up: the fat connector/ferrite end drops into the tube, the thin
-// whip rises up-and-back (~26° off vertical)
-const gAnt = group('antenna');
-{ const a = place(STLB64.o4antenna, 0x101216, .2, .5, M.elec.o4antenna);
-  a.rotation.x = -1.12; gAnt.add(a); }   // connector down, whip up-and-back
-// analog 5.8 GHz VTX "lollipop" antenna, inserted in the rear TPU mount — the
-// classic FPV look (dome on top). Its own toggle so it can be hidden.
+// 5.8 GHz VTX antenna in the rear TPU mount — SELECTABLE among 3 real models,
+// HEAD UP (only the chosen one is visible; dropdown in the sidebar).
 const gVtxAnt = group('vtxant');
-{ const l = place(STLB64.lollipop, 0x1c1c1e, .2, .5, M.elec.vtxant);
-  l.rotation.x = 0.42; gVtxAnt.add(l); }  // ~24° back, seated in the TPU tube
+const vtxModels = {
+  singularity: place(STLB64.ant_singularity, 0x181818, .2, .5, M.elec.vtxant),
+  osprey:      place(STLB64.ant_osprey,      0x141414, .2, .5, M.elec.vtxant),
+  lollipop4:   place(STLB64.ant_lollipop4,   0x171717, .2, .5, M.elec.vtxant),
+};
+Object.values(vtxModels).forEach(m=>{ m.rotation.x = 0.42; m.visible=false; gVtxAnt.add(m); });
+let vtxCur='lollipop4'; vtxModels[vtxCur].visible=true;   // default model, head up in the TPU
 // LiPo capacitor (25 V 22 µF, Ø6×12) SEATED IN ITS PRINTED TPU HOLDER
 const gCap = group('cap');
 gCap.add(place(STLB64.cap_holder, TPU, .1, .85, M.elec.cap));       // TPU snap-clip
@@ -521,17 +530,23 @@ gEx.add(place(STLB64.rx_pcb, 0x0f3d0f, .2, .5,                      // RX board
   g.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,1),
     new THREE.Vector3(0,-1,0.06).normalize());                     // horizontal, out the back
   g.position.set(0, -30/1000, 6/1000); gEx.add(g); }               // close to the frame
-// battery XT30 connector + red(+)/black(-) leads down to the ESC pads
-{ const xt = M.elec.xt30;
-  const conn = new THREE.Mesh(new THREE.BoxGeometry(0.009,0.007,0.006),
-    new THREE.MeshStandardMaterial({color:0xf0b000, metalness:.2, roughness:.5}));
-  conn.position.set(xt[0]/1000, xt[1]/1000, xt[2]/1000); gEx.add(conn);
-  gEx.add(wireTube([xt[0]+2, xt[1], xt[2]-1], [4, -6, 8], 0.85, 0xd21f1f));   // red +  (ESC)
-  gEx.add(wireTube([xt[0]-2, xt[1], xt[2]-1], [-4, -6, 8], 0.85, 0x111214));  // black - (ESC)
-  // battery pigtail: the pack's own red/black lead down to this XT30
-  const bt = M.elec.battery, brear = bt[1] - 26;                    // pack tail (rear)
-  gEx.add(wireTube([xt[0]+2, xt[1]+2, xt[2]+1], [ 2, brear, bt[2]-4], 0.9, 0xd21f1f));
-  gEx.add(wireTube([xt[0]-2, xt[1]+2, xt[2]+1], [-2, brear, bt[2]-4], 0.9, 0x111214)); }
+// realistic battery lead: a YELLOW XT30 (housing + gold pins) with thick
+// silicone RED(+) and BLACK(-) wires — pack tail -> XT30 -> ESC pads.
+{ const xt = M.elec.xt30, bt = M.elec.battery, brear = bt[1] - 26;
+  // XT30 yellow housing (rounded) + two gold pin bores
+  const body = new THREE.Mesh(new THREE.BoxGeometry(0.0095,0.0075,0.0072),
+    new THREE.MeshStandardMaterial({color:0xf2b400, metalness:.15, roughness:.45}));
+  body.position.set(xt[0]/1000, xt[1]/1000, xt[2]/1000); gEx.add(body);
+  for (const s of [-1,1]){ const pin=new THREE.Mesh(new THREE.CylinderGeometry(0.0011,0.0011,0.004,12),
+      new THREE.MeshStandardMaterial({color:0xcaa63a, metalness:.9, roughness:.25}));
+    pin.rotation.x=Math.PI/2; pin.position.set((xt[0]+s*2)/1000, (xt[1]-4)/1000, xt[2]/1000); gEx.add(pin); }
+  const RED=0xd51f26, BLK=0x0c0c0e, r=1.15;
+  // battery pigtail (pack tail -> XT30)
+  gEx.add(wireTube([2, brear, bt[2]-2], [xt[0]+2, xt[1]+3, xt[2]+1], r, RED));
+  gEx.add(wireTube([-2, brear, bt[2]-2], [xt[0]-2, xt[1]+3, xt[2]+1], r, BLK));
+  // ESC lead (XT30 -> FC solder pads)
+  gEx.add(wireTube([xt[0]+2, xt[1]-4, xt[2]-1], [4, -6, 8], r, RED));
+  gEx.add(wireTube([xt[0]-2, xt[1]-4, xt[2]-1], [-4, -6, 8], r, BLK)); }
 for (const [mx, my] of M.motors){                                  // 4 phase cables
   const c = mesh(STLB64.cable, 0x2a2c30, .2, .6);
   c.position.set(mx/1000, my/1000, M.frame_z + 0.004);
@@ -553,8 +568,7 @@ const GROUPS = {
   elec:     {label:'Carte AIO (STRATOS / GHF411)', color:'#0b6b39'},
   battery:  {label:'Batterie 3S 560 mAh (DOGCOM)', color:'#22262d'},
   screws:   {label:'Visserie M2 (moteurs + stack)', color:'#d6d9de'},
-  antenna:  {label:'Antenne DJI O4 (unique, dans le TPU)', color:'#101216'},
-  vtxant:   {label:'Antenne VTX lollipop 5,8 GHz (TPU)', color:'#1c1c1e'},
+  vtxant:   {label:'Antenne VTX 5,8 GHz (sélecteur)', color:'#1c1c1e'},
   cap:      {label:'Condensateur 25 V 22 µF (support TPU)', color:'#1b3a8f'},
   extras:   {label:'Buzzer · GPS · RX+TPU · câbles XT30', color:'#3a6ea5'},
 };
@@ -631,6 +645,10 @@ function applyElec(std){                    // std = show the real GHF411
 }
 let stdElec=true;                            // default: show the FC you provided
 applyElec(stdElec);
+// VTX antenna model selector — swap which of the 3 meshes is visible
+{ const sel=document.getElementById('vtxSel'); if(sel){ sel.value=vtxCur;
+  sel.addEventListener('change',e=>{ if(vtxModels[vtxCur])vtxModels[vtxCur].visible=false;
+    vtxCur=e.target.value; if(vtxModels[vtxCur])vtxModels[vtxCur].visible=true; }); } }
 document.getElementById('bElec').addEventListener('click', ()=>{
   stdElec=!stdElec; applyElec(stdElec);
 });
@@ -1100,7 +1118,9 @@ def main():
                 "rx_pcb": b64(os.path.join(STL, "rx_pcb.stl")),
                 "rx_holder": b64(os.path.join(STL, "rx_holder.stl")),
                 "rx_ant_tpu": b64(os.path.join(STL, "rx_ant_tpu.stl")),
-                "lollipop": b64(os.path.join(STL, "antenna_lollipop.stl")),
+                "ant_singularity": b64(os.path.join(STL, "ant_singularity.stl")),
+                "ant_osprey": b64(os.path.join(STL, "ant_osprey.stl")),
+                "ant_lollipop4": b64(os.path.join(STL, "ant_lollipop4.stl")),
                 "cable": b64(os.path.join(STL, "motor_cable.stl")),
             }, separators=(",", ":"))))
     with open(OUT, "w") as f:
