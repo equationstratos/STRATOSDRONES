@@ -612,7 +612,7 @@ boardCustom.rotation.z = Math.PI/4; boardCustom.visible = false; gElec.add(board
 const boardGhf = place(STLB64.ghf411, 0x14161b, .35, .45, M.elec.board);
 boardGhf.rotation.z = Math.PI/4; gElec.add(boardGhf);   // 45° = real JeNo AIO mount, default
 const gBatt = group('battery');
-gBatt.add(place(STLB64.battery, 0x22262d, .1, .55, M.elec.battery));
+gBatt.add(place(STLB64.battery, 0x83868c, .35, .45, M.elec.battery));   // silver LiPo foil
 // M2 screws on the real standoffs + camera plates
 const gScrew = group('screws');
 for (const s of M.screws){ const sc = place(STLB64.screw, 0xd6d9de, .9, .25, s);
@@ -701,20 +701,39 @@ gRx.add(place(STLB64.rx_pcb, 0x0f3d0f, .2, .5,
   g.position.set(M.elec.rxant[0]/1000, M.elec.rxant[1]/1000,
                  M.frame_z + M.elec.rxant[2]/1000);
   g.userData.base = g.position.clone(); gRx.add(g); }              // reparent under RX toggle
-// ALL cables in one group: battery XT30 red/black leads + 4 motor phase cables
+// battery harness (clean) + 4 motor phase cables — all in one toggle group.
+// Modelled on the real DOGCOM pack: a tidy red+black main lead to an XT30 and
+// a white JST-XH balance connector, no tangle.
 const gCbl = group('cables');
-{ const xt = M.elec.xt30, bt = M.elec.battery, brear = bt[1] - 26;
-  const body = new THREE.Mesh(new THREE.BoxGeometry(0.0095,0.0075,0.0072),
+{ const xt = M.elec.xt30, bt = M.elec.battery;
+  const RED=0xcf2128, BLK=0x121214;
+  // one smooth swept lead p0->p1 (mm) with a gentle sag, r = radius (mm)
+  const lead=(p0,p1,r,col,sag)=>{
+    const m=[(p0[0]+p1[0])/2,(p0[1]+p1[1])/2,Math.max(p0[2],p1[2])+(sag||0)];
+    const c=new THREE.CatmullRomCurve3([new THREE.Vector3(p0[0]/1000,p0[1]/1000,p0[2]/1000),
+      new THREE.Vector3(m[0]/1000,m[1]/1000,m[2]/1000),
+      new THREE.Vector3(p1[0]/1000,p1[1]/1000,p1[2]/1000)]);
+    return new THREE.Mesh(new THREE.TubeGeometry(c,28,r/1000,12,false),
+      new THREE.MeshStandardMaterial({color:col,metalness:.05,roughness:.5})); };
+  const root=[0, bt[1]-24, bt[2]+1];              // leads exit the pack's rear end
+  // XT30 female: yellow body + 2 gold cups (facing the board)
+  const body=new THREE.Mesh(new THREE.BoxGeometry(0.0090,0.0080,0.0070),
     new THREE.MeshStandardMaterial({color:0xf2b400, metalness:.15, roughness:.45}));
-  body.position.set(xt[0]/1000, xt[1]/1000, xt[2]/1000); gCbl.add(body);   // XT30 yellow
-  for (const s of [-1,1]){ const pin=new THREE.Mesh(new THREE.CylinderGeometry(0.0011,0.0011,0.004,12),
+  body.position.set(xt[0]/1000, xt[1]/1000, xt[2]/1000); gCbl.add(body);
+  for (const s of [-1,1]){ const cup=new THREE.Mesh(new THREE.CylinderGeometry(0.0012,0.0012,0.0042,16),
       new THREE.MeshStandardMaterial({color:0xcaa63a, metalness:.9, roughness:.25}));
-    pin.rotation.x=Math.PI/2; pin.position.set((xt[0]+s*2)/1000, (xt[1]-4)/1000, xt[2]/1000); gCbl.add(pin); }
-  const RED=0xd51f26, BLK=0x0c0c0e, r=1.15;
-  gCbl.add(wireTube([2, brear, bt[2]-2], [xt[0]+2, xt[1]+3, xt[2]+1], r, RED));    // pigtail +
-  gCbl.add(wireTube([-2, brear, bt[2]-2], [xt[0]-2, xt[1]+3, xt[2]+1], r, BLK));   // pigtail -
-  gCbl.add(wireTube([xt[0]+2, xt[1]-4, xt[2]-1], [4, -6, 8], r, RED));             // ESC +
-  gCbl.add(wireTube([xt[0]-2, xt[1]-4, xt[2]-1], [-4, -6, 8], r, BLK)); }          // ESC -
+    cup.rotation.x=Math.PI/2; cup.position.set((xt[0]+s*2.2)/1000,(xt[1]-4.4)/1000,xt[2]/1000); gCbl.add(cup); }
+  // main power pair: pack rear -> XT30 (thick, gentle curve, side by side)
+  gCbl.add(lead([ 2.4, root[1], root[2]], [xt[0]+2.2, xt[1]+3, xt[2]+1], 1.3, RED, 3));
+  gCbl.add(lead([-2.4, root[1], root[2]], [xt[0]-2.2, xt[1]+3, xt[2]+1], 1.3, BLK, 3));
+  // white JST-XH balance plug (3S = 4-pin) + 4 thin balance wires
+  const bal=new THREE.Mesh(new THREE.BoxGeometry(0.0075,0.0032,0.0040),
+    new THREE.MeshStandardMaterial({color:0xededf0, metalness:.0, roughness:.7}));
+  bal.position.set(6.5/1000,(bt[1]-20)/1000,(bt[2]+2)/1000); gCbl.add(bal);
+  const bcol=[BLK,RED,0xe0a828,0x2b8a2b];         // black, red, yellow, green
+  for (let i=0;i<4;i++) gCbl.add(lead([3.2, root[1], root[2]+2],
+    [4.7+i*1.2, bt[1]-20, bt[2]+2], 0.42, bcol[i], 1.5+i*0.4));
+}
 for (const [mx, my] of M.motors){                                  // 4 phase cables
   const c = mesh(STLB64.cable, 0x2a2c30, .2, .6);
   c.position.set(mx/1000, my/1000, M.frame_z + 0.004);
@@ -734,7 +753,7 @@ const GROUPS = {
   motors:   {label:'Moteurs 1104 (Readytosky)', color:'#3a3d43'},
   props:    {label:'Hélices 2,5" (2520)',  color:'#d8721e'},
   elec:     {label:'Carte AIO (STRATOS / GHF411)', color:'#0b6b39'},
-  battery:  {label:'Batterie 3S 560 mAh (DOGCOM)', color:'#22262d'},
+  battery:  {label:'Batterie 3S 560 mAh (DOGCOM)', color:'#83868c'},
   screws:   {label:'Visserie M2 (moteurs + stack)', color:'#d6d9de'},
   vtxant:   {label:'Antenne VTX 5,8 GHz (sélecteur)', color:'#1c1c1e'},
   cap:      {label:'Condensateur 25 V 22 µF (support TPU)', color:'#1b3a8f'},
@@ -842,7 +861,7 @@ document.getElementById('bElec').addEventListener('click', ()=>{
                 vtx_matchstick: {x:0, y:0,   z:0,    rx:28, ry:0, rz:0},
                 vtx_microlp:    {x:0, y:0,   z:0,    rx:28, ry:0, rz:0},
                 rxant:          {x:0, y:0,   z:0,    rx:87, ry:0, rz:0},
-                gasket:         {x:0, y:-1,  z:1,    rx:0,  ry:0, rz:0, s:100},
+                gasket:         {x:0, y:-1,  z:1,    rx:-27, ry:0, rz:0, s:100},
                 bezel:          {x:0, y:0,   z:0,    rx:0,  ry:0, rz:0, s:100} };
   const cp = o => Object.assign({}, o);
   const off = {}; for (const k in DEF) off[k] = cp(DEF[k]);
