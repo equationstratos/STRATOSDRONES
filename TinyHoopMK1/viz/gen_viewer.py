@@ -36,7 +36,7 @@ MODEL = dict(name="FR4N10", sub="FPV programmable / essaim · 2,5\" · 2S-3S", w
              prop_z=0.0135, motor_z=0.003, frame_z=0.0,
              elec=dict(board=[0,0,4], battery=[0,4,24],
                        o4cam=[0,42,10], o4airunit=[0,0,10],
-                       vtxant=[0,-30,7], rearbay=[0,-32,3], rxant=[0,-33,6],
+                       vtxant=[0,-29.5,5.5], rearbay=[0,-32,3], rxant=[0,-33,6],
                        cap=[-8,-24,9], buzzer=[11,-31,6], gps=[0,25,19.2],
                        rx=[0,-22,4], xt30=[0,-25,11], grommet=[0,0,11]),
              standoffs=dict(frame=_FRAME_STAND, board=_BOARD_STAND),
@@ -768,6 +768,7 @@ function buildLollipopAnt(o){
   for (let i = 1; i <= 8; i++){ const a = (i/8) * Math.PI/2;   // quarter-round top
     pts.push(new THREE.Vector2((headR-rr) + Math.cos(a)*rr, (zTop-rr) + Math.sin(a)*rr)); }
   const head = new THREE.Mesh(new THREE.LatheGeometry(pts, 40), capMat);
+  head.rotation.x = Math.PI/2;            // LatheGeometry spins about Y -> stand it up on Z
   head.position.z = zs + stem; grp.add(head);                  // colourable head
   // thin dark lip at the base of the cap, as on the real part
   fixed(tube(headR*1.02, 0.0009, zs + stem + 0.00045, shrMat));
@@ -1020,10 +1021,10 @@ document.getElementById('bElec').addEventListener('click', ()=>{
                 cammount_top:   {x:0, y:-2,  z:-1,   rx:-6, ry:0, rz:0},
                 cammount_bottom:{x:0, y:4.5, z:-1.5, rx:-5, ry:0, rz:0},
                 vtx_dji:        {x:0, y:-29,   z:48.5, rx:-147, ry:0, rz:0},
-                vtx_rhcp:       {x:0, y:0,     z:0,    rx:14,   ry:0, rz:0},
-                vtx_foxeer:     {x:0, y:0,     z:0,    rx:14,   ry:0, rz:0},
-                vtx_matchstick: {x:0, y:0,   z:0,    rx:14, ry:0, rz:0},
-                vtx_microlp:    {x:0, y:0,   z:0,    rx:14, ry:0, rz:0},
+                vtx_rhcp:       {x:0, y:0,     z:0,    rx:28,   ry:0, rz:0},
+                vtx_foxeer:     {x:0, y:0,     z:0,    rx:28,   ry:0, rz:0},
+                vtx_matchstick: {x:0, y:0,   z:0,    rx:28, ry:0, rz:0},
+                vtx_microlp:    {x:0, y:0,   z:0,    rx:28, ry:0, rz:0},
                 rxant:          {x:0, y:0,   z:0,    rx:87, ry:0, rz:0, s:62},
                 gasket:         {x:0, y:-1,  z:1,    rx:-27, ry:0, rz:0, s:100},
                 bezel:          {x:0, y:0,   z:0,    rx:0,  ry:0, rz:0, s:100} };
