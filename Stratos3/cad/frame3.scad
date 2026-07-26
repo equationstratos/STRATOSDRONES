@@ -2,11 +2,11 @@
 //  STRATOS 3 (Fr4n30-001) — 3" FPV freestyle, printable frame kit
 //  All dimensions in mm. Everything here is parametric: change TUNE, re-export.
 //
-//    openscad -o stl/PART.stl -D 'PART="canopy_a"' frame3.scad
+//    openscad -o stl/PART.stl -D 'PART="side_panel_a"' frame3.scad
 //    ./export.sh          # exports every part
 //
 //  Print notes live in ../README.md. Carbon plates are DXF-cut (2 mm / 3 mm),
-//  every "tpu_*" and "canopy_*" part is printed in TPU 95A.
+//  every "tpu_*" and "side_panel_*" part is printed in TPU 95A.
 // ===========================================================================
 
 PART = "all";          // which part to render/export
@@ -88,7 +88,7 @@ module top_plate() {
       offset(r=1.5) offset(r=-1.5) square([XT30_W+2*CLR+2, XT30_H+2*CLR+2], center=true);
     // battery strap slots
     for (y=[-16, 16]) translate([0,y]) square([BODY_W-10, 4], center=true);
-    translate([0, (BODY_L-14)/2-10]) circle(d=8);   // canopy screw / antenna pass
+    translate([0, (BODY_L-14)/2-10]) circle(d=8);   // side-panel screw / antenna pass
   }
 }
 
@@ -188,82 +188,66 @@ module tpu_batt_pad() {
 }
 
 // ===========================================================================
-//  CANOPIES — 5 styles, same footprint & fixings, pick your favourite.
-//  All screw to the top plate on the STACK pattern + the front post.
-//  Shared: camera window at the front, antenna exits at the back.
+//  SIDE PANELS / SIDE COVERS — 5 styles, printed in TPU, same fixings.
+//  They close the body between the plates: protect the stack from side impacts,
+//  keep debris out, and give the build its look. Print 2 of your chosen variant
+//  (the shape is symmetric, so the same STL does left AND right).
 // ===========================================================================
-CAN_L = BODY_L - 16;
-CAN_W = BODY_W + 4;
-module canopy_shell(h, taper=0.72, r=6) {       // common lofted body
-  hull() {
-    translate([0,0,0.01])   rounded(CAN_W, CAN_L, r, 0.02);
-    translate([0,2,h])      rounded(CAN_W*taper, CAN_L*0.86, r, 0.02);
-  }
-}
-module canopy_cuts() {                          // openings shared by all variants
-  // camera window (front, raked)
-  translate([0, CAN_L/2-6, 12]) rotate([CAM_TILT,0,0])
-    cube([CAM_W+3, 20, 20], center=true);
-  // antenna exits (rear)
-  for (x=[-8,8]) translate([x, -CAN_L/2+6, 14]) rotate([-BAY_ANG,0,0])
-    cylinder(d=7.5, h=30, center=true);
-  // USB / bind access, right side
-  translate([CAN_W/2, 4, 10]) rotate([0,90,0]) cylinder(d=11, h=8, center=true);
-  // airflow in (front) and out (rear top)
-  for (y=[10, 2, -6]) translate([0, y, 0]) rotate([0,0,0])
-    for (x=[-1,1]) translate([x*(CAN_W/2-2), 0, 12]) rotate([0,90,0])
-      cylinder(d=6, h=6, center=true);
-  // fixings: stack pattern + front post
-  for (x=[-1,1], y=[-1,1]) translate([x*STACK/2, y*STACK/2, 0]) m3(20);
-  translate([0, CAN_L/2-4, 0]) m3(20);
-}
-// inner void: the same loft inset by WALL on every side, open at the bottom so
-// the canopy drops over the stack. Height is h-WALL so the roof keeps its skin.
-module canopy_void(h, taper, r) {
-  translate([0,0,-1]) hull() {
-    translate([0,0,0.01])
-      rounded(CAN_W-2*WALL, CAN_L-2*WALL, max(r-WALL,1), 0.02);
-    translate([0,2,h-WALL])
-      rounded(CAN_W*taper-2*WALL, CAN_L*0.86-2*WALL, max(r-WALL,1), 0.02);
-  }
-}
-module canopy_body(h, taper, r) {
-  difference() {
-    canopy_shell(h, taper, r);
-    canopy_void(h, taper, r);
-    canopy_cuts();
-  }
-}
-
-// A — CINEWHOOP WRAP : haute, enveloppante, façon coque blanche (photo 3)
-module canopy_a() { canopy_body(26, 0.70, 7); }
-// B — RACER LOW : basse et effilée, style racer orange (photo 2)
-module canopy_b() { canopy_body(17, 0.62, 5); }
-// C — SPLIT AERO : nervures latérales, look Split-X (photo 1)
-module canopy_c() {
-  union() {
-    canopy_body(22, 0.66, 6);
-    for (x=[-1,1]) translate([x*(CAN_W/2-1.2), 0, 11])           // side strakes
-      rounded(2.4, CAN_L*0.7, 1, 8);
-  }
-}
-// D — CAGE : ajourée, minimum de matière, refroidissement maxi
-module canopy_d() {
-  difference() {
-    canopy_body(21, 0.68, 6);
-    for (y=[-24:9:24]) translate([0, y, 13]) rotate([0,90,0])
-      cylinder(d=9, h=CAN_W+10, center=true);                     // big side louvres
-    for (x=[-8,0,8]) translate([x, 6, 20]) cylinder(d=7, h=20);   // top vents
-  }
-}
-// E — DUCK BILL : bec avant plongeant, protège l'objectif en crash
-module canopy_e() {
-  union() {
-    canopy_body(23, 0.67, 6);
-    hull() {                                                       // the bill
-      translate([0, CAN_L/2-6, 6])  rounded(CAN_W*0.8, 4, 3, 3);
-      translate([0, CAN_L/2+7, 13]) rounded(CAN_W*0.5, 3, 2, 3);
+SP_L = BODY_L - 12;      // length along the body
+SP_H = STANDOFF_H;       // exactly the gap between the plates
+SP_T = 2.6;              // TPU thickness
+module sp_blank(){                                  // outline + fixing tabs
+  difference(){
+    union(){
+      translate([0,0,SP_H/2]) rotate([90,0,0])
+        linear_extrude(SP_T, center=true) offset(r=3) offset(r=-3)
+          square([SP_L, SP_H], center=true);
+      for (x=[-1,1], z=[0,1])                       // top & bottom lips, hook the plates
+        translate([x*(SP_L/2-9), 0, z*(SP_H-2)+1]) rotate([90,0,0])
+          linear_extrude(SP_T, center=true) square([14, 4], center=true);
     }
+    for (x=[-1,1], z=[0,1])                         // M2 fixing holes
+      translate([x*(SP_L/2-9), 0, z*(SP_H-2)+1]) rotate([90,0,0]) cylinder(d=2.2,h=10,center=true);
+  }
+}
+module sp_cut(shape) { rotate([90,0,0]) linear_extrude(SP_T+2, center=true) children(); }
+// A — NERVURÉE : pleine, nervures embossées (protection maxi, look photo rouge)
+module side_panel_a(){
+  union(){
+    sp_blank();
+    for (x=[-1:0.5:1]) translate([x*SP_L/3.2, -SP_T/2-0.6, SP_H/2]) rotate([90,0,0])
+      linear_extrude(1.2, center=true) square([3, SP_H-8], center=true);
+  }
+}
+// B — HEXA : treillis hexagonal, léger et aéré
+module side_panel_b(){
+  difference(){
+    sp_blank();
+    for (x=[-2:1:2], z=[0:1:2])
+      translate([x*15 + (z%2)*7.5, 0, 6+z*6]) sp_cut() circle(d=8, $fn=6);
+  }
+}
+// C — FENTES AÉRO : longues fentes inclinées (style racer)
+module side_panel_c(){
+  difference(){
+    sp_blank();
+    for (x=[-2:1:2]) translate([x*14, 0, SP_H/2]) rotate([0,12,0])
+      sp_cut() offset(r=2) offset(r=-2) square([5, SP_H-9], center=true);
+  }
+}
+// D — SQUELETTE : grandes ouvertures, matière minimale (le plus léger)
+module side_panel_d(){
+  difference(){
+    sp_blank();
+    for (x=[-1,0,1]) translate([x*24, 0, SP_H/2])
+      sp_cut() offset(r=3) offset(r=-3) square([18, SP_H-9], center=true);
+  }
+}
+// E — DEMI-HAUTEUR : ne ferme que le bas, laisse le stack respirer
+module side_panel_e(){
+  difference(){
+    sp_blank();
+    translate([0, 0, SP_H*0.72]) sp_cut() square([SP_L-16, SP_H], center=true);
   }
 }
 
@@ -275,7 +259,7 @@ module assembly() {
   color("#1a1d21") translate([0,0,STANDOFF_H]) top_plate();
   for (p=mot) translate([p[0],p[1],PLATE_B]) color("#3a3d43") cylinder(d=MOTOR_D, h=14);
   for (p=mot) translate([p[0],p[1],PLATE_B+15]) color("#d8721e",0.45) cylinder(d=PROP_D, h=1.2);
-  color("#2b2f36") translate([0,0,STANDOFF_H+PLATE_T]) canopy_a();
+  for (y=[-1,1]) color("#2b2f36") translate([0, y*(BODY_W/2+1.5), PLATE_B]) side_panel_a();
   color("#2b2f36") translate([0,-BODY_L/2+12, PLATE_B]) tpu_rear_bay();
   echo(str("WHEELBASE=", WB, " PROP=", PROP_D, " STACK=", STACK));
 }
@@ -291,9 +275,9 @@ else if (PART=="tpu_rx_holder")     tpu_rx_holder();
 else if (PART=="tpu_gps_mount")     tpu_gps_mount();
 else if (PART=="tpu_arm_guard")     tpu_arm_guard();
 else if (PART=="tpu_batt_pad")      tpu_batt_pad();
-else if (PART=="canopy_a")          canopy_a();
-else if (PART=="canopy_b")          canopy_b();
-else if (PART=="canopy_c")          canopy_c();
-else if (PART=="canopy_d")          canopy_d();
-else if (PART=="canopy_e")          canopy_e();
+else if (PART=="side_panel_a")    side_panel_a();
+else if (PART=="side_panel_b")    side_panel_b();
+else if (PART=="side_panel_c")    side_panel_c();
+else if (PART=="side_panel_d")    side_panel_d();
+else if (PART=="side_panel_e")    side_panel_e();
 else                                assembly();
