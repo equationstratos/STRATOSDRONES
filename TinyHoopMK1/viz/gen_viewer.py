@@ -37,7 +37,7 @@ MODEL = dict(name="FR4N10", sub="FPV programmable / essaim · 2,5\" · 2S-3S", w
              elec=dict(board=[0,0,4], battery=[0,4,24],
                        o4cam=[0,42,10], o4airunit=[0,0,10],
                        vtxant=[0,-30,7], rearbay=[0,-32,3], rxant=[0,-33,6],
-                       cap=[17,-24,9], buzzer=[11,-31,6], gps=[-4,-15,19],
+                       cap=[-8,-24,9], buzzer=[11,-31,6], gps=[0,25,19.2],
                        rx=[0,-22,4], xt30=[0,-25,11], grommet=[0,0,11]),
              standoffs=dict(frame=_FRAME_STAND, board=_BOARD_STAND),
              # ALL screws: 16 motor-mount + 3 frame-standoff tops + 4 board tops
@@ -721,6 +721,8 @@ const gVtxAnt = group('vtxant');                         // parent: toggle + col
 // Each model gets its OWN pivot group at the antenna base so the fine-adjust
 // panel can translate/rotate them ONE BY ONE (moving the DJI must not move the
 // RHCP, which is already well seated). Only one group is visible at a time.
+// mark a mesh so the colour picker leaves it alone (coax, gold plugs, …)
+function keep(m){ m.userData.keepColor = true; return m; }
 function vtxPivot(key, m){
   const g = new THREE.Group();
   g.position.set(M.elec.vtxant[0]/1000, M.elec.vtxant[1]/1000,
@@ -773,11 +775,14 @@ function buildLollipopAnt(o){
 }
 const vtxModels = {
   dji:        vtxPivot('dji',        mesh(STLB64.dji_pro_ant, 0x0f1114, .2, .5)),  // DJI O4 Pro antenna
-  // remodelled from the real parts: coloured capsule head + black coax + gold plug
-  rhcp:       vtxPivot('rhcp',       buildLollipopAnt({headR:0.0072, headH:0.0175,
-                stem:0.030, shrink:0.010, conn:'sma', color:0x7d2fb0})),   // RHCP LP A1
-  foxeer:     vtxPivot('foxeer',     buildLollipopAnt({headR:0.0068, headH:0.0165,
-                stem:0.026, shrink:0.009, conn:'sma', color:0xc4161c})),   // Foxeer Lollipop
+  // REAL Foxeer Lollipop 5.8 SMA (owner's STEP), split into head / stem / connector
+  // so the colour picker only repaints the HEAD, like the real red cap.
+  foxeer:     vtxPivot('foxeer',     (()=>{ const g = new THREE.Group();
+                g.add(mesh(STLB64.foxeer_head, 0xc4161c, .18, .34));            // red cap
+                g.add(keep(mesh(STLB64.foxeer_stem, 0x0b0b0d, .15, .62)));      // coax stem
+                g.add(keep(mesh(STLB64.foxeer_conn, 0xc9a227, .95, .24)));      // gold SMA
+                return g; })()),
+  rhcp:       vtxPivot('rhcp',       mesh(STLB64.rhcp_lp,     0x141414, .2, .5)),  // RHCP LP A1 (STEP)
   matchstick: vtxPivot('matchstick', mesh(STLB64.matchstick,  0x181818, .2, .5)),  // TrueRC Singularity
   microlp:    vtxPivot('microlp',    buildLollipopAnt({headR:0.0050, headH:0.0120,
                 stem:0.018, shrink:0.007, conn:'ufl', color:0xc4161c})),   // micro lollipop U.FL
@@ -793,10 +798,14 @@ function showVtxModel(key){
   const s = document.getElementById('vtxSel'); if (s) s.value = key;
 }
 // LiPo capacitor (25 V 22 µF, Ø6×12) SEATED IN ITS PRINTED TPU HOLDER
+// Capacitor LAID DOWN (axis along Y) so the Ø6x18.4 can fits BETWEEN the plates
+// instead of standing proud of the frame. Holder rotated with it.
 const gCap = group('cap');
-gCap.add(place(STLB64.cap_holder, TPU, .1, .85, M.elec.cap));       // TPU snap-clip
-gCap.add(place(STLB64.cap, 0x1b3a8f, .25, .45,                      // the can, in the bore
-  [M.elec.cap[0], M.elec.cap[1], M.elec.cap[2]+0.6]));
+{ const c = M.elec.cap;
+  const holder = place(STLB64.cap_holder, TPU, .1, .85, c);
+  holder.rotation.x = -Math.PI/2; gCap.add(holder);                 // TPU clip, on its side
+  const can = place(STLB64.cap, 0x1b3a8f, .25, .45, [c[0], c[1], c[2]+0.6]);
+  can.rotation.x = -Math.PI/2; gCap.add(can); }                     // the can, lying flat
 // ---- a swept round tube between two points (mm) — for wires ----
 function wireTube(p0, p1, r, col){
   const pts=[new THREE.Vector3(p0[0]/1000,p0[1]/1000,p0[2]/1000),
@@ -1011,10 +1020,10 @@ document.getElementById('bElec').addEventListener('click', ()=>{
                 cammount_top:   {x:0, y:-2,  z:-1,   rx:-6, ry:0, rz:0},
                 cammount_bottom:{x:0, y:4.5, z:-1.5, rx:-5, ry:0, rz:0},
                 vtx_dji:        {x:0, y:-29,   z:48.5, rx:-147, ry:0, rz:0},
-                vtx_rhcp:       {x:0, y:0,     z:0,    rx:28,   ry:0, rz:0},
-                vtx_foxeer:     {x:0, y:0,     z:0,    rx:28,   ry:0, rz:0},
-                vtx_matchstick: {x:0, y:0,   z:0,    rx:28, ry:0, rz:0},
-                vtx_microlp:    {x:0, y:0,   z:0,    rx:28, ry:0, rz:0},
+                vtx_rhcp:       {x:0, y:0,     z:0,    rx:14,   ry:0, rz:0},
+                vtx_foxeer:     {x:0, y:0,     z:0,    rx:14,   ry:0, rz:0},
+                vtx_matchstick: {x:0, y:0,   z:0,    rx:14, ry:0, rz:0},
+                vtx_microlp:    {x:0, y:0,   z:0,    rx:14, ry:0, rz:0},
                 rxant:          {x:0, y:0,   z:0,    rx:87, ry:0, rz:0, s:62},
                 gasket:         {x:0, y:-1,  z:1,    rx:-27, ry:0, rz:0, s:100},
                 bezel:          {x:0, y:0,   z:0,    rx:0,  ry:0, rz:0, s:100} };
@@ -1673,6 +1682,10 @@ def main():
                 "matchstick": b64(os.path.join(STL, "ant_singularity.stl")),
                 "rhcp_lp": b64(os.path.join(STL, "rhcp_lp.stl")),
                 "foxeer_lp": b64(os.path.join(STL, "foxeer_lp.stl")),
+                # real Foxeer Lollipop SMA (owner's STEP), split for head-only colour
+                "foxeer_head": b64(os.path.join(STL, "foxeer_head.stl")),
+                "foxeer_stem": b64(os.path.join(STL, "foxeer_stem.stl")),
+                "foxeer_conn": b64(os.path.join(STL, "foxeer_conn.stl")),
                 "rear_bay": b64(os.path.join(STL, "rear_bay.stl")),
                 "cable": b64(os.path.join(STL, "motor_cable.stl")),
             }, separators=(",", ":"))))
