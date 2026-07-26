@@ -122,6 +122,25 @@ TEMPLATE = r"""<!DOCTYPE html>
   button:hover{background:var(--btnh);border-color:var(--acc)}
   button.on{background:var(--acc);border-color:var(--acc);color:#fff}
   input[type=range]{width:100%;accent-color:var(--acc)}
+  /* ---- mode navigation (Visualisateur / Assemblage / Playground) ---- */
+  #modeName,.tagm{font-size:11px;font-weight:600;letter-spacing:.04em;color:var(--acc);
+    background:#12283d;border:1px solid #24506f;border-radius:5px;padding:1px 7px;
+    margin-left:6px;vertical-align:middle}
+  nav#modes,nav#modes2{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin:11px 0 4px}
+  .mode{display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 4px;
+    border:1px solid var(--line);border-radius:8px;background:#141a24;color:var(--dim);
+    text-decoration:none;font-size:10.5px;font-weight:600;letter-spacing:.02em;
+    transition:border-color .15s,background .15s,color .15s}
+  .mode:hover{border-color:#33587d;color:var(--ink);background:#182231}
+  .mode.active{border-color:var(--acc);background:#12283d;color:var(--ink)}
+  .mode .ic{font-size:15px;line-height:1}
+  #modeHelp{margin-top:2px;color:var(--dim)}
+  /* fullscreen button, floating over the canvas */
+  #fs{position:absolute;top:12px;left:12px;z-index:5;background:rgba(14,18,26,.86);
+    border:1px solid var(--line);border-radius:8px;color:var(--dim);cursor:pointer;
+    padding:7px 11px;font-size:12px}
+  #fs:hover{border-color:var(--acc);color:var(--ink)}
+  body:fullscreen #side,body:fullscreen #pg{display:none}
   /* assembly simulator (build.html / ?build=1) */
   .bsec{display:none} body.build .bsec{display:block}
   #asmBar{height:7px;background:#0d1219;border:1px solid var(--line);border-radius:5px;
@@ -165,9 +184,17 @@ TEMPLATE = r"""<!DOCTYPE html>
 <div id="app">
   <div id="side" class="sidebar">
     <header>
-      <h1><b>__NAME__</b>-001 — 3D</h1>
-      <p>__SUB__ · open source</p>
-      <p style="margin-top:4px;font-size:11px;color:#5db0ff">build __BUILD__ · panneau « Réglage antennes »</p>
+      <h1><b>__NAME__</b>-001 <span id="modeName">Visualisateur</span></h1>
+      <p>__SUB__</p>
+      <nav id="modes">
+        <a class="mode" data-mode="view"  href="?">
+          <span class="ic">◎</span><span>Visualisateur</span></a>
+        <a class="mode" data-mode="build" href="?build=1">
+          <span class="ic">⚙</span><span>Assemblage</span></a>
+        <a class="mode" data-mode="play"  href="?playground=1">
+          <span class="ic">▶</span><span>Playground</span></a>
+      </nav>
+      <p class="mini" id="modeHelp"></p>
     </header>
     <div class="sec">
       <h2>Vues</h2>
@@ -189,8 +216,8 @@ TEMPLATE = r"""<!DOCTYPE html>
         <option value="dji">DJI O4 Lite (STEP réel)</option>
         <option value="nano">Nano analogique (type Caddx/RunCam)</option>
       </select>
-      <div class="mini" style="margin-top:5px">Lentille AR + bague métal réalistes ;
-        joint réglable dans « Réglage antennes &amp; joint ».</div>
+      <div class="mini" style="margin-top:5px">Lentille AR + bague métal réalistes,
+        joint caoutchouc et berceau TPU calés sur la pièce réelle.</div>
     </div>
     <div class="sec">
       <h2>Antenne VTX (5,8 GHz)</h2>
@@ -265,47 +292,6 @@ TEMPLATE = r"""<!DOCTYPE html>
       <div id="asmList" style="margin-top:9px"></div>
     </div>
     <div class="sec">
-      <h2>Réglage antennes &amp; joint</h2>
-      <div class="mini" style="margin-bottom:8px">Choisis la pièce, aligne-la
-        avec les curseurs (chacune se règle <b>indépendamment</b>), puis
-        <b>relève les valeurs</b> et donne-les moi.</div>
-      <select id="camTarget" style="width:100%;background:var(--btn);color:var(--ink);
-        border:1px solid var(--line);border-radius:6px;padding:6px;margin-bottom:8px">
-        <option value="vtx_dji">Antenne VTX — DJI O4</option>
-        <option value="vtx_rhcp">Antenne VTX — RHCP (déjà OK)</option>
-        <option value="vtx_foxeer">Antenne VTX — Foxeer Lollipop</option>
-        <option value="vtx_matchstick">Antenne VTX — Matchstick</option>
-        <option value="vtx_microlp">Antenne VTX — Micro Lollipop</option>
-        <option value="rxant">Antenne RX — ELRS</option>
-        <option value="gasket">Joint caoutchouc caméra</option>
-        <option value="bezel">Anneau TPU caméra (protection)</option>
-      </select>
-      <div style="display:flex;justify-content:space-between"><span>Latéral (X)</span>
-        <span class="val" id="camXV">0.0 mm</span></div>
-      <input type="range" id="camX" min="-60" max="60" step="0.5" value="0"/>
-      <div style="display:flex;justify-content:space-between;margin-top:6px"><span>Profondeur (Y)</span>
-        <span class="val" id="camYV">0.0 mm</span></div>
-      <input type="range" id="camY" min="-60" max="60" step="0.5" value="0"/>
-      <div style="display:flex;justify-content:space-between;margin-top:6px"><span>Vertical (Z)</span>
-        <span class="val" id="camZV">0.0 mm</span></div>
-      <input type="range" id="camZ" min="-60" max="60" step="0.5" value="0"/>
-      <div style="display:flex;justify-content:space-between;margin-top:6px"><span>Rotation X (°)</span>
-        <span class="val" id="camRXV">0°</span></div>
-      <input type="range" id="camRX" min="-180" max="180" step="1" value="0"/>
-      <div style="display:flex;justify-content:space-between;margin-top:6px"><span>Rotation Y (°)</span>
-        <span class="val" id="camRYV">0°</span></div>
-      <input type="range" id="camRY" min="-180" max="180" step="1" value="0"/>
-      <div style="display:flex;justify-content:space-between;margin-top:6px"><span>Rotation Z (°)</span>
-        <span class="val" id="camRZV">0°</span></div>
-      <input type="range" id="camRZ" min="-180" max="180" step="1" value="0"/>
-      <div style="display:flex;justify-content:space-between;margin-top:6px"><span>Taille (%)</span>
-        <span class="val" id="camSV">100%</span></div>
-      <input type="range" id="camS" min="30" max="200" step="1" value="100"/>
-      <div class="mini" style="margin-top:8px"><b id="camDelta">vtx_dji : X 0 · Y 0 · Z 0 · RX 28 · RY 0 · RZ 0 · S 100</b>
-        — copie-moi cette ligne.</div>
-      <button id="camReset" style="width:100%;margin-top:8px">Réinitialiser cette antenne</button>
-    </div>
-    <div class="sec">
       <h2>Spécifications (cible)</h2>
       <table>__SPECS__</table>
     </div>
@@ -313,8 +299,16 @@ TEMPLATE = r"""<!DOCTYPE html>
 
   <div id="pg" class="sidebar">
     <header>
-      <h1><b>__NAME__</b>-001 — Simulateur</h1>
+      <h1><b>__NAME__</b>-001 <span class="tagm">Playground</span></h1>
       <p>pilotez le __SUB__ (SDK Tello + clavier)</p>
+      <nav id="modes2">
+        <a class="mode" data-mode="view"  href="?">
+          <span class="ic">◎</span><span>Visualisateur</span></a>
+        <a class="mode" data-mode="build" href="?build=1">
+          <span class="ic">⚙</span><span>Assemblage</span></a>
+        <a class="mode active" data-mode="play" href="?playground=1">
+          <span class="ic">▶</span><span>Playground</span></a>
+      </nav>
     </header>
     <div class="sec">
       <h2>Script</h2>
@@ -368,6 +362,7 @@ land</textarea>
   </div>
 
   <div id="view">
+    <button id="fs" title="Plein écran (F)">⛶ Plein écran</button>
     <div id="tip"><b>Souris :</b> glisser = orbite · molette = zoom ·
       clic-droit = pan. 2,5" programmable/essaim : <b>ELRS</b> + <b>LoRa 868</b>,
       vidéo analogique <b>ou O4 Lite</b>, 4 modes.</div>
@@ -1017,7 +1012,7 @@ document.getElementById('bElec').addEventListener('click', ()=>{
 // "reset" target, so the nose is correctly seated out of the box.
 // The camera + mounts keep their dialled-in seating (applied at load, not
 // user-editable here anymore); the panel now drives the antennas one-by-one.
-{ const DEF = { camera:         {x:0, y:-5,  z:-6,   rx:27, ry:0, rz:0},
+(function(){ const DEF = { camera:  {x:0, y:-5,  z:-6,   rx:27, ry:0, rz:0},
                 cammount_top:   {x:0, y:-2,  z:-1,   rx:-6, ry:0, rz:0},
                 cammount_bottom:{x:0, y:4.5, z:-1.5, rx:-5, ry:0, rz:0},
                 vtx_dji:        {x:0, y:-29,   z:48.5, rx:-147, ry:0, rz:0},
@@ -1039,6 +1034,9 @@ document.getElementById('bElec').addEventListener('click', ()=>{
       g.rotation.set(o.rx*D, o.ry*D, o.rz*D);
       g.scale.setScalar((o.s==null?100:o.s)/100);      // size slider
       g.userData.home = g.position.clone(); } };
+  // the sliders panel was removed from the UI; the DEF values below are still
+  // what SEATS the camera, mounts, gasket and antennas at load.
+  if (!el('camTarget')){ Object.keys(DEF).forEach(applyTarget); return; }
   const applyCam = ()=>{
     const t = el('camTarget').value; const o = off[t]; applyTarget(t);
     const s = (o.s==null?100:o.s);
@@ -1071,7 +1069,7 @@ document.getElementById('bElec').addEventListener('click', ()=>{
   el('camReset').addEventListener('click', ()=>{ off[el('camTarget').value]=cp(DEF[el('camTarget').value]); sync(); });
   Object.keys(DEF).forEach(applyTarget);   // seat camera/mounts + tilt every antenna at load
   sync();                                  // reflect the current dropdown target in the UI
-}
+})();
 let spinRate=0.4*60;                       // hélices en rotation par défaut
 document.getElementById('spinV').textContent='40%';
 document.getElementById('spin').addEventListener('input', e=>{ spinRate=e.target.value/100*60;
@@ -1083,6 +1081,36 @@ function setView(v){ const p=VIEWS[v]||VIEWS.iso; camera.position.set(p[0],p[1],
   controls.target.set(0,0,0.018); controls.update(); }
 document.querySelectorAll('[data-view]').forEach(b=> b.onclick=()=>setView(b.dataset.view));
 if (!PLAY) setView('iso');
+
+// ---- mode navigation + fullscreen -----------------------------------------
+{ const cur = PLAY ? 'play' : (BUILD ? 'build' : 'view');
+  const HELP = {
+    view:  'Explore le drone : vues, éclaté, sélecteurs de pièces et couleurs.',
+    build: 'Monte le drone pièce par pièce : clic = surligner, double-clic = emboîter.',
+    play:  'Pilote le drone au clavier ou par script SDK.',
+  };
+  const NAME = {view:'Visualisateur', build:'Assemblage', play:'Playground'};
+  document.querySelectorAll('nav#modes .mode, nav#modes2 .mode').forEach(a=>{
+    a.classList.toggle('active', a.dataset.mode === cur); });
+  const mn = document.getElementById('modeName');
+  if (mn) mn.textContent = NAME[cur];
+  const mh = document.getElementById('modeHelp');
+  if (mh) mh.textContent = HELP[cur];
+  // build.html defaults to assembly: its "Visualisateur" link must switch it off
+  if (__BUILD_DEFAULT__){
+    const q = {view:'?nobuild=1', build:'?', play:'?playground=1&nobuild=1'};
+    document.querySelectorAll('nav#modes .mode, nav#modes2 .mode').forEach(a=>{
+      a.setAttribute('href', q[a.dataset.mode]); });
+  }
+  const fs = document.getElementById('fs');
+  const toggleFS = ()=>{ if (document.fullscreenElement) document.exitFullscreen();
+    else document.documentElement.requestFullscreen().catch(()=>{}); };
+  if (fs) fs.onclick = toggleFS;
+  addEventListener('keydown', e=>{ if ((e.key==='f'||e.key==='F') &&
+    !/^(INPUT|TEXTAREA|SELECT)$/.test((e.target.tagName||''))) toggleFS(); });
+  addEventListener('fullscreenchange', ()=>{ if (fs) fs.textContent =
+    document.fullscreenElement ? '⛶ Quitter' : '⛶ Plein écran'; setTimeout(resize, 60); });
+}
 
 // ===========================================================================
 //  Assembly simulator (build.html / ?build=1)
