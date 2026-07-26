@@ -43,7 +43,7 @@ MODEL = dict(name="FR4N10", sub="FPV programmable / essaim · 2,5\" · 2S-3S", w
              standoffs=dict(frame=_FRAME_STAND, board=_BOARD_STAND),
              # ALL screws: 16 motor-mount + 3 frame-standoff tops + 4 board tops
              screws=_MOTOR_SCREWS + _STACK_SCREWS,
-             cammount=[0,0,0], side=[13.6, -1, 3, 0.70],            # O4 mount parts are already in frame coords
+             cammount=[0,0,0], side=[26.8, -1, 3, 0.70],            # O4 mount parts are already in frame coords
              # per-group explode offsets (mm along Z, × slider)
              explode=dict(bottom=[0,0,0], top=[0,0,56], standoffs=[0,0,26],
                           camcage=[0,0,40], camera=[0,0,48],
