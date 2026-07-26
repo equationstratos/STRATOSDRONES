@@ -251,6 +251,35 @@ module side_panel_e(){
   }
 }
 
+// F — RAIL SCULPTÉ : flanc structurel effilé, nervure centrale, treillis
+//     diagonal et oeillets aux extrémités (d'après les rendus fournis).
+module side_panel_f(){
+  difference(){
+    union(){
+      // corps effilé : haut à l'arrière, pointe à l'avant
+      rotate([90,0,0]) linear_extrude(SP_T, center=true)
+        polygon([[-SP_L/2,1],[-SP_L/2+6,SP_H],[SP_L/2-26,SP_H],
+                 [SP_L/2,SP_H*0.42],[SP_L/2,1]]);
+      // nervure centrale saillante (l'arête des photos)
+      translate([-4,-SP_T/2-0.7,SP_H*0.52]) rotate([90,0,0])
+        linear_extrude(1.4, center=true) polygon([[-SP_L/2+8,-2.6],[SP_L/2-14,-1.6],
+                                                  [SP_L/2-14,1.6],[-SP_L/2+8,2.6]]);
+      // oeillets de fixation
+      for (x=[-1,1]) translate([x*(SP_L/2-7), 0, x>0?SP_H*0.30:3.5]) rotate([90,0,0])
+        cylinder(d=8, h=SP_T, center=true);
+    }
+    // treillis : deux grands triangles ajourés + une fente longue
+    translate([-SP_L/4+2,0,SP_H*0.55]) sp_cut()
+      offset(r=2) offset(r=-2) polygon([[-15,-7],[13,-7],[-15,9]]);
+    translate([SP_L/8,0,SP_H*0.55]) sp_cut()
+      offset(r=2) offset(r=-2) polygon([[-11,-7],[15,-7],[15,7]]);
+    translate([-SP_L/2+13,0,SP_H*0.22]) sp_cut()
+      offset(r=1.6) offset(r=-1.6) square([20,4], center=true);
+    for (x=[-1,1]) translate([x*(SP_L/2-7), 0, x>0?SP_H*0.30:3.5]) rotate([90,0,0])
+      cylinder(d=3.2, h=SP_T+2, center=true);
+  }
+}
+
 // ===========================================================================
 //  ASSEMBLY PREVIEW (PART="all")
 // ===========================================================================
@@ -280,4 +309,5 @@ else if (PART=="side_panel_b")    side_panel_b();
 else if (PART=="side_panel_c")    side_panel_c();
 else if (PART=="side_panel_d")    side_panel_d();
 else if (PART=="side_panel_e")    side_panel_e();
+else if (PART=="side_panel_f")    side_panel_f();
 else                                assembly();
