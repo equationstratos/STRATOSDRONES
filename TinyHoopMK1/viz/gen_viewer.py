@@ -229,6 +229,7 @@ TEMPLATE = r"""<!DOCTYPE html>
         <option value="c">C — Fentes aéro (racer)</option>
         <option value="d">D — Squelette (léger)</option>
         <option value="e">E — Demi-hauteur</option>
+        <option value="f">F — Rail sculpté (photos)</option>
       </select>
       <div class="mini" style="margin-top:5px">Flancs imprimés du Stratos 3, posés
         ici à titre d'essai (échelle 3" — on ajustera).</div>
@@ -815,7 +816,7 @@ function showVtxModel(key){
 // swaps which variant is visible; only one pair is shown at a time.
 const gSide = group('side');
 const sideModels = {};
-{ const src = {a:STLB64.sp_a, b:STLB64.sp_b, c:STLB64.sp_c, d:STLB64.sp_d, e:STLB64.sp_e};
+{ const src = {a:STLB64.sp_a, b:STLB64.sp_b, c:STLB64.sp_c, d:STLB64.sp_d, e:STLB64.sp_e, f:STLB64.sp_f};
   for (const k in src){
     const g = new THREE.Group();
     for (const sx of [-1,1]){
@@ -1760,6 +1761,7 @@ def main():
                 "sp_c": b64(os.path.join(S3, "side_panel_c.stl")),
                 "sp_d": b64(os.path.join(S3, "side_panel_d.stl")),
                 "sp_e": b64(os.path.join(S3, "side_panel_e.stl")),
+                "sp_f": b64(os.path.join(S3, "side_panel_f.stl")),
                 "cable": b64(os.path.join(STL, "motor_cable.stl")),
             }, separators=(",", ":"))))
     # the viewer: assembly panel available on demand (?build=1)
