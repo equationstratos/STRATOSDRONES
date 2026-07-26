@@ -1,0 +1,243 @@
+{
+ "materials": {
+  "alu": [
+   0.92,
+   0.26,
+   [
+    0.76,
+    0.773,
+    0.796,
+    1.0
+   ]
+  ],
+  "carbon": [
+   0.22,
+   0.46,
+   [
+    0.102,
+    0.114,
+    0.129,
+    1.0
+   ]
+  ],
+  "copper": [
+   0.9,
+   0.25,
+   [
+    0.793,
+    0.651,
+    0.229,
+    1.0
+   ]
+  ],
+  "gold": [
+   0.88,
+   0.26,
+   [
+    0.847,
+    0.647,
+    0.125,
+    1.0
+   ]
+  ],
+  "lipo": [
+   0.12,
+   0.62,
+   [
+    0.051,
+    0.051,
+    0.063,
+    1.0
+   ]
+  ],
+  "pcb": [
+   0.2,
+   0.5,
+   [
+    0.043,
+    0.325,
+    0.18,
+    1.0
+   ]
+  ],
+  "plastic": [
+   0.1,
+   0.55,
+   [
+    0.078,
+    0.082,
+    0.094,
+    1.0
+   ]
+  ],
+  "tpu": [
+   0.04,
+   0.86,
+   [
+    0.169,
+    0.184,
+    0.212,
+    1.0
+   ]
+  ]
+ },
+ "parts": {
+  "ant_dji": {
+   "bytes": 77980,
+   "faces": 4241,
+   "file": "parts/ant_dji.glb",
+   "material": "plastic"
+  },
+  "ant_foxeer": {
+   "bytes": 456408,
+   "faces": 25231,
+   "file": "parts/ant_foxeer.glb",
+   "material": "plastic"
+  },
+  "ant_matchstick": {
+   "bytes": 6484,
+   "faces": 276,
+   "file": "parts/ant_matchstick.glb",
+   "material": "plastic"
+  },
+  "ant_rhcp": {
+   "bytes": 127200,
+   "faces": 6976,
+   "file": "parts/ant_rhcp.glb",
+   "material": "plastic"
+  },
+  "arm_bumper": {
+   "bytes": 24332,
+   "faces": 1290,
+   "file": "parts/arm_bumper.glb",
+   "material": "tpu"
+  },
+  "battery": {
+   "bytes": 210516,
+   "faces": 11606,
+   "file": "parts/battery.glb",
+   "material": "lipo"
+  },
+  "board_stratos": {
+   "bytes": 33612,
+   "faces": 1784,
+   "file": "parts/board_stratos.glb",
+   "material": "pcb"
+  },
+  "buzzer": {
+   "bytes": 5752,
+   "faces": 236,
+   "file": "parts/buzzer.glb",
+   "material": "plastic"
+  },
+  "cam_cage": {
+   "bytes": 99368,
+   "faces": 5394,
+   "file": "parts/cam_cage.glb",
+   "material": "carbon"
+  },
+  "cam_mount_bot": {
+   "bytes": 21920,
+   "faces": 1130,
+   "file": "parts/cam_mount_bot.glb",
+   "material": "tpu"
+  },
+  "cam_mount_top": {
+   "bytes": 24616,
+   "faces": 1304,
+   "file": "parts/cam_mount_top.glb",
+   "material": "tpu"
+  },
+  "cap_holder": {
+   "bytes": 8604,
+   "faces": 396,
+   "file": "parts/cap_holder.glb",
+   "material": "tpu"
+  },
+  "capacitor": {
+   "bytes": 4608,
+   "faces": 172,
+   "file": "parts/capacitor.glb",
+   "material": "plastic"
+  },
+  "frame_bottom": {
+   "bytes": 302116,
+   "faces": 16760,
+   "file": "parts/frame_bottom.glb",
+   "material": "carbon"
+  },
+  "frame_top": {
+   "bytes": 39536,
+   "faces": 2124,
+   "file": "parts/frame_top.glb",
+   "material": "carbon"
+  },
+  "ghf411": {
+   "bytes": 625884,
+   "faces": 34646,
+   "file": "parts/ghf411.glb",
+   "material": "pcb"
+  },
+  "gps_module": {
+   "bytes": 11292,
+   "faces": 544,
+   "file": "parts/gps_module.glb",
+   "material": "plastic"
+  },
+  "motor": {
+   "bytes": 34192,
+   "faces": 1836,
+   "file": "parts/motor.glb",
+   "material": "alu"
+  },
+  "o4_airunit": {
+   "bytes": 508620,
+   "faces": 28538,
+   "file": "parts/o4_airunit.glb",
+   "material": "pcb"
+  },
+  "o4_cam": {
+   "bytes": 1038236,
+   "faces": 57954,
+   "file": "parts/o4_cam.glb",
+   "material": "plastic"
+  },
+  "prop": {
+   "bytes": 15012,
+   "faces": 752,
+   "file": "parts/prop.glb",
+   "material": "plastic"
+  },
+  "rear_bay": {
+   "bytes": 17336,
+   "faces": 888,
+   "file": "parts/rear_bay.glb",
+   "material": "tpu"
+  },
+  "rx_antenna": {
+   "bytes": 16428,
+   "faces": 828,
+   "file": "parts/rx_antenna.glb",
+   "material": "plastic"
+  },
+  "rx_holder": {
+   "bytes": 12416,
+   "faces": 608,
+   "file": "parts/rx_holder.glb",
+   "material": "tpu"
+  },
+  "rx_pcb": {
+   "bytes": 6880,
+   "faces": 300,
+   "file": "parts/rx_pcb.glb",
+   "material": "pcb"
+  },
+  "screw": {
+   "bytes": 3872,
+   "faces": 132,
+   "file": "parts/screw.glb",
+   "material": "alu"
+  }
+ },
+ "units": "m"
+}
