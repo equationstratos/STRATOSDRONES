@@ -78,6 +78,7 @@ def importmap():
         "three/addons/controls/OrbitControls.js": v("addons", "controls", "OrbitControls.js"),
         "three/addons/loaders/STLLoader.js": v("addons", "loaders", "STLLoader.js"),
         "three/addons/environments/RoomEnvironment.js": v("addons", "environments", "RoomEnvironment.js"),
+        "three/addons/geometries/RoundedBoxGeometry.js": v("addons", "geometries", "RoundedBoxGeometry.js"),
     }}, separators=(",", ":"))
 
 
@@ -193,15 +194,22 @@ TEMPLATE = r"""<!DOCTYPE html>
       <h2>Électronique</h2>
       <button id="bElec" class="on" style="width:100%">Électronique : STRATOS TINYHOOP AIO</button>
       <div id="bom" class="mini" style="display:none;margin-top:9px">
-        <b>Build « standard » (composants du commerce, repo JeNo) :</b>
+        <b>Build « standard » — exactement les pièces affichées dans le
+        visualisateur :</b>
         <table style="margin-top:5px">
-          <tr><td>FC / ESC</td><td class="v">JHEMCU GHF411 AIO (STEP réel)</td></tr>
-          <tr><td>Moteurs</td><td class="v">1104 7500KV (Readytosky)</td></tr>
-          <tr><td>Hélices</td><td class="v">Gemfan 2520</td></tr>
-          <tr><td>Caméra</td><td class="v">DJI O4 Lite (caméra + air unit + antenne)</td></tr>
-          <tr><td>RX</td><td class="v">ELRS (antenne céram.)</td></tr>
-          <tr><td>VTX</td><td class="v">analogique 5,8 GHz (si non-O4)</td></tr>
-          <tr><td>Batterie</td><td class="v">2S-3S 450-560 mAh</td></tr>
+          <tr><td>Châssis</td><td class="v">JeNo Pocket V2 2,5" (carbone, STEP réel) + top plate STRATOS (fente passe-câble)</td></tr>
+          <tr><td>FC / ESC</td><td class="v">JHEMCU GHF411 AIO (STEP réel) · ou STRATOS TINYHOOP AIO</td></tr>
+          <tr><td>Moteurs</td><td class="v">4× 1104 7500KV (Readytosky) — 3 fils de phase + garde TPU par bras</td></tr>
+          <tr><td>Hélices</td><td class="v">Gemfan 2520 (2,5", tri-pale)</td></tr>
+          <tr><td>Caméra</td><td class="v">sélecteur : DJI O4 Lite (STEP réel) · nano analogique — objectif M12 type Flywoo Wylde</td></tr>
+          <tr><td>Support caméra</td><td class="v">TPU haut + bas, joint caoutchouc, berceau d'objectif, 2 entretoises de cage (or)</td></tr>
+          <tr><td>VTX vidéo</td><td class="v">air unit DJI O4 Lite (ou baie analogique 5,8 GHz)</td></tr>
+          <tr><td>Antenne VTX</td><td class="v">sélecteur 5 modèles : DJI O4 · RHCP LP A1 · Foxeer Lollipop · TrueRC Matchstick · Micro Lollipop U.FL</td></tr>
+          <tr><td>RX</td><td class="v">ELRS 2,4 GHz — PCB en berceau TPU + antenne T horizontale à l'arrière</td></tr>
+          <tr><td>Batterie</td><td class="v">DOGCOM 560 mAh 3S 60C (28×52,5×18,5 mm)</td></tr>
+          <tr><td>Alim</td><td class="v">XT30 + paire rouge/noir (boucle de service) + prise d'équilibrage JST-XH</td></tr>
+          <tr><td>Condensateur</td><td class="v">25 V 22 µF dans son support TPU</td></tr>
+          <tr><td>Divers</td><td class="v">GPS / compas · buzzer · visserie M2 · entretoises alu · bumpers TPU</td></tr>
         </table>
         <div style="margin-top:5px">Vole en Betaflight — <b>non</b> programmable /
           essaim (ça, c'est la carte STRATOS).</div>
@@ -342,6 +350,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { STLLoader } from 'three/addons/loaders/STLLoader.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 
 const STLB64 = __STLS__;   // {frame, canopy, prop, motor}
 const M = __MODEL__;       // geometry constants (metres)
@@ -362,6 +371,7 @@ renderer.setPixelRatio(Math.min(devicePixelRatio,
 renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.05;
 view.appendChild(renderer.domElement);
 const controls = new OrbitControls(camera, renderer.domElement);
+try { window.__cam = camera; window.__ctr = controls; } catch(_){}   // for deterministic test views
 controls.enableDamping = true; controls.dampingFactor = 0.08;
 controls.minDistance = PLAY ? 0.3 : 0.08; controls.maxDistance = PLAY ? 14 : 0.8;
 
@@ -633,29 +643,35 @@ const gBatt = group('battery');
 // DOGCOM 560 mAh 3S pack — a clean procedural box with a printed label texture
 // (silver foil top, black band, gold DOGCOM + yellow specs). No moulded text
 // spilling off the block. Sized/placed on the real STL envelope (28x52.5x18.5).
-{ const W=568,H=200, cv=document.createElement('canvas'); cv.width=W; cv.height=H;
+{ const W=600,H=320, cv=document.createElement('canvas'); cv.width=W; cv.height=H;
   const x=cv.getContext('2d');
-  x.fillStyle='#b7bac0'; x.fillRect(0,0,W,H);                      // silver base
-  x.fillStyle='#0c0c0e'; x.fillRect(0,H*0.30,W,H*0.70);           // black label band
-  const grd=x.createLinearGradient(0,0,0,H*0.30); grd.addColorStop(0,'#cfd2d6'); grd.addColorStop(1,'#a7aab0');
-  x.fillStyle=grd; x.fillRect(0,0,W,H*0.30);
-  x.fillStyle='#e6b53c'; x.font='italic bold 84px Arial'; x.textBaseline='middle';
-  x.fillText('DOGCOM', W*0.135, H*0.60);                          // gold brand
-  x.fillStyle='#f4d64a'; x.font='bold 34px Arial'; x.fillText('560', W*0.70, H*0.47);
-  x.font='bold 24px Arial'; x.fillText('MAH', W*0.815, H*0.47);
-  x.fillStyle='#dcdcde'; x.font='bold 18px Arial'; x.fillText('11.1V 3S  ·  60C', W*0.70, H*0.66);
-  x.fillStyle='#8d8d90'; x.font='12px Arial'; x.fillText('www.titltop.com', W*0.135, H*0.86);
-  x.fillStyle='#e6b53c'; x.beginPath(); x.ellipse(W*0.065,H*0.55,24,20,0,0,Math.PI*2); x.fill();
-  x.fillStyle='#0c0c0e'; x.font='bold 18px Arial'; x.fillText('DC', W*0.038, H*0.58);   // bee badge
+  x.fillStyle='#0c0c0e'; x.fillRect(0,0,W,H);                      // all-black wrap label
+  x.textBaseline='middle';
+  x.fillStyle='#e6b53c'; x.font='italic bold 104px Arial';
+  x.fillText('DOGCOM', W*0.16, H*0.42);                            // gold brand
+  x.fillStyle='#f4d64a'; x.font='bold 60px Arial'; x.fillText('560', W*0.20, H*0.72);
+  x.font='bold 34px Arial'; x.fillText('MAH', W*0.36, H*0.73);
+  x.fillStyle='#dcdcde'; x.font='bold 27px Arial'; x.fillText('11.1V 3S  ·  60C', W*0.55, H*0.72);
+  x.fillStyle='#8d8d90'; x.font='17px Arial'; x.fillText('www.titltop.com', W*0.62, H*0.90);
+  x.fillStyle='#e6b53c'; x.beginPath(); x.ellipse(W*0.075,H*0.40,34,29,0,0,Math.PI*2); x.fill();
+  x.fillStyle='#0c0c0e'; x.font='bold 26px Arial'; x.fillText('DC', W*0.043, H*0.43);   // bee badge
   const lab=new THREE.CanvasTexture(cv); lab.colorSpace=THREE.SRGBColorSpace; lab.anisotropy=8;
-  lab.center.set(0.5,0.5); lab.rotation=Math.PI/2;                // align text along the pack length
-  const labMat=new THREE.MeshStandardMaterial({map:lab, metalness:.2, roughness:.5});
+  const bw=0.028, bl=0.0525, bh=0.0185, cx=0, cy=3.75/1000, cz=33.2/1000, eps=0.00025;
+  // black shrink-wrap body with ROUNDED corners (matte, wraps the whole block)
+  const black=new THREE.MeshStandardMaterial({color:0x0d0d10, metalness:.12, roughness:.62});
+  const body=new THREE.Mesh(new RoundedBoxGeometry(bw,bl,bh, 5, 0.0022), black);
+  body.position.set(cx,cy,cz); gBatt.add(body);
+  // printed DOGCOM label on the TOP face only (dessus) — sides stay plain black
+  const labMat=new THREE.MeshStandardMaterial({map:lab, metalness:.15, roughness:.5});
+  { const p=new THREE.Mesh(new THREE.PlaneGeometry(bl-0.003, bw-0.003), labMat);
+    p.position.set(cx, cy, cz + bh/2 + eps);      // flat on top, facing +Z
+    p.rotation.z = Math.PI/2;                     // text reads along the pack length
+    gBatt.add(p); }
+  // silver foil exposed at the 2 ends (±Y) — the wrap doesn't cover them
   const silver=new THREE.MeshStandardMaterial({color:0xc4c6ca, metalness:.55, roughness:.32});
-  const ends =new THREE.MeshStandardMaterial({color:0x9a9da2, metalness:.45, roughness:.4});
-  const base =new THREE.MeshStandardMaterial({color:0x6a6d72, metalness:.4,  roughness:.45});
-  const bm=new THREE.Mesh(new THREE.BoxGeometry(0.028,0.0525,0.0185),
-    [labMat,labMat,ends,ends,silver,base]);                        // +X,-X,+Y,-Y,+Z,-Z
-  bm.position.set(0, 3.75/1000, 33.2/1000); gBatt.add(bm); }
+  for (const sy of [-1,1]){ const e=new THREE.Mesh(new THREE.PlaneGeometry(bw-0.004, bh-0.003), silver);
+    e.position.set(cx, cy+sy*(bl/2+eps), cz); e.rotation.set(sy>0?-Math.PI/2:Math.PI/2, 0, 0);
+    gBatt.add(e); } }
 // M2 screws on the real standoffs + camera plates
 const gScrew = group('screws');
 for (const s of M.screws){ const sc = place(STLB64.screw, 0xd6d9de, .9, .25, s);
