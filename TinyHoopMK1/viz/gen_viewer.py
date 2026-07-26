@@ -730,29 +730,57 @@ function vtxPivot(key, m){
   g.visible = false; G['vtx_'+key] = g; gVtxAnt.add(g);
   return g;
 }
-// Procedural MICRO lollipop (U.FL) — a SOLID rounded dome on a thin coax
-// pigtail, the compact type best suited to a 2.5". Built full so the head is
-// never hollow. Base at z=0, dome up (+Z), in metres.
-function buildMicroLollipop(){
+// ---- real lollipop-style FPV antenna, built to the photos -------------------
+// A COLOURED CAPSULE HEAD (cylinder with a rounded top and a small lip) on a
+// black flexible coax stem, a thicker heatshrink sleeve, and a gold connector.
+// Only the head takes the colour picker: every other mesh is flagged keepColor.
+// Base at z=0, head up (+Z), metres.
+function buildLollipopAnt(o){
+  const headR = o.headR, headH = o.headH, stem = o.stem, shrink = o.shrink;
   const grp = new THREE.Group();
-  const red = new THREE.MeshStandardMaterial({color:0xc4161c, metalness:.15, roughness:.33});
-  const blk = new THREE.MeshStandardMaterial({color:0x0c0c0e, metalness:.2,  roughness:.6});
-  const cyl = (r0,r1,h,z,mat)=>{ const m=new THREE.Mesh(
-      new THREE.CylinderGeometry(r0,r1,h,20), mat);
-    m.rotation.x=Math.PI/2; m.position.z=z; grp.add(m); return m; };  // axis -> Z
-  cyl(0.0006,0.0006,0.015,0.0075, blk);                 // thin U.FL coax pigtail
-  cyl(0.0019,0.0019,0.004,0.0170, blk);                 // heatshrink neck
-  cyl(0.0034,0.0030,0.0016,0.0197, red);                // red base collar of the bulb
-  const dome=new THREE.Mesh(new THREE.SphereGeometry(0.0036,22,18), red);  // SOLID bulb
-  dome.scale.set(1,1,1.18); dome.position.z=0.0225; grp.add(dome);         // rounded head
+  const capMat  = new THREE.MeshStandardMaterial({color:o.color, metalness:.18, roughness:.34});
+  const blkMat  = new THREE.MeshStandardMaterial({color:0x0b0b0d, metalness:.15, roughness:.62});
+  const shrMat  = new THREE.MeshStandardMaterial({color:0x141416, metalness:.10, roughness:.78});
+  const goldMat = new THREE.MeshStandardMaterial({color:0xc9a227, metalness:.95, roughness:.24});
+  const fixed = m => { m.userData.keepColor = true; return m; };   // colour picker skips these
+  const tube = (r, h, z, m) => { const k = new THREE.Mesh(
+      new THREE.CylinderGeometry(r, r, h, 24), m);
+    k.rotation.x = Math.PI/2; k.position.z = z; grp.add(k); return k; };
+
+  // gold connector (SMA barrel or the small U.FL plug)
+  if (o.conn === 'sma'){
+    fixed(tube(0.0032, 0.0075, 0.0037, goldMat));
+    fixed(tube(0.0021, 0.0030, 0.0090, goldMat));
+  } else {
+    fixed(tube(0.0018, 0.0032, 0.0016, goldMat));
+  }
+  const z0 = (o.conn === 'sma') ? 0.0105 : 0.0032;
+  fixed(tube(0.0016, shrink, z0 + shrink/2, shrMat));          // heatshrink sleeve
+  const zs = z0 + shrink;
+  fixed(tube(0.00092, stem, zs + stem/2, blkMat));             // flexible coax stem
+  // the capsule head: lathe profile = flat bottom, straight wall, rounded top
+  const pts = [], zTop = headH, rr = headR*0.62;               // rr = top round-over
+  pts.push(new THREE.Vector2(0, 0));
+  pts.push(new THREE.Vector2(headR, 0));
+  pts.push(new THREE.Vector2(headR, zTop - rr));
+  for (let i = 1; i <= 8; i++){ const a = (i/8) * Math.PI/2;   // quarter-round top
+    pts.push(new THREE.Vector2((headR-rr) + Math.cos(a)*rr, (zTop-rr) + Math.sin(a)*rr)); }
+  const head = new THREE.Mesh(new THREE.LatheGeometry(pts, 40), capMat);
+  head.position.z = zs + stem; grp.add(head);                  // colourable head
+  // thin dark lip at the base of the cap, as on the real part
+  fixed(tube(headR*1.02, 0.0009, zs + stem + 0.00045, shrMat));
   return grp;
 }
 const vtxModels = {
   dji:        vtxPivot('dji',        mesh(STLB64.dji_pro_ant, 0x0f1114, .2, .5)),  // DJI O4 Pro antenna
-  rhcp:       vtxPivot('rhcp',       mesh(STLB64.rhcp_lp,     0x141414, .2, .5)),  // RHCP LP A1 (STEP)
-  foxeer:     vtxPivot('foxeer',     mesh(STLB64.foxeer_lp,   0x141414, .2, .5)),  // Foxeer Lollipop 5.8
+  // remodelled from the real parts: coloured capsule head + black coax + gold plug
+  rhcp:       vtxPivot('rhcp',       buildLollipopAnt({headR:0.0072, headH:0.0175,
+                stem:0.030, shrink:0.010, conn:'sma', color:0x7d2fb0})),   // RHCP LP A1
+  foxeer:     vtxPivot('foxeer',     buildLollipopAnt({headR:0.0068, headH:0.0165,
+                stem:0.026, shrink:0.009, conn:'sma', color:0xc4161c})),   // Foxeer Lollipop
   matchstick: vtxPivot('matchstick', mesh(STLB64.matchstick,  0x181818, .2, .5)),  // TrueRC Singularity
-  microlp:    vtxPivot('microlp',    buildMicroLollipop()),                        // solid micro lollipop
+  microlp:    vtxPivot('microlp',    buildLollipopAnt({headR:0.0050, headH:0.0120,
+                stem:0.018, shrink:0.007, conn:'ufl', color:0xc4161c})),   // micro lollipop U.FL
 };
 let vtxCur='dji'; vtxModels[vtxCur].visible=true;         // default: the DJI antenna
 // (the 28° seating tilt is carried by the fine-adjust DEF below, applied at load)
@@ -914,8 +942,10 @@ function setExplode(f){                       // f in 0..1
 }
 
 // ---- live recolour (configurator-compatible) ----
+// recolour a group — meshes flagged keepColor (coax, heatshrink, gold plugs,
+// gold cage bars…) keep their real colour, so e.g. only an antenna's HEAD changes.
 function setColor(g, hex){ if(!hex||!G[g]) return; const col=new THREE.Color(hex);
-  G[g].traverse(o=>{ if(o.isMesh) o.material.color.copy(col); }); }
+  G[g].traverse(o=>{ if(o.isMesh && !o.userData.keepColor) o.material.color.copy(col); }); }
 function applyColors(o){ if(!o) return;
   setColor('frame',  o.body!=null?o.body:o.frame);
   setColor('props',  o.propFront!=null?o.propFront:(o.props!=null?o.props:o.pr)); }
@@ -985,7 +1015,7 @@ document.getElementById('bElec').addEventListener('click', ()=>{
                 vtx_foxeer:     {x:0, y:0,     z:0,    rx:28,   ry:0, rz:0},
                 vtx_matchstick: {x:0, y:0,   z:0,    rx:28, ry:0, rz:0},
                 vtx_microlp:    {x:0, y:0,   z:0,    rx:28, ry:0, rz:0},
-                rxant:          {x:0, y:0,   z:0,    rx:87, ry:0, rz:0},
+                rxant:          {x:0, y:0,   z:0,    rx:87, ry:0, rz:0, s:62},
                 gasket:         {x:0, y:-1,  z:1,    rx:-27, ry:0, rz:0, s:100},
                 bezel:          {x:0, y:0,   z:0,    rx:0,  ry:0, rz:0, s:100} };
   const cp = o => Object.assign({}, o);
