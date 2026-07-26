@@ -128,11 +128,14 @@ TEMPLATE = r"""<!DOCTYPE html>
     overflow:hidden;margin:2px 0 7px}
   #asmFill{height:100%;width:0;background:linear-gradient(90deg,var(--acc),#3ddc91);
     transition:width .3s}
-  .asm{display:flex;align-items:center;gap:8px;padding:5px 7px;border-radius:6px;
+  .asm{display:flex;align-items:flex-start;gap:8px;padding:6px 7px;border-radius:6px;
     border:1px solid transparent;cursor:pointer;font-size:12.5px;user-select:none}
   .asm:hover{background:#151b26} .asm.sel{border-color:var(--acc);background:#141d2b}
-  .asm.ok{opacity:.5} .asm .d{flex:0 0 9px;height:9px;border-radius:50%;background:#2a3547}
+  .asm.ok{opacity:.5} .asm .d{flex:0 0 9px;height:9px;border-radius:50%;
+    background:#2a3547;margin-top:4px}
   .asm.ok .d{background:#3ddc91}
+  .asm .tx{display:block;line-height:1.35}
+  .asm .tx i{display:block;font-style:normal;color:var(--dim);font-size:11px;margin-top:1px}
   .val{color:var(--acc);font-variant-numeric:tabular-nums}
   table{width:100%;border-collapse:collapse;font-size:12px}
   td{padding:3px 0;color:var(--mut)}
@@ -254,7 +257,11 @@ TEMPLATE = r"""<!DOCTYPE html>
         <button id="asmReset" style="flex:1">Éparpiller</button>
       </div>
       <div style="height:6px"></div>
-      <button id="asmGhost" style="width:100%">Fantômes : oui</button>
+      <div style="display:flex;gap:6px">
+        <button id="asmGhost" style="flex:1">Fantômes : oui</button>
+        <button id="asmTidy" style="flex:1">Ranger les pièces</button>
+      </div>
+      <div class="mini" id="asmHint" style="margin-top:6px;color:var(--acc)"></div>
       <div id="asmList" style="margin-top:9px"></div>
     </div>
     <div class="sec">
@@ -1049,14 +1056,64 @@ const ASM = (function(){
   const ORDER = ['bottom','motors','standoffs','elec','airunit','camcage','cagestd',
     'cammount_bottom','camera','cammount_top','top','tpu','rx','vtxant','cap',
     'gps','buzzer','cables','screws','props','battery'];
+  // what each part is / how it seats — shown under its name in the list
+  const NOTE = {
+    bottom:"La base de tout : plaque carbone 3 mm, les 4 bras vers l'extérieur.",
+    motors:"4× 1104 7500KV, un par bras sur les trous à 9 mm, vissés par-dessous.",
+    standoffs:"Entretoises alu : 1 à l'avant, 2 à l'arrière — elles portent la plaque haute.",
+    elec:"Carte AIO (FC + 4 ESC) à 45° sur le montage 25,5 mm, connecteurs vers l'arrière.",
+    airunit:"Air unit DJI O4 Lite, empilée au-dessus de la FC sur silent-blocs.",
+    camcage:"Les deux joues carbone qui encaissent les chocs devant la caméra.",
+    cagestd:"Les 2 barres dorées qui relient les joues ; la caméra se loge entre elles.",
+    cammount_bottom:"Berceau TPU inférieur : il reçoit le bas de la caméra.",
+    camera:"Caméra inclinée ~27°, objectif bien en retrait dans la cage.",
+    cammount_top:"Berceau TPU supérieur : il referme et bloque la caméra.",
+    top:"Plaque haute 2 mm, vissée sur les 3 entretoises. La fente arrière = passage XT30.",
+    tpu:"Bumpers imprimés : patins de bras + pare-chocs arrière, ils absorbent les crashs.",
+    rx:"Récepteur ELRS dans son berceau TPU, antenne T horizontale vers l'arrière.",
+    vtxant:"Antenne vidéo 5,8 GHz, tête vers le haut dans la baie arrière.",
+    cap:"Condensateur 25 V 22 µF dans son support TPU — il lisse les pics de courant.",
+    gps:"GPS / compas posé sur le stack, dans l'empreinte du châssis (vols extérieurs).",
+    buzzer:"Buzzer de repérage, à l'arrière, orienté vers l'extérieur.",
+    cables:"3 fils de phase par moteur le long des bras, sous leur garde TPU.",
+    screws:"Visserie M2 : moteurs, entretoises et stack.",
+    props:"Hélices Gemfan 2520 — en dernier, 2 sens de rotation, écrous serrés.",
+    battery:"Pack DOGCOM 560 mAh 3S sanglé sur la plaque haute, XT30 par la fente.",
+  };
+  // for the "Ranger les pièces" layout
+  const CAT = {
+    bottom:0, top:0, camcage:0, standoffs:0, cagestd:0, screws:0,       // structure
+    motors:1, props:1,                                                  // propulsion
+    elec:2, airunit:2, rx:2, gps:2, buzzer:2, cap:2, cables:2, battery:2,// électronique
+    tpu:3, cammount_top:3, cammount_bottom:3, camera:3, vtxant:3,       // TPU / caméra
+  };
+  const CATNAME = ['structure carbone','propulsion','électronique','TPU & caméra'];
   const list = ORDER.filter(k => G[k]);
   const items = list.map((k,i) => {
     const g = G[k];
     const seat = (g.userData.home || g.position).clone();   // its true assembled seat
     const a = (i/list.length)*Math.PI*2 + 0.4, R = 0.145;
-    return {key:k, g, seat, bin:new THREE.Vector3(Math.cos(a)*R, Math.sin(a)*R, 0.004),
+    return {key:k, g, seat, cat:(CAT[k]||0),
+            bin:new THREE.Vector3(Math.cos(a)*R, Math.sin(a)*R, 0.004),
             placed:true};
   });
+  // default layout: parts waiting in a ring around the build area
+  function circleSpots(){
+    items.forEach((it,i) => { const a = (i/items.length)*Math.PI*2 + 0.4, R = 0.145;
+      it.bin.set(Math.cos(a)*R, Math.sin(a)*R, 0.004); });
+  }
+  // tidy: parts lined up in rows, one row per category, around the build area
+  function tidySpots(){
+    const rows = [[],[],[],[]];
+    items.forEach(it => rows[it.cat].push(it));
+    rows.forEach((row, c) => {
+      const y = 0.115 - c*0.075;                            // one row per category
+      row.forEach((it, j) => {
+        const x = (j - (row.length-1)/2) * 0.055;
+        it.bin.set(x, y, 0.004);
+      });
+    });
+  }
   let sel = 0, ghostOn = true, ghosts = [];
 
   // translucent guide at each empty seat
@@ -1083,9 +1140,11 @@ const ASM = (function(){
       el.classList.toggle('sel', i === sel); });
     ghosts.forEach((gh,i) => { gh.visible = ghostOn && !items[i].placed; });
   }
-  function select(i){
+  function select(i){                       // i < 0 clears the selection
     if (items[sel]) setHighlight(items[sel], false);
-    sel = i; setHighlight(items[sel], true); refresh();
+    sel = i;
+    if (items[sel]) setHighlight(items[sel], true);
+    refresh();
   }
   function snap(i, ms){
     const it = items[i]; if (!it || it.placed) return;
@@ -1107,7 +1166,9 @@ const ASM = (function(){
   const box = $('asmList');
   items.forEach((it,i) => {
     const el = document.createElement('div'); el.className = 'asm';
-    el.innerHTML = `<span class="d"></span><span>${(GROUPS[it.key]||{}).label || it.key}</span>`;
+    el.innerHTML = `<span class="d"></span><span class="tx">` +
+      `<b>${(GROUPS[it.key]||{}).label || it.key}</b>` +
+      (NOTE[it.key] ? `<i>${NOTE[it.key]}</i>` : '') + `</span>`;
     el.addEventListener('click', () => select(i));
     el.addEventListener('dblclick', () => { select(i); snap(i, 380); });
     box.appendChild(el);
@@ -1117,6 +1178,16 @@ const ASM = (function(){
   $('asmReset').onclick = scatter;
   $('asmGhost').onclick = e => { ghostOn = !ghostOn;
     e.target.textContent = 'Fantômes : ' + (ghostOn?'oui':'non'); refresh(); };
+  // "Ranger les pièces": lay the loose parts out in tidy rows, one per category
+  let tidy = false;
+  $('asmTidy').onclick = e => {
+    tidy = !tidy;
+    if (tidy) tidySpots(); else circleSpots();
+    items.forEach(it => { if (!it.placed) it.g.position.copy(it.bin); });
+    e.target.textContent = tidy ? 'Éparpiller autour' : 'Ranger les pièces';
+    $('asmHint').textContent = tidy
+      ? 'Rangé par catégorie : ' + CATNAME.join(' · ') : '';
+  };
 
   // drag a loose part on its own height plane; release near the seat -> clicks in
   const ray = new THREE.Raycaster(), ptr = new THREE.Vector2();
@@ -1130,7 +1201,8 @@ const ASM = (function(){
     let o = hits[0].object; while (o.parent && o.parent !== frameRoot) o = o.parent;
     return items.findIndex(i => i.g === o); };
   renderer.domElement.addEventListener('pointerdown', ev => {
-    const i = hit(ev); if (i < 0) return;
+    const i = hit(ev);
+    if (i < 0){ select(-1); return; }        // clic dans le vide = on désélectionne
     drag = i; dragZ = items[i].g.position.z; select(i); controls.enabled = false; });
   renderer.domElement.addEventListener('pointermove', ev => {
     if (drag === null) return;
