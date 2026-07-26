@@ -122,6 +122,17 @@ TEMPLATE = r"""<!DOCTYPE html>
   button:hover{background:var(--btnh);border-color:var(--acc)}
   button.on{background:var(--acc);border-color:var(--acc);color:#fff}
   input[type=range]{width:100%;accent-color:var(--acc)}
+  /* assembly simulator (build.html / ?build=1) */
+  .bsec{display:none} body.build .bsec{display:block}
+  #asmBar{height:7px;background:#0d1219;border:1px solid var(--line);border-radius:5px;
+    overflow:hidden;margin:2px 0 7px}
+  #asmFill{height:100%;width:0;background:linear-gradient(90deg,var(--acc),#3ddc91);
+    transition:width .3s}
+  .asm{display:flex;align-items:center;gap:8px;padding:5px 7px;border-radius:6px;
+    border:1px solid transparent;cursor:pointer;font-size:12.5px;user-select:none}
+  .asm:hover{background:#151b26} .asm.sel{border-color:var(--acc);background:#141d2b}
+  .asm.ok{opacity:.5} .asm .d{flex:0 0 9px;height:9px;border-radius:50%;background:#2a3547}
+  .asm.ok .d{background:#3ddc91}
   .val{color:var(--acc);font-variant-numeric:tabular-nums}
   table{width:100%;border-collapse:collapse;font-size:12px}
   td{padding:3px 0;color:var(--mut)}
@@ -231,6 +242,20 @@ TEMPLATE = r"""<!DOCTYPE html>
       </div>
       <div class="mini">Ouvrez <b>?playground=1</b> pour le simulateur de vol
         (clavier + scripts SDK).</div>
+    </div>
+    <div class="sec bsec" id="asmSec">
+      <h2>Assemblage</h2>
+      <div id="asmBar"><div id="asmFill"></div></div>
+      <div class="mini" style="margin-bottom:8px"><span id="asmCnt">0</span> /
+        <span id="asmTot">0</span> pièces posées — <b>clic</b> = surligner ·
+        <b>double-clic</b> = emboîter · glisse-la à la souris.</div>
+      <div style="display:flex;gap:6px">
+        <button id="asmAll" style="flex:1">Tout assembler</button>
+        <button id="asmReset" style="flex:1">Éparpiller</button>
+      </div>
+      <div style="height:6px"></div>
+      <button id="asmGhost" style="width:100%">Fantômes : oui</button>
+      <div id="asmList" style="margin-top:9px"></div>
     </div>
     <div class="sec">
       <h2>Réglage antennes &amp; joint</h2>
@@ -357,8 +382,11 @@ const M = __MODEL__;       // geometry constants (metres)
 const PARAMS = new URLSearchParams(location.search);
 const EMBED = PARAMS.has('embed');
 const PLAY  = PARAMS.has('playground');
+// assembly simulator: on by default in build.html (__BUILD_DEFAULT__), or ?build=1
+const BUILD = __BUILD_DEFAULT__ ? !PARAMS.has('nobuild') : PARAMS.has('build');
 if (EMBED) document.body.classList.add('embed');
 if (PLAY)  document.body.classList.add('play');
+if (BUILD) document.body.classList.add('build');
 
 const view = document.getElementById('view');
 const scene = new THREE.Scene();
@@ -1009,6 +1037,118 @@ function setView(v){ const p=VIEWS[v]||VIEWS.iso; camera.position.set(p[0],p[1],
 document.querySelectorAll('[data-view]').forEach(b=> b.onclick=()=>setView(b.dataset.view));
 if (!PLAY) setView('iso');
 
+// ===========================================================================
+//  Assembly simulator (build.html / ?build=1)
+//  Reuses the groups THIS FILE already built, so every part keeps the exact
+//  geometry, seat, material and colour of the 3-D viewer — nothing is re-typed.
+// ===========================================================================
+const ASM = (function(){
+  if (!BUILD) return null;
+  const $ = id => document.getElementById(id);
+  // one entry per toggle-able group, in a sensible build order
+  const ORDER = ['bottom','motors','standoffs','elec','airunit','camcage','cagestd',
+    'cammount_bottom','camera','cammount_top','top','tpu','rx','vtxant','cap',
+    'gps','buzzer','cables','screws','props','battery'];
+  const list = ORDER.filter(k => G[k]);
+  const items = list.map((k,i) => {
+    const g = G[k];
+    const seat = (g.userData.home || g.position).clone();   // its true assembled seat
+    const a = (i/list.length)*Math.PI*2 + 0.4, R = 0.145;
+    return {key:k, g, seat, bin:new THREE.Vector3(Math.cos(a)*R, Math.sin(a)*R, 0.004),
+            placed:true};
+  });
+  let sel = 0, ghostOn = true, ghosts = [];
+
+  // translucent guide at each empty seat
+  function makeGhosts(){
+    ghosts.forEach(x => { frameRoot.remove(x); });
+    ghosts = items.map(it => { const c = it.g.clone(true);
+      c.traverse(o => { if (o.isMesh) o.material = new THREE.MeshStandardMaterial({
+        color:0x5db0ff, transparent:true, opacity:0.13, depthWrite:false}); });
+      c.position.copy(it.seat); c.visible = false; frameRoot.add(c); return c; });
+  }
+  // highlight = emissive tint on the real meshes (kept out of the colour pickers)
+  function setHighlight(it, on){
+    it.g.traverse(o => { if (o.isMesh && o.material && o.material.emissive){
+      if (on){ if (!o.userData._em) o.userData._em = o.material.emissive.getHex();
+               o.material.emissive.setHex(0x1d4e7a); }
+      else if (o.userData._em !== undefined){ o.material.emissive.setHex(o.userData._em); } } });
+  }
+  function refresh(){
+    const done = items.filter(i => i.placed).length;
+    $('asmCnt').textContent = done; $('asmTot').textContent = items.length;
+    $('asmFill').style.width = (100*done/items.length) + '%';
+    [...$('asmList').children].forEach((el,i) => {
+      el.classList.toggle('ok', items[i].placed);
+      el.classList.toggle('sel', i === sel); });
+    ghosts.forEach((gh,i) => { gh.visible = ghostOn && !items[i].placed; });
+  }
+  function select(i){
+    if (items[sel]) setHighlight(items[sel], false);
+    sel = i; setHighlight(items[sel], true); refresh();
+  }
+  function snap(i, ms){
+    const it = items[i]; if (!it || it.placed) return;
+    const from = it.g.position.clone(), to = it.seat.clone(), t0 = performance.now();
+    it.placed = true; ms = ms || 480;
+    (function tick(){
+      const t = Math.min(1, (performance.now()-t0)/ms), e = 1-Math.pow(1-t,3);
+      it.g.position.lerpVectors(from, to, e);
+      it.g.position.z += Math.sin(Math.PI*t)*0.010;          // small arc, like a hand
+      if (t < 1) requestAnimationFrame(tick); else { it.g.position.copy(to); refresh(); }
+    })();
+    refresh();
+  }
+  function scatter(){
+    items.forEach(it => { it.placed = false; it.g.position.copy(it.bin); });
+    sel = 0; refresh();
+  }
+  // sidebar list: click = highlight, double-click = assemble
+  const box = $('asmList');
+  items.forEach((it,i) => {
+    const el = document.createElement('div'); el.className = 'asm';
+    el.innerHTML = `<span class="d"></span><span>${(GROUPS[it.key]||{}).label || it.key}</span>`;
+    el.addEventListener('click', () => select(i));
+    el.addEventListener('dblclick', () => { select(i); snap(i, 380); });
+    box.appendChild(el);
+  });
+  $('asmAll').onclick = () => items.forEach((it,i) => {
+    if (!it.placed) setTimeout(() => snap(i, 420), i*110); });
+  $('asmReset').onclick = scatter;
+  $('asmGhost').onclick = e => { ghostOn = !ghostOn;
+    e.target.textContent = 'Fantômes : ' + (ghostOn?'oui':'non'); refresh(); };
+
+  // drag a loose part on its own height plane; release near the seat -> clicks in
+  const ray = new THREE.Raycaster(), ptr = new THREE.Vector2();
+  let drag = null, dragZ = 0;
+  const hit = ev => { const r = renderer.domElement.getBoundingClientRect();
+    ptr.x = ((ev.clientX-r.left)/r.width)*2-1; ptr.y = -((ev.clientY-r.top)/r.height)*2+1;
+    ray.setFromCamera(ptr, camera);
+    const loose = items.filter(i => !i.placed);
+    const hits = ray.intersectObjects(loose.map(i => i.g), true);
+    if (!hits.length) return -1;
+    let o = hits[0].object; while (o.parent && o.parent !== frameRoot) o = o.parent;
+    return items.findIndex(i => i.g === o); };
+  renderer.domElement.addEventListener('pointerdown', ev => {
+    const i = hit(ev); if (i < 0) return;
+    drag = i; dragZ = items[i].g.position.z; select(i); controls.enabled = false; });
+  renderer.domElement.addEventListener('pointermove', ev => {
+    if (drag === null) return;
+    const r = renderer.domElement.getBoundingClientRect();
+    ptr.x = ((ev.clientX-r.left)/r.width)*2-1; ptr.y = -((ev.clientY-r.top)/r.height)*2+1;
+    ray.setFromCamera(ptr, camera);
+    const pl = new THREE.Plane(new THREE.Vector3(0,0,1), -dragZ), p = new THREE.Vector3();
+    if (ray.ray.intersectPlane(pl, p)) items[drag].g.position.set(p.x, p.y, dragZ); });
+  addEventListener('pointerup', () => {
+    if (drag === null) return;
+    const it = items[drag];
+    if (it.g.position.distanceTo(it.seat) < 0.024) snap(drag, 240);
+    drag = null; controls.enabled = true; });
+
+  makeGhosts(); scatter(); select(0);
+  return {items, snap, scatter, select};
+})();
+
 function resize(){ const w=view.clientWidth,h=view.clientHeight;
   renderer.setSize(w,h); camera.aspect=w/h; camera.updateProjectionMatrix(); }
 addEventListener('resize', resize); resize();
@@ -1434,10 +1574,20 @@ def main():
                 "rear_bay": b64(os.path.join(STL, "rear_bay.stl")),
                 "cable": b64(os.path.join(STL, "motor_cable.stl")),
             }, separators=(",", ":"))))
+    # the viewer: assembly panel available on demand (?build=1)
     with open(OUT, "w") as f:
-        f.write(html)
+        f.write(html.replace("__BUILD_DEFAULT__", "false"))
     print(f"== {MODEL['name']}-001 3D viewer + playground ==")
     print(f"  wrote {os.path.relpath(OUT, REPO)} ({len(html)} B)")
+
+    # the assembly simulator: SAME page, same parts/materials/colours, but the
+    # assembly panel is on by default. Generated from this file so build.html can
+    # never drift from the viewer.
+    build_out = os.path.join(REPO, "TinyHoopMK1", "build", "build.html")
+    os.makedirs(os.path.dirname(build_out), exist_ok=True)
+    with open(build_out, "w") as f:
+        f.write(html.replace("__BUILD_DEFAULT__", "true"))
+    print(f"  wrote {os.path.relpath(build_out, REPO)} (simulateur d'assemblage)")
 
 
 if __name__ == "__main__":

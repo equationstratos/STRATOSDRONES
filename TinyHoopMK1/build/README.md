@@ -1,46 +1,47 @@
 # Simulateur d'assemblage — TinyHoop MK1
 
-Ouvre [`build.html`](build.html) par double-clic (aucun serveur, aucun build) :
-tu prends les pièces une par une et tu les **emboîtes** virtuellement jusqu'au
-drone complet.
+Ouvre [`build.html`](build.html) par double-clic : tu prends les pièces une par
+une et tu les **emboîtes** virtuellement jusqu'au drone complet.
 
-Ce sont **les vraies pièces du visualisateur 3-D**
-([`../viz/drone_viewer.html`](../viz/)) — mêmes maillages (plaques JeNo issues du
-STEP, DJI O4, TPU imprimés, moteurs Readytosky 1104, pack DOGCOM), et **mêmes
-coordonnées d'assemblage** : un montage terminé est identique au visualisateur,
-pièce pour pièce.
+## Pourquoi c'est fidèle au visualisateur
 
-## Comment ça marche
+`build.html` est **généré par le même script** que le visualisateur 3-D
+([`../viz/gen_viewer.py`](../viz/)) : c'est **la même page**, avec le panneau
+d'assemblage activé par défaut. Le simulateur ne redéfinit **aucune** pièce ni
+position — il réutilise les groupes déjà construits par le viewer.
 
-- **24 étapes** dans l'ordre réel du montage (plaque basse → moteurs →
-  entretoises → FC → air unit → cage + caméra → plaque haute → baie arrière →
-  RX → antennes → condo → GPS → bumpers → hélices → batterie).
-- Les pièces non posées attendent **autour** du drone ; leur emplacement final
-  est montré par un **fantôme bleu translucide**.
-- **Glisse une pièce à la souris** : si tu la lâches assez près de son logement,
-  elle **s'emboîte** d'elle-même (avec une petite animation).
-- Ou utilise les commandes : `Entrée` / **Emboîter** pose l'étape courante,
-  **Suivante** passe à la pièce d'après, **Tout assembler** joue le montage
-  complet, **Recommencer** remet tout dans le bac.
-- `R` fait tourner la pièce en main, `Échap` la repose dans le bac.
-- La barre de progression et la gamme de montage à gauche suivent l'avancement ;
-  à 24/24 le message **« Drone assemblé »** confirme la structure complète.
-
-## Régénérer
+Conséquence : géométrie, cotes, matériaux, couleurs, batterie DOGCOM (étiquette
++ bords arrondis), supports caméra, bumpers, hélices, antennes… **tout est
+identique par construction**, et ne peut pas diverger.
 
 ```bash
-python3 TinyHoopMK1/build/gen_build.py     # réécrit build.html
+python3 TinyHoopMK1/viz/gen_viewer.py   # écrit viz/drone_viewer.html ET build/build.html
 ```
 
-Le générateur importe les mêmes STL que `viz/gen_viewer.py` et les inline en
-base64, d'où un fichier autonome (~15 Mo) qui marche en `file://`.
+## Utilisation
 
-## Notes
+- **21 pièces** dans l'ordre du montage (plaque basse → moteurs → entretoises →
+  FC → air unit → cage + caméra → plaque haute → TPU → RX → antenne VTX → condo
+  → GPS → buzzer → câbles → visserie → hélices → batterie).
+- Les pièces non posées attendent **autour** du drone ; leur logement est
+  indiqué par un **fantôme bleu**.
+- Dans la liste de gauche : **un clic surligne** la pièce dans la 3-D,
+  **un double-clic l'emboîte** toute seule.
+- **Glisser-déposer** : lâchée près de son logement, la pièce s'emboîte.
+- **Tout assembler** joue le montage complet ; **Éparpiller** remet tout autour.
+- **Fantômes** : affiche/masque les repères translucides.
 
-- Les entretoises (châssis, carte, cage caméra) sont **procédurales et lisses**,
-  comme dans le visualisateur — pas les anciens maillages facettés.
-- Les positions viennent de `viz/gen_viewer.py` (`MODEL.elec`, `MOTORS`,
-  `standoffs`) : si tu déplaces une pièce là-bas, reflète-la ici.
-- Le guide texte du montage réel (PCB, impression, bring-up) reste
-  [`../../docs/build_guide.md`](../../docs/build_guide.md) — ce simulateur en est
-  la version 3-D interactive, pas un remplacement.
+Le reste du viewer reste disponible dans la même page : **sélecteur de caméra**
+(O4 Lite / nano analogique), **sélecteur d'antenne VTX** (5 modèles),
+**sélecteurs de couleur** par pièce, vue éclatée, fil de fer, thème clair/sombre.
+
+## Variantes d'URL
+
+| URL | Effet |
+|---|---|
+| `build.html` | simulateur d'assemblage (par défaut) |
+| `build.html?nobuild=1` | même page, panneau d'assemblage masqué |
+| `../viz/drone_viewer.html?build=1` | le visualisateur avec le panneau d'assemblage |
+
+Le guide texte du montage réel (PCB, impression, bring-up) reste
+[`../../docs/build_guide.md`](../../docs/build_guide.md).
