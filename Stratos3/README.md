@@ -1,7 +1,7 @@
 # STRATOS 3 (Fr4n30-001) — 3" FPV freestyle imprimable
 
 Un **3 pouces** style freestyle : plaques carbone + **toutes les pièces TPU**
-imprimables, et **5 canopées** au choix pour lui donner sa gueule.
+imprimables, et **5 side panels** (flancs) au choix pour lui donner sa gueule.
 
 Tout est paramétrique dans [`cad/frame3.scad`](cad/frame3.scad) — change le bloc
 `TUNE`, ré-exporte, c'est tout.
@@ -82,8 +82,8 @@ pare-chocs de bras **+ canal pour les 3 fils de phase**) · `tpu_batt_pad`
 2. Passe les 3 fils de phase **avant** de clipser les `tpu_arm_guard`.
 3. Soude l'**XT30 en dernier**, condensateur d'abord — plus de place au fer.
 4. Fais passer le fil de batterie **par la fente** de la plaque haute, puis
-   remonte la canopée : elle cache la soudure et le fil est protégé.
-5. Antennes **avant** de visser la canopée : elles s'engagent par le dessous.
+   remonte les side panels : ils cachent la soudure et protègent le fil.
+5. Antennes **avant** de visser les flancs : elles s'engagent par le dessous.
 6. Sangle : patins `tpu_batt_pad` collés sur la plaque haute, ça évite que la
    LiPo glisse en virage.
 

@@ -88,7 +88,7 @@ module top_plate() {
       offset(r=1.5) offset(r=-1.5) square([XT30_W+2*CLR+2, XT30_H+2*CLR+2], center=true);
     // battery strap slots
     for (y=[-16, 16]) translate([0,y]) square([BODY_W-10, 4], center=true);
-    translate([0, (BODY_L-14)/2-10]) circle(d=8);   // canopy screw / antenna pass
+    translate([0, (BODY_L-14)/2-10]) circle(d=8);   // side-panel screw / antenna pass
   }
 }
 
