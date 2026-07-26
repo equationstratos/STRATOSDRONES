@@ -194,15 +194,22 @@ TEMPLATE = r"""<!DOCTYPE html>
       <h2>Électronique</h2>
       <button id="bElec" class="on" style="width:100%">Électronique : STRATOS TINYHOOP AIO</button>
       <div id="bom" class="mini" style="display:none;margin-top:9px">
-        <b>Build « standard » (composants du commerce, repo JeNo) :</b>
+        <b>Build « standard » — exactement les pièces affichées dans le
+        visualisateur :</b>
         <table style="margin-top:5px">
-          <tr><td>FC / ESC</td><td class="v">JHEMCU GHF411 AIO (STEP réel)</td></tr>
-          <tr><td>Moteurs</td><td class="v">1104 7500KV (Readytosky)</td></tr>
-          <tr><td>Hélices</td><td class="v">Gemfan 2520</td></tr>
-          <tr><td>Caméra</td><td class="v">DJI O4 Lite (caméra + air unit + antenne)</td></tr>
-          <tr><td>RX</td><td class="v">ELRS (antenne céram.)</td></tr>
-          <tr><td>VTX</td><td class="v">analogique 5,8 GHz (si non-O4)</td></tr>
-          <tr><td>Batterie</td><td class="v">2S-3S 450-560 mAh</td></tr>
+          <tr><td>Châssis</td><td class="v">JeNo Pocket V2 2,5" (carbone, STEP réel) + top plate STRATOS (fente passe-câble)</td></tr>
+          <tr><td>FC / ESC</td><td class="v">JHEMCU GHF411 AIO (STEP réel) · ou STRATOS TINYHOOP AIO</td></tr>
+          <tr><td>Moteurs</td><td class="v">4× 1104 7500KV (Readytosky) — 3 fils de phase + garde TPU par bras</td></tr>
+          <tr><td>Hélices</td><td class="v">Gemfan 2520 (2,5", tri-pale)</td></tr>
+          <tr><td>Caméra</td><td class="v">sélecteur : DJI O4 Lite (STEP réel) · nano analogique — objectif M12 type Flywoo Wylde</td></tr>
+          <tr><td>Support caméra</td><td class="v">TPU haut + bas, joint caoutchouc, berceau d'objectif, 2 entretoises de cage (or)</td></tr>
+          <tr><td>VTX vidéo</td><td class="v">air unit DJI O4 Lite (ou baie analogique 5,8 GHz)</td></tr>
+          <tr><td>Antenne VTX</td><td class="v">sélecteur 5 modèles : DJI O4 · RHCP LP A1 · Foxeer Lollipop · TrueRC Matchstick · Micro Lollipop U.FL</td></tr>
+          <tr><td>RX</td><td class="v">ELRS 2,4 GHz — PCB en berceau TPU + antenne T horizontale à l'arrière</td></tr>
+          <tr><td>Batterie</td><td class="v">DOGCOM 560 mAh 3S 60C (28×52,5×18,5 mm)</td></tr>
+          <tr><td>Alim</td><td class="v">XT30 + paire rouge/noir (boucle de service) + prise d'équilibrage JST-XH</td></tr>
+          <tr><td>Condensateur</td><td class="v">25 V 22 µF dans son support TPU</td></tr>
+          <tr><td>Divers</td><td class="v">GPS / compas · buzzer · visserie M2 · entretoises alu · bumpers TPU</td></tr>
         </table>
         <div style="margin-top:5px">Vole en Betaflight — <b>non</b> programmable /
           essaim (ça, c'est la carte STRATOS).</div>
