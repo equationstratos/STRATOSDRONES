@@ -1,5 +1,8 @@
 # builds
 build/
+# ...but TinyHoopMK1/build/ is the 3-D assembly simulator, not a CMake build dir
+!TinyHoopMK1/build/
+!TinyHoopMK1/build/**
 *.o
 *.a
 *.so
