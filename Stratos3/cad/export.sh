@@ -4,7 +4,7 @@ set -e
 cd "$(dirname "$0")"; mkdir -p stl preview
 PARTS="bottom_plate top_plate tpu_cam_mount_top tpu_cam_mount_bottom tpu_rear_bay \
 tpu_cap_holder tpu_rx_holder tpu_gps_mount tpu_arm_guard tpu_batt_pad \
-canopy_a canopy_b canopy_c canopy_d canopy_e"
+side_panel_a side_panel_b side_panel_c side_panel_d side_panel_e"
 for P in $PARTS; do
   echo "  $P"
   xvfb-run -a openscad -o "stl/$P.stl" --export-format binstl -D "PART=\"$P\"" frame3.scad

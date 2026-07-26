@@ -22,20 +22,23 @@ Tout est paramétrique dans [`cad/frame3.scad`](cad/frame3.scad) — change le b
 | Hauteur de corps | 22 mm entre plaques |
 | Caméra | nano/micro 19 mm, **inclinaison 30°** |
 
-## Les 5 canopées
+## Les 5 side panels (flancs)
 
-| | Style | Haut. | Pour qui |
-|---|---|---|---|
-| **A** | Cinewhoop wrap — coque enveloppante | 26 mm | look propre, protège tout, cinématique |
-| **B** | Racer low — basse et effilée | 17 mm | racing, traînée mini, le plus léger |
-| **C** | Split aero — nervures latérales | 22 mm | style Split-X, rigidité en plus |
-| **D** | Cage ajourée — grandes ouïes | 21 mm | vol chaud / été, refroidissement maxi |
-| **E** | Duck bill — bec avant plongeant | 23 mm | freestyle, protège l'objectif en crash |
+Ils ferment le corps **entre les deux plaques** : protègent le stack des impacts
+latéraux, gardent les débris dehors, et donnent son look au build.
+La forme est **symétrique** — le même STL fait le côté gauche **et** le droit,
+donc tu en imprimes simplement **2**.
 
-Toutes partagent **les mêmes fixations** (trame 30,5 + vis avant) et les mêmes
-sorties : fenêtre caméra inclinée à 30°, deux passages d'antenne à l'arrière,
-accès **USB/bind** sur le flanc droit, ouïes d'entrée et de sortie d'air.
-Tu peux donc les échanger sans rien remonter d'autre.
+| | Style | Pour qui |
+|---|---|---|
+| **A** | Nervurée — pleine, nervures embossées | protection maxi, look plein |
+| **B** | Hexa — treillis hexagonal | léger et aéré, refroidissement |
+| **C** | Fentes aéro — longues fentes inclinées | style racer |
+| **D** | Squelette — 3 grandes ouvertures | le plus léger |
+| **E** | Demi-hauteur — ne ferme que le bas | laisse le stack respirer |
+
+Tous ont **les mêmes fixations** : lèvres haute et basse qui viennent se prendre
+sur les plaques, 4 trous M2. Ils s'échangent sans rien remonter d'autre.
 
 ## Pièces TPU
 
@@ -48,11 +51,11 @@ pare-chocs de bras **+ canal pour les 3 fils de phase**) · `tpu_batt_pad`
 
 ## Réglages d'impression
 
-- **TPU 95A** pour tout ce qui commence par `tpu_` et pour les canopées :
+- **TPU 95A** pour tout ce qui commence par `tpu_` et pour les side panels :
   buse 0,4 · couche **0,2 mm** · **3 périmètres** · remplissage **20 %** gyroïde ·
   **pas de support** (tout est dessiné auto-portant ≤ 45°) · 25-30 mm/s.
-- Canopées : poser **la face ouverte sur le plateau**, ça évite tout support et
-  donne la meilleure finition sur le dessus.
+- Side panels : poser **à plat sur le flanc**, aucun support, et imprimer **×2**
+  (le même fichier sert à gauche et à droite).
 - `tpu_arm_guard` : imprimer **×4**, canal de câble vers l'intérieur.
 - Plaques carbone : **découpe** (CNC/laser), pas impression — les `.stl` servent
   de gabarit, `cad/dxf/` pour l'atelier.
