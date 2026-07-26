@@ -22,6 +22,7 @@ STL = os.path.join(REPO, "TinyHoopMK1", "cad", "stl")
 TPU = os.path.join(REPO, "TinyHoopMK1", "cad", "frame_jeno", "tpu")
 PARTS = os.path.join(REPO, "TinyHoopMK1", "cad", "frame_jeno", "parts")
 DJI = os.path.join(REPO, "TinyHoopMK1", "cad", "dji_o4")
+S3 = os.path.join(REPO, "Stratos3", "cad", "stl")
 OUT = os.path.join(HERE, "drone_viewer.html")
 
 # the 4 real motor-mount holes of the front-right corner (measured in the STEP)
@@ -42,7 +43,7 @@ MODEL = dict(name="FR4N10", sub="FPV programmable / essaim · 2,5\" · 2S-3S", w
              standoffs=dict(frame=_FRAME_STAND, board=_BOARD_STAND),
              # ALL screws: 16 motor-mount + 3 frame-standoff tops + 4 board tops
              screws=_MOTOR_SCREWS + _STACK_SCREWS,
-             cammount=[0,0,0],            # O4 mount parts are already in frame coords
+             cammount=[0,0,0], side=[13.6, -1, 3, 0.70],            # O4 mount parts are already in frame coords
              # per-group explode offsets (mm along Z, × slider)
              explode=dict(bottom=[0,0,0], top=[0,0,56], standoffs=[0,0,26],
                           camcage=[0,0,40], camera=[0,0,48],
@@ -218,6 +219,19 @@ TEMPLATE = r"""<!DOCTYPE html>
       </select>
       <div class="mini" style="margin-top:5px">Lentille AR + bague métal réalistes,
         joint caoutchouc et berceau TPU calés sur la pièce réelle.</div>
+    </div>
+    <div class="sec">
+      <h2>Flancs latéraux</h2>
+      <select id="sideSel" style="width:100%;background:var(--btn);color:var(--ink);
+        border:1px solid var(--line);border-radius:6px;padding:7px;font-size:12px">
+        <option value="a">A — Nervurée (pleine)</option>
+        <option value="b">B — Hexa (treillis)</option>
+        <option value="c">C — Fentes aéro (racer)</option>
+        <option value="d">D — Squelette (léger)</option>
+        <option value="e">E — Demi-hauteur</option>
+      </select>
+      <div class="mini" style="margin-top:5px">Flancs imprimés du Stratos 3, posés
+        ici à titre d'essai (échelle 3" — on ajustera).</div>
     </div>
     <div class="sec">
       <h2>Antenne VTX (5,8 GHz)</h2>
@@ -796,6 +810,25 @@ function showVtxModel(key){
 // LiPo capacitor (25 V 22 µF, Ø6×12) SEATED IN ITS PRINTED TPU HOLDER
 // Capacitor LAID DOWN (axis along Y) so the Ø6x18.4 can fits BETWEEN the plates
 // instead of standing proud of the frame. Holder rotated with it.
+// ---- side panels (flancs imprimés, 5 variantes) --------------------------
+// Two mirrored copies flanking the body, seated between the plates. The picker
+// swaps which variant is visible; only one pair is shown at a time.
+const gSide = group('side');
+const sideModels = {};
+{ const src = {a:STLB64.sp_a, b:STLB64.sp_b, c:STLB64.sp_c, d:STLB64.sp_d, e:STLB64.sp_e};
+  for (const k in src){
+    const g = new THREE.Group();
+    for (const sx of [-1,1]){
+      const m = mesh(src[k], 0x2b2f36, .06, .82);
+      m.rotation.z = Math.PI/2;                       // panel runs along the body (Y)
+      m.scale.multiplyScalar(M.side[3]);              // 3" part previewed at 2.5" scale
+      m.position.set(sx*(M.side[0])/1000, M.side[1]/1000, M.frame_z + M.side[2]/1000);
+      g.add(m);
+    }
+    g.visible = false; sideModels[k] = g; gSide.add(g);
+  }
+}
+let sideCur = 'a'; sideModels[sideCur].visible = true;
 const gCap = group('cap');
 { const c = M.elec.cap;
   const holder = place(STLB64.cap_holder, TPU, .1, .85, c);
@@ -914,6 +947,7 @@ const GROUPS = {
   battery:  {label:'Batterie 3S 560 mAh (DOGCOM)', color:'#83868c'},
   screws:   {label:'Visserie M2 (moteurs + stack)', color:'#d6d9de'},
   vtxant:   {label:'Antenne VTX 5,8 GHz (sélecteur)', color:'#1c1c1e'},
+  side:     {label:'Flancs latéraux (sélecteur)', color:'#2b2f36'},
   cap:      {label:'Condensateur 25 V 22 µF (support TPU)', color:'#1b3a8f'},
   rx:       {label:'Récepteur RX (PCB + antenne)', color:'#0f3d0f'},
   gps:      {label:'GPS / compas', color:'#0a0c10'},
@@ -1000,6 +1034,10 @@ applyElec(stdElec);
 { const sel=document.getElementById('vtxSel'); if(sel){ sel.value=vtxCur;
   sel.addEventListener('change',e=>{ showVtxModel(e.target.value);
     if (window.__pickAntenna) window.__pickAntenna('vtx_'+e.target.value); }); } }
+// side-panel variant selector
+{ const sel=document.getElementById('sideSel'); if(sel){ sel.value=sideCur;
+  sel.addEventListener('change',e=>{ if(sideModels[sideCur])sideModels[sideCur].visible=false;
+    sideCur=e.target.value; if(sideModels[sideCur])sideModels[sideCur].visible=true; }); } }
 // camera model selector — swap DJI STEP body vs nano analog body
 { const sel=document.getElementById('camSel'); if(sel){ sel.value=camCur;
   sel.addEventListener('change',e=>{ if(camModels[camCur])camModels[camCur].visible=false;
@@ -1674,7 +1712,7 @@ def main():
             .replace("__MODEL__", json.dumps(
                 {k: MODEL[k] for k in ("motors", "prop_z", "motor_z", "frame_z",
                                        "elec", "screws", "standoffs",
-                                       "cammount", "explode")},
+                                       "cammount", "side", "explode")},
                 separators=(",", ":")))
             .replace("__STLS__", json.dumps({
                 # REAL WE are FPV geometry, split from the STEP + the 02-TPU
@@ -1716,6 +1754,12 @@ def main():
                 "foxeer_stem": b64(os.path.join(STL, "foxeer_stem.stl")),
                 "foxeer_conn": b64(os.path.join(STL, "foxeer_conn.stl")),
                 "rear_bay": b64(os.path.join(STL, "rear_bay.stl")),
+                # Stratos 3 side panels (flancs imprimés) — 5 variantes
+                "sp_a": b64(os.path.join(S3, "side_panel_a.stl")),
+                "sp_b": b64(os.path.join(S3, "side_panel_b.stl")),
+                "sp_c": b64(os.path.join(S3, "side_panel_c.stl")),
+                "sp_d": b64(os.path.join(S3, "side_panel_d.stl")),
+                "sp_e": b64(os.path.join(S3, "side_panel_e.stl")),
                 "cable": b64(os.path.join(STL, "motor_cable.stl")),
             }, separators=(",", ":"))))
     # the viewer: assembly panel available on demand (?build=1)
