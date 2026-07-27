@@ -88,7 +88,7 @@ def stls():
         "grommet": o("xt30_grommet"), "gpsmount": o("gps_mount"),
         "bumper": o("rear_bumper"),
         # ── pièces Sub250 d'origine, telles quelles
-        "flanc_g": o("flanc_gauche"), "flanc_d": o("flanc_droit"),
+        "sidepanel": o("sub250_side_panel"),
         "footpad": o("sub250_foot_pad"),
         "rxplate": o("sub250_rx_plate"), "tailmount": o("sub250_tail_mount"),
         # ── pièces réutilisées du TinyHoop MK1 (mêmes composants du commerce)
@@ -395,25 +395,21 @@ const gBumper = group('bumper');
   m.position.set(0, -65/1000, (M.z.bottom-2.2)/1000); gBumper.add(m); }
 
 /* pièces Sub250 d'origine */
-/* Le fichier Sub250 « side panels » contient les DEUX flancs — gauche et droit
-   — déjà séparés mais réunis dans un seul fichier. `prep_sub250.py` les extrait
-   en `flanc_gauche.stl` et `flanc_droit.stl` ; ils se posent tels quels, chacun
-   de son côté, sans miroir : chaque pièce est déjà de la bonne main.
-   La face du flanc est dans le plan X-Z du fichier ; la rotation de -90° autour
-   de Z amène sa longueur d'avant en arrière. */
+/* `side_panel.stl` EST le flanc gauche, dans son entier. Le flanc droit est
+   son miroir — un seul fichier à imprimer, retourné dans le trancheur pour la
+   deuxième pièce. La face du flanc est dans le plan X-Z du fichier : la
+   rotation de -90° autour de Z amène sa longueur d'avant en arrière. */
 const gSide = group('sidepanels');
 { const SIDE_X = 13.0;
-  const poser = (b64, sx, dy, dz) => {
+  for (const sx of [-1, +1]){                      // -1 = gauche (la pièce), +1 = son miroir
     const g = new THREE.Group();
-    const m = mesh(b64, SUB250, .06, .78);
+    const m = mesh(STLB64.sidepanel, SUB250, .06, .78);
     m.rotation.z = -Math.PI/2;
     g.add(m);
-    g.position.set(sx*SIDE_X/1000, dy/1000, dz/1000);
+    g.scale.x = sx;
+    g.position.set(sx*SIDE_X/1000, -6/1000, 0);
     gSide.add(g);
-    return g;
-  };
-  poser(STLB64.flanc_g, -1, -6, 0);                // flanc GAUCHE
-  poser(STLB64.flanc_d, +1, -6, 19);               // flanc DROIT
+  }
 }
 const gFeet = group('feet');
 for (const [i,[sx,sy]] of [[1,1],[-1,1],[-1,-1],[1,-1]].entries()){
@@ -636,8 +632,8 @@ const PARTS = [
    "S'encliquette dans la découpe du roof et protège le fil du bord carbone."],
   ['bumper',     'Bumper arrière',      '×1 · TPU',         'Imprimé', 0x24272d,
    "Capuchon sur la pointe arrière — encaisse les atterrissages ratés."],
-  ['sidepanels', 'Flancs latéraux',     'gauche + droit',   'Sub250', 0x2ec4b6,
-   "Pièces d'origine Sub250. Le fichier livré contient les deux flancs réunis : ils sont extraits en flanc_gauche.stl (72 × 17,7 × 32,5) et flanc_droit.stl (43 × 9,3 × 10,8)."],
+  ['sidepanels', 'Flancs latéraux',     '×2 · Sub250',      'Sub250', 0x2ec4b6,
+   "Pièce d'origine Sub250, 99 × 17,7 × 32,5 mm : c'est le flanc GAUCHE. Le droit est son miroir — un seul fichier, retourné dans le trancheur pour la deuxième pièce."],
   ['feet',       'Patins de pied',      '×4 · Sub250',      'Sub250', 0x2ec4b6,
    "Pièce d'origine Sub250 : le fichier livré en contient 4 sur une planche."],
   ['rxplate',    'Platine antennes RX', '×1 · Sub250',      'Sub250', 0xd8dce2,
