@@ -44,7 +44,7 @@ MODEL = dict(
     cage=dict(gap=T.CAGE_GAP, t=T.CAGE_T, y=T.CAM_Y, z=T.CAM_Z, tilt=T.CAM_TILT,
               w=T.CAM_W, h=T.CAM_H),
     standoffs=dict(top=T.STANDOFFS_TOP, cam=T.STANDOFFS_CAM),
-    stack=T.STACK, ground=11.2 - T.Z_ARM,                   # patin de pied sous le bras
+    stack=T.STACK, stack_y=T.STACK_Y, xt30_y=T.XT30_Y, ground=11.2 - T.Z_ARM,                   # patin de pied sous le bras
     specs=[("Entraxe", "150 mm (125 × 82,9)"), ("Hélices", "3\" · 76 mm"),
            ("Moteurs", "1404 4500 KV"), ("Plaques", "basse 2,5 · médiane 2,5 · roof 2,0"),
            ("Bras", "3 mm carbone"), ("Stack", "20×20 (VTX 25,5)"),
@@ -88,7 +88,8 @@ def stls():
         "grommet": o("xt30_grommet"), "gpsmount": o("gps_mount"),
         "bumper": o("rear_bumper"),
         # ── pièces Sub250 d'origine, telles quelles
-        "sidepanel": o("sub250_side_panel"), "footpad": o("sub250_foot_pad"),
+        "side_a": o("sub250_side_panel_a"), "side_b": o("sub250_side_panel_b"),
+        "footpad": o("sub250_foot_pad"),
         "rxplate": o("sub250_rx_plate"), "tailmount": o("sub250_tail_mount"),
         # ── pièces réutilisées du TinyHoop MK1 (mêmes composants du commerce)
         "prop": t("prop"), "screw": t("screw"), "cap": t("capacitor"),
@@ -383,56 +384,89 @@ for (const a of ARM_DIR){
 
 const gPad = group('battpad');
 { const m = mesh(STLB64.battpad, TPU, .1, .86);
-  m.position.set(0, 4/1000, (M.z.total)/1000); gPad.add(m); }
+  m.position.set(0, 2/1000, (M.z.total)/1000); gPad.add(m); }
 
 const gGrommet = group('grommet');
 { const m = mesh(STLB64.grommet, TPU, .1, .84);
-  m.position.set(0, -28/1000, (M.z.top-1.6)/1000); gGrommet.add(m); }
+  m.position.set(0, M.xt30_y/1000, (M.z.top-1.6)/1000); gGrommet.add(m); }
 
 const gBumper = group('bumper');
 { const m = mesh(STLB64.bumper, TPU, .1, .86);
   m.position.set(0, -65/1000, (M.z.bottom-2.2)/1000); gBumper.add(m); }
 
 /* pièces Sub250 d'origine */
-/* Le flanc Sub250 fait 99 × 17,7 × 32,5 : ses 99 mm courent d'avant en arrière,
-   sa paroi vient à l'aplomb du bord des plaques et ses lèvres haute et basse
-   viennent se prendre dessus (le recouvrement aux niveaux des plaques est voulu). */
+/* Le fichier Sub250 « side panels » contient DEUX pièces posées côte à côte sur
+   une planche : la coque (72 mm) et la grille (43 mm). Elles se montent chacune
+   en deux exemplaires, une par côté — d'où 4 pièces ici, en miroir. */
 const gSide = group('sidepanels');
 for (const sx of [1,-1]){
   const g = new THREE.Group();
-  const m = mesh(STLB64.sidepanel, SUB250, .06, .78);
-  m.rotation.z = -Math.PI/2;                       // 99 mm suivant Y
-  g.add(m);
+  const a = mesh(STLB64.side_a, SUB250, .06, .78);
+  a.rotation.z = -Math.PI/2;                       // les 72 mm courent d'avant en arrière
+  a.position.set(0, 2/1000, 0);
+  g.add(a);
+  const b = mesh(STLB64.side_b, SUB250, .06, .78); // la grille, au-dessus et en arrière
+  b.rotation.z = -Math.PI/2;
+  b.position.set(-3/1000, -50/1000, 20/1000);
+  g.add(b);
   g.scale.x = sx;
-  g.position.set(sx*13/1000, -1/1000, 0);
+  g.position.set(sx*13/1000, 0, 0);
   gSide.add(g);
 }
+/* Le patin se visse SOUS le patin moteur (mêmes 4 vis M2 en 9×9) et sa partie
+   large vient coiffer le BOUT du bras. Son surplus de matière est du côté de
+   son +Y local : on l'oriente donc vers l'extérieur, dans l'axe du bras. */
 const gFeet = group('feet');
-for (const [sx,sy] of [[1,1],[-1,1],[-1,-1],[1,-1]]){
+for (const [i,[sx,sy]] of [[1,1],[-1,1],[-1,-1],[1,-1]].entries()){
+  const g = new THREE.Group();
+  g.rotation.z = ARM_DIR[i] - Math.PI/2;           // +Y local -> vers le bout du bras
   const m = mesh(STLB64.footpad, SUB250, .06, .8);
-  m.position.set(sx*M.mx/1000, sy*M.my/1000, (M.z.arm-11.2)/1000);
-  m.rotation.z = Math.atan2(sy*M.my, sx*M.mx);
-  gFeet.add(m);
+  m.position.z = (M.z.arm - 11.2)/1000;
+  g.add(m);
+  g.position.set(sx*M.mx/1000, sy*M.my/1000, 0);
+  gFeet.add(g);
 }
 const gRxPlate = group('rxplate');
 { const m = mesh(STLB64.rxplate, 0xd8dce2, .06, .7);
-  m.position.set(0, -51.5/1000, M.z.total/1000); gRxPlate.add(m); }
+  m.position.set(0, -52/1000, M.z.total/1000); gRxPlate.add(m); }
+/* Étrier de queue : ses deux oreilles enjambent l'empilage de plaques et ses
+   deux tubes d'antenne pointent vers l'arrière. Dans son repère d'origine
+   l'axe des tubes est +Z ; on le bascule de 90° pour l'envoyer vers -Y. */
+const TAIL_Y = -58, TAIL_Z = M.z.mid + 2;
 const gTail = group('tailmount');
 { const m = mesh(STLB64.tailmount, SUB250, .06, .78);
-  m.position.set(0, -70/1000, M.z.bottom/1000); gTail.add(m); }
+  m.rotation.x = Math.PI/2;                        // +Z local -> -Y (vers l'arrière)
+  m.position.set(0, TAIL_Y/1000, TAIL_Z/1000);
+  gTail.add(m); }
 
 /* moteurs 1404 — construits en primitives (légers, cotes exactes) */
+// Moteur 1404 : embase de fixation, stator bobiné apparent, cloche ventilée,
+// chapeau et écrou d'hélice. Cotes réelles d'un 1404 (cloche Ø15,8, H ~17,5).
 function motor(){
   const g = new THREE.Group();
-  const base = new THREE.Mesh(new THREE.CylinderGeometry(.0068,.0074,.0022,28),
-    new THREE.MeshStandardMaterial({color:0x2b2f36, metalness:.85, roughness:.35}));
-  base.rotation.x = Math.PI/2; base.position.z = .0011; g.add(base);
-  const bell = new THREE.Mesh(new THREE.CylinderGeometry(.007,.0066,.0092,28),
-    new THREE.MeshStandardMaterial({color:0x3a3f47, metalness:.9, roughness:.28}));
-  bell.rotation.x = Math.PI/2; bell.position.z = .0068; g.add(bell);
-  const shaft = new THREE.Mesh(new THREE.CylinderGeometry(.00075,.00075,.006,12),
-    new THREE.MeshStandardMaterial({color:0xd6d9de, metalness:.95, roughness:.16}));
-  shaft.rotation.x = Math.PI/2; shaft.position.z = .0135; g.add(shaft);
+  const mat = (c,m,r) => new THREE.MeshStandardMaterial({color:c, metalness:m, roughness:r});
+  const cyl = (rt,rb,h,seg,material,z) => { const m = new THREE.Mesh(
+      new THREE.CylinderGeometry(rt,rb,h,seg), material);
+    m.rotation.x = Math.PI/2; m.position.z = z; g.add(m); return m; };
+  cyl(.0058,.0063,.0016, 24, mat(0x24272c,.85,.38), .0008);          // embase
+  for (let i=0;i<4;i++){                                              // 4 bossages M2
+    const a = i/4*Math.PI*2 + Math.PI/4;
+    const b = new THREE.Mesh(new THREE.CylinderGeometry(.0016,.0016,.0016,10),
+      mat(0x24272c,.85,.38));
+    b.rotation.x = Math.PI/2;
+    b.position.set(Math.cos(a)*.0064, Math.sin(a)*.0064, .0008); g.add(b);
+  }
+  cyl(.0068,.0068,.0044, 24, mat(0x8a6a2f,.65,.52), .0038);           // stator bobiné
+  cyl(.0079,.0074,.0074, 30, mat(0x3d4249,.92,.24), .0097);           // cloche
+  for (let i=0;i<9;i++){                                              // ouïes de cloche
+    const a = i/9*Math.PI*2;
+    const v = new THREE.Mesh(new THREE.BoxGeometry(.0013,.0034,.0022), mat(0x101318,.3,.7));
+    v.position.set(Math.cos(a)*.0074, Math.sin(a)*.0074, .0104);
+    v.rotation.z = a; g.add(v);
+  }
+  cyl(.0079,.0079,.0011, 30, mat(0x3d4249,.92,.24), .0139);           // chapeau
+  cyl(.0026,.0026,.0026,  6, mat(0xc9a227,.95,.2),  .0158);           // écrou d'hélice
+  cyl(.0008,.0008,.0040, 12, mat(0xd6d9de,.95,.16), .0165);           // axe
   return g;
 }
 const gMotors = group('motors');
@@ -442,16 +476,14 @@ for (const [sx,sy] of [[1,1],[-1,1],[-1,-1],[1,-1]]){
 }
 /* hélices 3" : le STL 2,5" du TinyHoop remis à l'échelle */
 const gProps = group('props');
-const PROP_SCALE = M.prop_d/56.6;
+const PROP_SCALE = M.prop_d/63.6;   // le STL est un 2,5\" de 63,6 mm
 for (const [i,[sx,sy]] of [[1,1],[-1,1],[-1,-1],[1,-1]].entries()){
+  // NE PAS recentrer sur la boîte englobante : le moyeu du STL est déjà en
+  // (0,0) — une hélice tripale a une boîte naturellement décentrée.
   const m = mesh(STLB64.prop, 0xd8721e, .05, .35, {opacity:.55});
-  // le STL d'origine n'est pas centré sur son moyeu : on le recentre en X/Y
-  m.geometry.computeBoundingBox();
-  const bb = m.geometry.boundingBox;
-  m.geometry.translate(-(bb.min.x+bb.max.x)/2, -(bb.min.y+bb.max.y)/2, 0);
   m.scale.setScalar(.001*PROP_SCALE);
   if (i%2) m.scale.y *= -1;                        // CW / CCW
-  m.position.set(sx*M.mx/1000, sy*M.my/1000, (M.z.arm+16)/1000);
+  m.position.set(sx*M.mx/1000, sy*M.my/1000, (M.z.arm+18.5)/1000);   // sur le chapeau
   gProps.add(m);
 }
 
@@ -464,8 +496,8 @@ const gElec = group('elec');
 const ELEC = {};
 { // ── variante STOCK : RedFox A3 45A AIO + DJI O4 Pro
   const g = new THREE.Group();
-  const fc = pcb(30,30,3.2, 0x0f1a2e); fc.position.set(0,-6/1000,(M.z.mid+5)/1000); g.add(fc);
-  const air = pcb(30,24,7.5, 0x11532e); air.position.set(0,10/1000,(M.z.mid+13)/1000); g.add(air);
+  const fc = pcb(30,30,3.2, 0x0f1a2e); fc.position.set(0,M.stack_y/1000,(M.z.mid+5)/1000); g.add(fc);
+  const air = pcb(30,24,7.5, 0x11532e); air.position.set(0,(M.stack_y+16)/1000,(M.z.mid+13)/1000); g.add(air);
   const cam = pcb(M.cage.w,20,M.cage.h, 0x1c1f24);
   cam.position.set(0, (M.cage.y-6)/1000, (M.z.deck+11)/1000);
   cam.rotation.x = -M.cage.tilt*D; g.add(cam);
@@ -480,9 +512,9 @@ const ELEC = {};
 { // ── variante STRATOS : carte TINYHOOP AIO + SX1262 + GPS
   const g = new THREE.Group();
   const fc = mesh(STLB64.board, 0x0b6b39, .15, .5);
-  fc.position.set(0,-6/1000,(M.z.mid+4)/1000); g.add(fc);
+  fc.position.set(0,M.stack_y/1000,(M.z.mid+4)/1000); g.add(fc);
   const lora = pcb(16,24,3.2, 0x14161b); lora.position.set(0,14/1000,(M.z.mid+11)/1000); g.add(lora);
-  const air = pcb(30,24,7.5, 0x11532e); air.position.set(0,10/1000,(M.z.mid+18)/1000); g.add(air);
+  const air = pcb(30,24,7.5, 0x11532e); air.position.set(0,(M.stack_y+16)/1000,(M.z.mid+18)/1000); g.add(air);
   const cam = pcb(M.cage.w,20,M.cage.h, 0x1c1f24);
   cam.position.set(0, (M.cage.y-6)/1000, (M.z.deck+11)/1000);
   cam.rotation.x = -M.cage.tilt*D; g.add(cam);
@@ -500,18 +532,24 @@ const gCap = group('cap');
 
 /* antennes */
 const gAnt = group('antennes');
-{ const v = mesh(STLB64.vtxant, 0x0f1114, .2, .5);
-  v.position.set(0,-76/1000,(M.z.deck+10)/1000); v.rotation.x = 20*D; gAnt.add(v);
+{ /* L'antenne VTX s'engage dans le tube HAUT de l'étrier de queue et sort vers
+     l'arrière, légèrement relevée — elle ne traverse plus le roof. */
+  const v = mesh(STLB64.vtxant, 0x0f1114, .2, .5);
+  v.rotation.x = 50*D;                             // engagée dans le tube, vers l'arrière ET vers le haut
+  v.position.set(0, (TAIL_Y - 13)/1000, (TAIL_Z + 8)/1000);
+  gAnt.add(v);
+  /* Antennes RX : à plat sous leur platine Sub250, sur le roof. */
   const r = mesh(STLB64.rxant, 0x141414, .25, .5);
-  r.position.set(0,-51.5/1000,(M.z.total+4.5)/1000); gAnt.add(r); }
+  r.position.set(0, -52/1000, (M.z.total+4.5)/1000);
+  gAnt.add(r); }
 
 /* batterie 4S 660 mAh + faisceau XT30 */
 const gBatt = group('battery');
 { const bw=30, bl=62, bh=26;
   const b = new THREE.Mesh(new RoundedBoxGeometry(bw/1000,bl/1000,bh/1000,5,.0022),
     new THREE.MeshStandardMaterial({color:0x14161b, metalness:.15, roughness:.62}));
-  b.position.set(0,1/1000,(M.z.total+bh/2+3)/1000); gBatt.add(b);
-  const y0=1-bl/2, z0=M.z.total+bh/2+3;
+  b.position.set(0,2/1000,(M.z.total+bh/2+3)/1000); gBatt.add(b);
+  const y0=2-bl/2, z0=M.z.total+bh/2+3;
   for (const [col,dx] of [[0xc0392b,-3],[0x111214,3]]){
     const cv=[];
     for (let i=0;i<=16;i++){ const t=i/16;
@@ -521,6 +559,31 @@ const gBatt = group('battery');
     const w = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(cv),24,.0011,8),
       new THREE.MeshStandardMaterial({color:col, metalness:.1, roughness:.6}));
     gBatt.add(w);
+  }
+}
+
+/* Câbles moteur : 3 fils de phase par moteur, passés dans le canal du
+   protège-bras puis rabattus sous la plaque médiane jusqu'aux pads de l'ESC. */
+const gWires = group('cables');
+{ const PH = [0xc0392b, 0x111214, 0xe6e6e6];        // les 3 phases
+  for (const [i,[sx,sy]] of [[1,1],[-1,1],[-1,-1],[1,-1]].entries()){
+    const a = ARM_DIR[i], ca = Math.cos(a), sa = Math.sin(a);
+    for (let k=0;k<3;k++){
+      const off = (k-1)*1.15;                       // les 3 fils côte à côte
+      const pts = [];
+      const at = (r, z, lat) => new THREE.Vector3(
+        (r*ca - lat*sa)/1000, (r*sa + lat*ca)/1000, z/1000);
+      pts.push(at(72, M.z.arm + 2.0, off*0.6));                   // sortie du moteur
+      pts.push(at(60, M.z.arm + 5.0, off));                       // remontée sur le bras
+      pts.push(at(46, M.z.arm + 5.2, off));                       // dans le canal du guide
+      pts.push(at(32, M.z.arm + 4.6, off));
+      pts.push(at(22, M.z.mid  + 1.2, off*1.4));                  // passage sous la médiane
+      pts.push(at(13, M.z.mid  + 3.0, off*1.8));                  // pads de l'ESC
+      const w = new THREE.Mesh(
+        new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 26, .00052, 6),
+        new THREE.MeshStandardMaterial({color:PH[k], metalness:.1, roughness:.62}));
+      gWires.add(w);
+    }
   }
 }
 
@@ -588,6 +651,8 @@ const PARTS = [
    "Antenne VTX inclinée dans le support de queue, antennes RX à plat sous leur platine."],
   ['battery',    'Batterie 4S',         '660-720 mAh',      'Électronique', 0x14161b,
    "XT30, sanglée sur le roof. Le fil descend par la découpe, avec du mou."],
+  ['cables',     'Câbles moteur',       '3 × 4 phases',     'Électronique', 0xc0392b,
+   "Trois fils par moteur, passés dans le canal du protège-bras puis rabattus sous la médiane jusqu'aux pads de l'ESC."],
   ['screws',     'Visserie',            'M2 / M3',          'Visserie', 0xd6d9de,
    "16 vis moteur M2 + 6 vis d'entretoise M3. Frein-filet sur les moteurs."],
 ];
@@ -671,7 +736,7 @@ const EXPLODE = {
   props:[0,0,96], elec:[0,0,18], cap:[0,0,10], guards:[0,0,-40],
   battpad:[0,0,88], grommet:[0,0,82], bumper:[0,0,-20], sidepanels:[0,0,-8],
   feet:[0,0,-46], rxplate:[0,0,92], tailmount:[0,0,30], antennes:[0,0,100],
-  battery:[0,0,112], screws:[0,0,60],
+  battery:[0,0,112], screws:[0,0,60], cables:[0,0,-34],
 };
 Object.keys(G).forEach(k => { G[k].userData.home = G[k].position.clone(); });
 const expSlider = document.getElementById('explode');

@@ -143,6 +143,34 @@ def main(only=None):
     # le berceau caméra doit entrer entre les flancs de cage
     ok &= check("berceau dans la cage", sizes["cam_cradle_bottom"][0], T.CAGE_GAP, 0.6)
 
+    # ── un perçage trop près du bord = une vis qui ne tient pas, voire qui ne
+    #    passe pas. On contrôle chaque trou contre la silhouette réelle de la
+    #    plaque, interpolée entre les points du profil.
+    def half_width(y):
+        p = sorted(T.PROFILE_WIDE, key=lambda a: a[0])
+        if y <= p[0][0] or y >= p[-1][0]:
+            return 0.0
+        for (y0, w0), (y1, w1) in zip(p, p[1:]):
+            if y0 <= y <= y1:
+                return w0 + (w1 - w0) * (y - y0) / (y1 - y0)
+        return 0.0
+
+    print("\n  Marges de perçage (plaques basse et médiane)")
+    worst = None
+    for name, holes in (("entretoise", T.STANDOFFS_TOP + T.STANDOFFS_CAM),
+                        ("racine de bras", F.arm_root_holes()),
+                        ("stack", F.stack_holes() + F.vtx_holes())):
+        for x, y in holes:
+            margin = half_width(y) - abs(x) - T.M3 / 2
+            if worst is None or margin < worst[0]:
+                worst = (margin, name, x, y)
+    m, name, x, y = worst
+    print("      %-26s %8.2f mm au plus juste  (%s en x=%.1f, y=%.1f)"
+          % ("marge au bord", m, name, x, y))
+    if m < T.EDGE_MIN - T.M3:
+        print("      *** un perçage sort de la plaque ou n'a pas de matière ***")
+        ok = False
+
     print("      %-26s %8.2f mm avant/arrière, %.2f mm latéral"
           % ("dégagement hélices", gap_y, gap_x))
     if gap_y <= 0.5:
