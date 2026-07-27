@@ -30,7 +30,8 @@ Les deux variantes sont sélectionnables dans le visualisateur
 
 | Pièce | Qté | Matière | Fichier |
 |---|---|---|---|
-| Flanc latéral | **2** | TPU 95A | `../ref/sub250_stl/side_panel.stl` |
+| Flanc latéral gauche | 1 | TPU 95A | `../cad/stl/flanc_gauche.stl` |
+| Flanc latéral droit | 1 | TPU 95A | `../cad/stl/flanc_droit.stl` (miroir du gauche) |
 | Patin de pied | **4** | TPU 95A | `../ref/sub250_stl/foot_pad_x4.stl` (les 4 sur une planche) |
 | Platine d'antennes RX | 1 | TPU 95A | `../ref/sub250_stl/rx_antenna_plate.stl` |
 | Support d'antenne de queue | 1 | TPU 95A | `../ref/sub250_stl/tail_antenna_mount.stl` |
