@@ -395,27 +395,30 @@ const gBumper = group('bumper');
   m.position.set(0, -65/1000, (M.z.bottom-2.2)/1000); gBumper.add(m); }
 
 /* pièces Sub250 d'origine */
-/* Le fichier Sub250 « side panels » contient DEUX pièces posées côte à côte sur
-   une planche : la coque (72 mm) et la grille (43 mm). Elles se montent chacune
-   en deux exemplaires, une par côté — d'où 4 pièces ici, en miroir. */
+/* Le fichier Sub250 « side panels » contient DEUX pièces distinctes posées
+   côte à côte sur une planche d'impression : la coque (72 × 17,7 × 32,5) et la
+   grille (43 × 9,3 × 10,8). Elles vont **une de chaque côté** — la coque à
+   gauche, la grille à droite — et pas les deux de chaque côté.
+   Chaque pièce est un mur dont la face est en X-Z dans le fichier : la rotation
+   de -90° autour de Z amène sa longueur d'avant en arrière et son épaisseur
+   en travers, avec la concavité tournée vers le châssis. */
 const gSide = group('sidepanels');
-for (const sx of [1,-1]){
-  const g = new THREE.Group();
-  const a = mesh(STLB64.side_a, SUB250, .06, .78);
-  a.rotation.z = -Math.PI/2;                       // les 72 mm courent d'avant en arrière
-  a.position.set(0, 2/1000, 0);
-  g.add(a);
-  const b = mesh(STLB64.side_b, SUB250, .06, .78); // la grille, au-dessus et en arrière
-  b.rotation.z = -Math.PI/2;
-  b.position.set(-3/1000, -50/1000, 20/1000);
-  g.add(b);
-  g.scale.x = sx;
-  g.position.set(sx*13/1000, 0, 0);
-  gSide.add(g);
+{ const SIDE_X = 13.0;
+  const coque = new THREE.Group();                 // ── côté GAUCHE
+  { const m = mesh(STLB64.side_a, SUB250, .06, .78);
+    m.rotation.z = -Math.PI/2;
+    coque.add(m); }
+  coque.scale.x = -1;                              // concavité vers l'intérieur
+  coque.position.set(-SIDE_X/1000, -6/1000, 0);
+  gSide.add(coque);
+
+  const grille = new THREE.Group();                // ── côté DROIT
+  { const m = mesh(STLB64.side_b, SUB250, .06, .78);
+    m.rotation.z = -Math.PI/2;
+    grille.add(m); }
+  grille.position.set(SIDE_X/1000, -6/1000, 19/1000);
+  gSide.add(grille);
 }
-/* Le patin se visse SOUS le patin moteur (mêmes 4 vis M2 en 9×9) et sa partie
-   large vient coiffer le BOUT du bras. Son surplus de matière est du côté de
-   son +Y local : on l'oriente donc vers l'extérieur, dans l'axe du bras. */
 const gFeet = group('feet');
 for (const [i,[sx,sy]] of [[1,1],[-1,1],[-1,-1],[1,-1]].entries()){
   const g = new THREE.Group();
