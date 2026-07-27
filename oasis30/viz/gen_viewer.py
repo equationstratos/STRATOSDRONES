@@ -425,13 +425,16 @@ for (const [i,[sx,sy]] of [[1,1],[-1,1],[-1,-1],[1,-1]].entries()){
 const gRxPlate = group('rxplate');
 { const m = mesh(STLB64.rxplate, 0xd8dce2, .06, .7);
   m.position.set(0, -52/1000, M.z.total/1000); gRxPlate.add(m); }
-/* Étrier de queue : ses deux oreilles enjambent l'empilage de plaques et ses
-   deux tubes d'antenne pointent vers l'arrière. Dans son repère d'origine
-   l'axe des tubes est +Z ; on le bascule de 90° pour l'envoyer vers -Y. */
-const TAIL_Y = -58, TAIL_Z = M.z.mid + 2;
+/* Étrier de queue Sub250. Dans son repère d'origine l'encoche qui enfourche les
+   plaques et l'axe des tubes d'antenne sont suivant +Z. Il faut donc l'amener à
+   ouvrir vers l'AVANT (+Y) pour qu'il vienne se prendre sur la queue du châssis,
+   l'antenne sortant alors vers l'arrière. Vu de côté (nez à droite), c'est une
+   rotation **anti-horaire**, soit un rotation.x croissant.
+   TAIL_RX est le seul chiffre à toucher pour l'ajuster. */
+const TAIL_Y = -67, TAIL_Z = M.z.mid + 1, TAIL_RX = -90;
 const gTail = group('tailmount');
 { const m = mesh(STLB64.tailmount, SUB250, .06, .78);
-  m.rotation.x = Math.PI/2;                        // +Z local -> -Y (vers l'arrière)
+  m.rotation.x = TAIL_RX*D;
   m.position.set(0, TAIL_Y/1000, TAIL_Z/1000);
   gTail.add(m); }
 
@@ -502,7 +505,7 @@ const ELEC = {};
   lens.rotation.x = Math.PI/2 - M.cage.tilt*D;
   lens.position.set(0, (M.cage.y+3)/1000, (M.z.deck+14)/1000); g.add(lens);
   const rx = mesh(STLB64.rxpcb, 0x0f3d0f, .2, .5);
-  rx.position.set(0,-38/1000,(M.z.mid+3)/1000); g.add(rx);
+  rx.position.set(0,-30/1000,(M.z.mid+3)/1000); g.add(rx);
   ELEC.stock = g; gElec.add(g);
 }
 { // ── variante STRATOS : carte TINYHOOP AIO + SX1262 + GPS
@@ -519,7 +522,7 @@ const ELEC = {};
   const gps = mesh(STLB64.gps, 0x0a0c10, .2, .5);
   gps.position.set(0, 30/1000, (M.z.deck+8)/1000); g.add(gps);
   const rx = mesh(STLB64.rxpcb, 0x0f3d0f, .2, .5);
-  rx.position.set(0,-38/1000,(M.z.mid+3)/1000); g.add(rx);
+  rx.position.set(0,-30/1000,(M.z.mid+3)/1000); g.add(rx);
   ELEC.stratos = g; g.visible = false; gElec.add(g);
 }
 const gCap = group('cap');
@@ -531,12 +534,12 @@ const gAnt = group('antennes');
 { /* L'antenne VTX s'engage dans le tube HAUT de l'étrier de queue et sort vers
      l'arrière, légèrement relevée — elle ne traverse plus le roof. */
   const v = mesh(STLB64.vtxant, 0x0f1114, .2, .5);
-  v.rotation.x = 50*D;                             // engagée dans le tube, vers l'arrière ET vers le haut
-  v.position.set(0, (TAIL_Y - 13)/1000, (TAIL_Z + 8)/1000);
+  v.rotation.x = 34*D;                             // engagée dans le tube, vers l'arrière ET vers le haut
+  v.position.set(0, (TAIL_Y - 5)/1000, (TAIL_Z + 15)/1000);
   gAnt.add(v);
   /* Antennes RX : à plat sous leur platine Sub250, sur le roof. */
   const r = mesh(STLB64.rxant, 0x141414, .25, .5);
-  r.position.set(0, -52/1000, (M.z.total+4.5)/1000);
+  r.position.set(0, -52/1000, (M.z.total+8)/1000);
   gAnt.add(r); }
 
 /* batterie 4S 660 mAh + faisceau XT30 */
