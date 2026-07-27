@@ -41,6 +41,7 @@ hardware/frame/     Parametric OpenSCAD frames → STL:
                       • frame.scad …        open racing-style X-frame
                       • tello_style/ …      closed Tello-size clamshell body
 docs/               Build guide, bring-up, SDK reference, architecture, safety
+atelier/            FPV build-workshop site + print posters (buy-the-drone option, FPV league)
 ```
 
 ## Quick start (simulation)

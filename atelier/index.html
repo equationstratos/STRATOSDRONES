@@ -1,0 +1,623 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Atelier Build FPV — Stratos Drones</title>
+<meta name="description" content="Atelier de construction de drone FPV : une journée, un fer à souder, un châssis carbone — et tu repars avec ton drone. Plus la Stratos FPV League : classement, manches programmées et impromptues, cadeaux en fin de saison.">
+<meta property="og:title" content="Atelier Build FPV — construis ton drone, repars avec">
+<meta property="og:description" content="Une journée pour monter ton drone FPV de A à Z. Débutants bienvenus. Option « repars avec ton drone ». Et une ligue FPV avec classement et prix.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='26' font-size='26'>🚁</text></svg>">
+<style>
+:root{
+  --bg:#0a0b0d; --bg2:#101216; --card:#14171c; --line:#23262d; --line2:#2e323b;
+  --txt:#e9ecf1; --mut:#9aa3af; --acc:#2f6fed; --acc2:#63a4ff;
+  --gold:#f5b942; --lime:#47d18a; --warn:#ff8a5b;
+  --r:14px; --maxw:1140px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--txt);
+  font:16px/1.65 ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  -webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}
+img{max-width:100%;display:block}
+.wrap{max-width:var(--maxw);margin:0 auto;padding:0 24px}
+.mut{color:var(--mut)} .acc{color:var(--acc2)}
+h2{font-size:clamp(26px,3.4vw,38px);line-height:1.12;letter-spacing:-.01em;margin:0 0 14px}
+h3{font-size:19px;margin:0 0 6px}
+section{padding:72px 0;border-bottom:1px solid var(--line)}
+.tag{display:inline-block;font-size:12px;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--acc2);border:1px solid #1a2c4d;background:#0b1220;padding:5px 11px;border-radius:999px;margin-bottom:16px}
+.tag.g{color:var(--gold);border-color:#4a3714;background:#1a1408}
+.lead{color:var(--mut);font-size:17.5px;max-width:62ch}
+
+/* nav */
+header.nav{position:sticky;top:0;z-index:30;backdrop-filter:blur(10px);
+  background:rgba(10,11,13,.78);border-bottom:1px solid var(--line)}
+.nav .wrap{display:flex;align-items:center;gap:22px;height:62px}
+.brand{font-weight:700;letter-spacing:.14em;font-size:14.5px;white-space:nowrap}
+.brand b{color:var(--acc2)}
+.nav nav{margin-left:auto;display:flex;gap:20px;font-size:14px;align-items:center}
+.nav nav a{color:var(--mut)} .nav nav a:hover{color:var(--txt)}
+.btn{display:inline-block;padding:10px 18px;border-radius:999px;font-size:14px;font-weight:600;
+  border:1px solid var(--line2);transition:.15s;cursor:pointer;background:none;color:inherit}
+.btn.p{background:var(--acc);color:#eef4ff;border-color:var(--acc)}
+.btn.p:hover{background:var(--acc2);border-color:var(--acc2)}
+.btn.g{background:var(--gold);color:#20180a;border-color:var(--gold)}
+.btn.g:hover{filter:brightness(1.08)}
+.btn:hover{border-color:#454b57}
+.burger{display:none;margin-left:auto;border:1px solid var(--line2);border-radius:9px;
+  padding:7px 11px;font-size:17px;line-height:1;background:none;color:var(--txt);cursor:pointer}
+
+/* hero */
+.hero{border-bottom:1px solid var(--line);
+  background:radial-gradient(1100px 560px at 72% -12%,#182033 0,var(--bg) 62%)}
+.hero .wrap{display:grid;grid-template-columns:1.08fr .92fr;gap:44px;align-items:center;padding:70px 24px 64px}
+.hero h1{font-size:clamp(34px,5.2vw,58px);line-height:1.03;letter-spacing:-.015em;margin:0 0 18px}
+.hero h1 span{color:var(--acc2)}
+.hero .cta{display:flex;gap:12px;flex-wrap:wrap;margin:26px 0 28px}
+.kpis{display:flex;gap:28px;flex-wrap:wrap}
+.kpi b{display:block;font-size:21px}
+.kpi span{font-size:12px;color:var(--mut);text-transform:uppercase;letter-spacing:.08em}
+.hero figure{margin:0;border:1px solid var(--line);border-radius:var(--r);overflow:hidden;background:#fff}
+.shot{position:relative}
+.shot figcaption{position:absolute;left:0;right:0;bottom:0;padding:10px 14px;font-size:12.5px;
+  color:#dfe6f2;background:linear-gradient(transparent,rgba(6,8,12,.88))}
+
+/* generic grids */
+.grid{display:grid;gap:18px}
+.g2{grid-template-columns:repeat(2,1fr)}
+.g3{grid-template-columns:repeat(3,1fr)}
+.g4{grid-template-columns:repeat(4,1fr)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:22px}
+.card p{color:var(--mut);font-size:14.5px}
+.ic{font-size:22px;line-height:1;margin-bottom:10px}
+
+/* timeline */
+.tl{margin-top:26px;border-left:2px solid var(--line2);padding-left:0}
+.tl li{list-style:none;display:grid;grid-template-columns:76px 1fr;gap:16px;padding:0 0 20px 22px;
+  position:relative;margin-left:-1px;border-left:0}
+.tl li::before{content:"";position:absolute;left:-7px;top:8px;width:12px;height:12px;border-radius:50%;
+  background:var(--acc);box-shadow:0 0 0 4px rgba(47,111,237,.16)}
+.tl li.br::before{background:var(--mut);box-shadow:0 0 0 4px rgba(154,163,175,.14)}
+.tl time{font-variant-numeric:tabular-nums;font-weight:700;font-size:14.5px;color:var(--acc2);padding-top:1px}
+.tl li.br time{color:var(--mut)}
+.tl b{display:block;font-size:15.5px}
+.tl p{color:var(--mut);font-size:14px;margin-top:2px}
+
+/* pricing */
+.price{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:26px;align-items:stretch}
+.plan{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:24px;
+  display:flex;flex-direction:column}
+.plan.hi{border-color:var(--gold);background:linear-gradient(180deg,#191408,#14171c 42%);
+  box-shadow:0 0 0 1px rgba(245,185,66,.18),0 18px 50px -30px rgba(245,185,66,.6)}
+.plan .pn{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--mut)}
+.plan.hi .pn{color:var(--gold)}
+.plan .pp{font-size:36px;font-weight:800;letter-spacing:-.02em;margin:8px 0 2px}
+.plan .pp small{font-size:14px;font-weight:600;color:var(--mut)}
+.plan .pd{color:var(--mut);font-size:14px;min-height:44px}
+.plan ul{margin:16px 0 20px;padding:0;list-style:none;font-size:14.5px}
+.plan li{padding:6px 0 6px 24px;position:relative;border-top:1px solid var(--line)}
+.plan li::before{content:"✓";position:absolute;left:0;color:var(--lime);font-weight:700}
+.plan li.no::before{content:"—";color:var(--mut)}
+.plan li.no{color:var(--mut)}
+.plan .btn{margin-top:auto;text-align:center}
+
+/* kits */
+.kit{display:grid;grid-template-columns:repeat(2,1fr);gap:18px;margin-top:26px}
+.kit .card{display:flex;flex-direction:column}
+.kit h3 small{display:block;font-weight:500;font-size:13px;color:var(--mut);letter-spacing:.04em;margin-top:3px}
+.kit .pp{font-size:30px;font-weight:800;margin:12px 0 4px}
+.kit ul{margin:14px 0 0;padding-left:20px;font-size:14.5px;color:var(--mut)}
+.kit li{margin:4px 0}
+.steps{counter-reset:s;display:grid;grid-template-columns:repeat(4,1fr);gap:18px;margin-top:26px}
+.step{background:var(--bg2);border:1px solid var(--line);border-radius:var(--r);padding:20px}
+.step::before{counter-increment:s;content:counter(s);display:grid;place-items:center;width:30px;height:30px;
+  border-radius:50%;background:var(--acc);color:#fff;font-weight:700;font-size:14px;margin-bottom:12px}
+.opts{margin-top:22px;border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+table{width:100%;border-collapse:collapse;font-size:14.5px}
+th,td{text-align:left;padding:11px 16px;border-bottom:1px solid var(--line)}
+th{background:var(--bg2);font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--mut)}
+tr:last-child td{border-bottom:0}
+td.n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+
+/* league */
+#ligue{background:linear-gradient(180deg,#0d0b07,var(--bg) 40%)}
+.pod{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:22px}
+.pod .card{border-color:#2c2617}
+.pod .m{font-size:26px}
+.rank td.p{font-weight:700}
+.rank .pos{width:52px;color:var(--mut);font-variant-numeric:tabular-nums}
+.rank tr.top1 td{background:rgba(245,185,66,.08)}
+.badge{display:inline-block;font-size:11.5px;padding:2px 8px;border-radius:999px;border:1px solid var(--line2);color:var(--mut)}
+.badge.on{color:var(--lime);border-color:#1d4232;background:#0b1a14}
+.badge.flash{color:var(--warn);border-color:#4a2a18;background:#1a0f08}
+form.sub{display:flex;gap:10px;flex-wrap:wrap;margin-top:20px}
+form.sub input{flex:1 1 220px;background:var(--bg2);border:1px solid var(--line2);border-radius:999px;
+  padding:12px 18px;color:var(--txt);font:inherit;font-size:14.5px}
+form.sub input:focus{outline:none;border-color:var(--acc)}
+.note{margin-top:14px;font-size:13.5px;color:var(--mut)}
+.note b{color:var(--txt)}
+.callout{margin-top:22px;border:1px solid var(--line);border-left:3px solid var(--acc);
+  background:var(--bg2);border-radius:0 var(--r) var(--r) 0;padding:16px 20px;font-size:14.5px;color:var(--mut)}
+.callout.g{border-left-color:var(--gold)}
+
+/* faq */
+details{border:1px solid var(--line);border-radius:var(--r);background:var(--card);margin-top:12px}
+summary{padding:16px 20px;cursor:pointer;font-weight:600;list-style:none;display:flex;align-items:center;gap:12px}
+summary::-webkit-details-marker{display:none}
+summary::after{content:"+";margin-left:auto;color:var(--acc2);font-size:20px;line-height:1}
+details[open] summary::after{content:"–"}
+details p{padding:0 20px 18px;color:var(--mut);font-size:14.5px}
+
+footer{padding:44px 0;color:var(--mut);font-size:14px}
+footer .wrap{display:flex;gap:18px;flex-wrap:wrap;align-items:center}
+footer a{color:var(--acc2)}
+
+@media(max-width:900px){
+  .hero .wrap{grid-template-columns:1fr;gap:30px;padding:52px 24px}
+  .g3,.g4,.price,.steps,.kit,.pod{grid-template-columns:1fr 1fr}
+  .nav nav{display:none;position:absolute;top:62px;left:0;right:0;flex-direction:column;
+    align-items:flex-start;gap:0;background:var(--bg2);border-bottom:1px solid var(--line);padding:8px 24px 16px}
+  .nav nav.open{display:flex}
+  .nav nav a{padding:10px 0;width:100%}
+  .burger{display:block}
+}
+@media(max-width:620px){
+  .g2,.g3,.g4,.price,.steps,.kit,.pod{grid-template-columns:1fr}
+  .tl li{grid-template-columns:1fr;gap:2px}
+  section{padding:54px 0}
+}
+</style>
+</head>
+<body>
+
+<header class="nav">
+  <div class="wrap">
+    <a class="brand" href="#top">STRATOS<b>DRONES</b></a>
+    <button class="burger" id="burger" aria-label="Menu">☰</button>
+    <nav id="menu">
+      <a href="#atelier">L'atelier</a>
+      <a href="#programme">Programme</a>
+      <a href="#tarifs">Tarifs</a>
+      <a href="#kit">Repars avec ton drone</a>
+      <a href="#ligue">Ligue FPV</a>
+      <a href="#infos">Infos</a>
+      <a class="btn p" href="#reserver">Réserver</a>
+    </nav>
+  </div>
+</header>
+
+<!-- ───────────────────────────────── hero -->
+<div class="hero" id="top">
+  <div class="wrap">
+    <div>
+      <span class="tag">Atelier build FPV · Bordeaux</span>
+      <h1>Construis ton drone FPV.<br><span>Et repars avec.</span></h1>
+      <p class="lead">Une journée, un fer à souder, un châssis carbone et un tas de pièces.
+        À la fin&nbsp;: ça vole — et si tu prends la formule kit, tu repars avec le drone
+        <b>que tu as monté toi-même</b>. Aucun prérequis, débutants bienvenus.</p>
+      <div class="cta">
+        <a class="btn p" href="#reserver">Réserver une place</a>
+        <a class="btn" href="#kit">Repartir avec le drone →</a>
+        <a class="btn" href="../TinyHoopMK1/viz/drone_viewer.html">Voir le drone en 3D</a>
+      </div>
+      <div class="kpis">
+        <div class="kpi"><b>7 h</b><span>d'atelier</span></div>
+        <div class="kpi"><b>6</b><span>places max</span></div>
+        <div class="kpi"><b>1</b><span>drone monté par toi</span></div>
+        <div class="kpi"><b>0</b><span>prérequis</span></div>
+      </div>
+    </div>
+    <figure class="shot">
+      <img src="../site/assets/cad/hero.jpg" alt="TinyHoop MK1 — drone FPV 2,5 pouces conçu par Stratos Drones" loading="lazy">
+      <figcaption>Le TinyHoop MK1 — 2,5″, châssis carbone + pièces TPU imprimées ici.</figcaption>
+    </figure>
+  </div>
+</div>
+
+<!-- ───────────────────────────────── l'atelier -->
+<section id="atelier">
+  <div class="wrap">
+    <span class="tag">L'atelier</span>
+    <h2>On ne regarde pas un drone. On le fabrique.</h2>
+    <p class="lead">Pas de diaporama de deux heures. Tu as ton poste, tes pièces, ton fer à souder,
+      et quelqu'un derrière l'épaule quand ça coince. On monte un vrai drone de course —
+      le même que celui modélisé, imprimé et documenté dans ce dépôt.</p>
+
+    <div class="grid g4" style="margin-top:28px">
+      <div class="card"><div class="ic">🔥</div><h3>Soudure</h3>
+        <p>On s'entraîne sur une carte d'exercice avant de toucher le stack. Étamage, pads, tresse à dessouder&nbsp;: les vrais gestes.</p></div>
+      <div class="card"><div class="ic">🔧</div><h3>Montage</h3>
+        <p>Plaques carbone, moteurs, entretoises, supports TPU imprimés, passage propre des 3 fils de phase.</p></div>
+      <div class="card"><div class="ic">🎛️</div><h3>Configuration</h3>
+        <p>Betaflight de A à Z&nbsp;: bind ELRS, sens des moteurs, modes, <b>failsafe</b>, arming, taux.</p></div>
+      <div class="card"><div class="ic">🕹️</div><h3>Vol</h3>
+        <p>Simulateur d'abord, puis premier décollage en filet, en immersion. On règle ensemble ce qui doit l'être.</p></div>
+    </div>
+
+    <div class="grid g3" style="margin-top:18px">
+      <div class="card"><div class="ic">🔋</div><h3>Sécurité LiPo</h3>
+        <p>Charge, stockage, tension par cellule, que faire d'une batterie gonflée. La partie qu'on saute trop souvent.</p></div>
+      <div class="card"><div class="ic">🩺</div><h3>Diagnostic</h3>
+        <p>Ça ne s'arme pas, un moteur chauffe, la vidéo neige&nbsp;: la méthode pour trouver la panne tout seul, plus tard, chez toi.</p></div>
+      <div class="card"><div class="ic">📐</div><h3>Conception</h3>
+        <p>Aperçu de la chaîne complète&nbsp;: CAO paramétrique, impression des TPU, découpe carbone. Les fichiers sont ouverts.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ───────────────────────────────── programme -->
+<section id="programme">
+  <div class="wrap">
+    <span class="tag">Programme</span>
+    <h2>Le déroulé d'une journée</h2>
+    <p class="lead">Format « build complet », 9 h 30 → 17 h 30. La formule découverte (3 h) reprend
+      les étapes 2, 3 et 8.</p>
+    <ul class="tl">
+      <li><time>09:30</time><div><b>Accueil &amp; déballage</b>
+        <p>Café, tour de table, on étale les pièces et on les nomme une par une.</p></div></li>
+      <li><time>10:00</time><div><b>Anatomie d'un FPV</b>
+        <p>Châssis, moteurs, ESC/FC, VTX, récepteur, batterie&nbsp;: à quoi sert quoi et pourquoi ça vole. 30 minutes, pas plus.</p></div></li>
+      <li><time>10:30</time><div><b>Atelier soudure</b>
+        <p>Sur carte d'entraînement&nbsp;: étamer, souder un fil de 18 AWG, reprendre une soudure ratée.</p></div></li>
+      <li><time>11:15</time><div><b>Montage mécanique</b>
+        <p>Plaques carbone, 4 moteurs, entretoises, supports TPU caméra, pare-chocs, cheminement des câbles.</p></div></li>
+      <li class="br"><time>12:30</time><div><b>Pause déjeuner</b><p>Sur place ou à côté — 1 h.</p></div></li>
+      <li><time>13:30</time><div><b>Soudure du stack</b>
+        <p>ESC/FC, XT30, condensateur, les 3 phases de chaque moteur. Contrôle visuel + continuité avant la mise sous tension.</p></div></li>
+      <li><time>15:00</time><div><b>Caméra, VTX, antennes, récepteur</b>
+        <p>Réglage de l'inclinaison caméra, antenne bien assise dans son logement TPU, récepteur ELRS dans son berceau.</p></div></li>
+      <li><time>15:45</time><div><b>Première mise sous tension &amp; Betaflight</b>
+        <p>Fumée&nbsp;? Non. Bind, sens de rotation, accéléromètre, modes, failsafe, arming. Test moteurs hélices démontées.</p></div></li>
+      <li><time>16:30</time><div><b>Premier vol</b>
+        <p>Simulateur pour prendre les manches, puis décollage en filet. Chacun vole.</p></div></li>
+      <li><time>17:30</time><div><b>Debrief &amp; départ</b>
+        <p>Réglages fins, questions, pièces de rechange — et tu emportes ton drone si tu as pris le kit.</p></div></li>
+    </ul>
+  </div>
+</section>
+
+<!-- ───────────────────────────────── tarifs -->
+<section id="tarifs">
+  <div class="wrap">
+    <span class="tag">Formules</span>
+    <h2>Trois façons de venir</h2>
+    <p class="lead">Le matériel d'atelier (outillage, fers, radios, lunettes, simulateur, filet)
+      est fourni dans toutes les formules. Ce qui change, c'est la durée — et si tu repars avec un drone.</p>
+
+    <div class="price">
+      <div class="plan">
+        <span class="pn">Découverte</span>
+        <div class="pp">49 €<small> / pers.</small></div>
+        <div class="pd">3 h — pour voir si le FPV c'est pour toi.</div>
+        <ul>
+          <li>Initiation soudure</li>
+          <li>Montage / démontage guidé</li>
+          <li>Simulateur + vol en filet</li>
+          <li class="no">Tu ne repars pas avec un drone</li>
+        </ul>
+        <a class="btn" href="#reserver">Réserver</a>
+      </div>
+
+      <div class="plan">
+        <span class="pn">Build complet</span>
+        <div class="pp">129 €<small> / pers.</small></div>
+        <div class="pd">Une journée entière, drone monté de A à Z sur le matériel de l'atelier.</div>
+        <ul>
+          <li>Programme complet 9 h 30 → 17 h 30</li>
+          <li>Soudure du stack, câblage, Betaflight</li>
+          <li>Vol en filet + réglages</li>
+          <li>Déjeuner non inclus</li>
+          <li class="no">Le drone reste à l'atelier</li>
+        </ul>
+        <a class="btn" href="#reserver">Réserver</a>
+      </div>
+
+      <div class="plan hi">
+        <span class="pn">★ Build + ton drone</span>
+        <div class="pp">129 €<small> + kit</small></div>
+        <div class="pd">La même journée, mais sur <b>ton</b> kit — et tu repars avec.</div>
+        <ul>
+          <li>Tout le « Build complet »</li>
+          <li>Kit neuf réservé à ton nom</li>
+          <li>Test au banc avec toi avant le départ</li>
+          <li>Pièces TPU imprimées ici, remplacées 1 an</li>
+          <li>Tu repars avec ton drone ✈</li>
+        </ul>
+        <a class="btn g" href="#kit">Choisir mon kit</a>
+      </div>
+    </div>
+
+    <div class="callout">Groupes, scolaires, CE, fablabs, anniversaires&nbsp;: format et tarif adaptés — <a class="acc" href="#reserver">demandez un devis</a>.
+      Les tarifs ci-dessus sont ceux de la session standard à 6 participants.</div>
+  </div>
+</section>
+
+<!-- ───────────────────────────────── kit / achat -->
+<section id="kit">
+  <div class="wrap">
+    <span class="tag g">Repars avec ton drone</span>
+    <h2>Le drone que tu as monté rentre avec toi</h2>
+    <p class="lead">C'est l'option la plus demandée, alors elle est simple&nbsp;: tu réserves un kit
+      en même temps que ta place. On le prépare, tu le montes pendant l'atelier, on le teste
+      ensemble au banc, et il repart dans ton sac le soir même.</p>
+
+    <div class="kit">
+      <div class="card">
+        <h3>Kit ANALOGIQUE <small>TinyHoop MK1 · 2,5″ · le plus accessible</small></h3>
+        <div class="pp">189 €</div>
+        <p>Vidéo analogique 5,8 GHz — moins cher, se répare pièce par pièce, compatible avec la plupart des lunettes du club.</p>
+        <ul>
+          <li>Châssis carbone 2,5″ + toutes les pièces <b>TPU imprimées ici</b></li>
+          <li>4 moteurs 1104 7500 KV + AIO ESC/FC 25,5 mm</li>
+          <li>Caméra nano + VTX 25–400 mW + antenne</li>
+          <li>Récepteur ExpressLRS 2,4 GHz</li>
+          <li>2 batteries 3S 560 mAh + sangle + 8 hélices Gemfan 2520</li>
+          <li>Visserie, entretoises, XT30, condensateur</li>
+        </ul>
+      </div>
+      <div class="card" style="border-color:#2c3a55">
+        <h3>Kit NUMÉRIQUE <small>TinyHoop MK1 · air unit DJI O4 Lite</small></h3>
+        <div class="pp">389 €</div>
+        <p>Image numérique HD, la même base mécanique. Nécessite des lunettes DJI (prêtées pendant l'atelier).</p>
+        <ul>
+          <li>Tout le kit analogique, même châssis</li>
+          <li><b>Air unit DJI O4 Lite</b> + antenne, à la place de la caméra/VTX analogique</li>
+          <li>Supports TPU caméra dessinés pour l'O4</li>
+          <li>Réglage de l'inclinaison fait avec toi</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="steps">
+      <div class="step"><b>Tu réserves</b><p class="mut" style="font-size:14px">Place + kit au moment de l'inscription. Acompte de 50 € sur le kit.</p></div>
+      <div class="step"><b>On prépare</b><p class="mut" style="font-size:14px">Pièces contrôlées, TPU imprimés à ta couleur, kit étiqueté à ton nom.</p></div>
+      <div class="step"><b>Tu montes</b><p class="mut" style="font-size:14px">La journée entière, accompagné. Chaque soudure est vérifiée avant la suivante.</p></div>
+      <div class="step"><b>Tu repars</b><p class="mut" style="font-size:14px">Après test au banc et premier vol. Solde réglé sur place.</p></div>
+    </div>
+
+    <div class="opts">
+      <table>
+        <thead><tr><th>Options à ajouter</th><th class="n">Prix</th></tr></thead>
+        <tbody>
+          <tr><td>Batterie 3S 560 mAh supplémentaire</td><td class="n">12 €</td></tr>
+          <tr><td>Jeu de 4 hélices Gemfan 2520</td><td class="n">4 €</td></tr>
+          <tr><td>Jeu de pièces TPU de rechange (bumpers, supports)</td><td class="n">15 €</td></tr>
+          <tr><td>Chargeur 1S–4S + sac de charge</td><td class="n">39 €</td></tr>
+          <tr><td>Radiocommande ExpressLRS (RadioMaster Pocket)</td><td class="n">89 €</td></tr>
+          <tr><td>Peinture / gravure de ton pseudo sur la plaque</td><td class="n">offert</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout g"><b>À savoir&nbsp;:</b> une radiocommande et des lunettes sont
+      <b>prêtées pendant l'atelier</b> — le kit ne les inclut pas. Pour voler chez toi il te faudra
+      les deux (on t'aide à choisir sans te vendre quoi que ce soit). Les tarifs sont indiqués
+      TTC&nbsp;; ils bougent avec le prix des composants, ils sont reconfirmés à l'inscription.</div>
+  </div>
+</section>
+
+<!-- ───────────────────────────────── ligue -->
+<section id="ligue">
+  <div class="wrap">
+    <span class="tag g">Projet annexe · Saison 1 en préparation</span>
+    <h2>Stratos FPV League</h2>
+    <p class="lead">Monter un drone, c'est bien. Le faire courir contre les autres, c'est mieux.
+      La ligue démarre avec les anciens de l'atelier — un classement à l'année, des manches
+      annoncées à l'avance… et d'autres qui tombent sans prévenir.</p>
+
+    <div class="grid g3" style="margin-top:26px">
+      <div class="card"><div class="ic">📅</div><h3>Manches programmées <span class="badge on">calendrier</span></h3>
+        <p>Une manche par mois, date connue des semaines à l'avance. Qualifs chronométrées puis finales par groupes de 4.</p></div>
+      <div class="card"><div class="ic">⚡</div><h3>Manches impromptues <span class="badge flash">flash</span></h3>
+        <p>Annoncées <b>48 h avant</b> sur la liste de diffusion. Beau temps, un spot libre, six pilotes dispos&nbsp;: on court. Points comptés comme une manche normale.</p></div>
+      <div class="card"><div class="ic">🏁</div><h3>Trois catégories</h3>
+        <p><b>Débutant</b> (indoor / filet) · <b>Spec Stratos</b> (drone monté à l'atelier, matériel identique pour tous) · <b>Open</b> 2,5″–3″.</p></div>
+    </div>
+
+    <h3 style="margin:38px 0 10px;font-size:22px">Barème</h3>
+    <div class="opts">
+      <table>
+        <thead><tr><th>Position</th><th class="n">Points</th><th>Bonus</th><th class="n">Points</th></tr></thead>
+        <tbody>
+          <tr><td>1<sup>er</sup></td><td class="n">25</td><td>Meilleur tour de la manche</td><td class="n">+3</td></tr>
+          <tr><td>2<sup>e</sup></td><td class="n">18</td><td>Présence (même sans finale)</td><td class="n">+2</td></tr>
+          <tr><td>3<sup>e</sup></td><td class="n">15</td><td>Coup de main au montage d'un autre pilote</td><td class="n">+2</td></tr>
+          <tr><td>4<sup>e</sup> à 10<sup>e</sup></td><td class="n">12 · 10 · 8 · 6 · 4 · 2 · 1</td><td>Manche impromptue honorée</td><td class="n">+1</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="note">Les deux plus mauvais résultats de la saison sont retirés du total — une panne
+      ou un week-end raté ne condamne personne.</p>
+
+    <h3 style="margin:38px 0 10px;font-size:22px">Classement</h3>
+    <div class="opts">
+      <table class="rank">
+        <thead><tr><th class="pos">#</th><th>Pilote</th><th>Catégorie</th><th class="n">Manches</th><th class="n">Points</th></tr></thead>
+        <tbody id="rankbody"></tbody>
+      </table>
+    </div>
+    <p class="note" id="ranknote"></p>
+
+    <h3 style="margin:38px 0 10px;font-size:22px">Ce qu'il y a à gagner</h3>
+    <div class="pod">
+      <div class="card"><div class="m">🥇</div><h3>Champion de saison</h3>
+        <p>Un <b>drone complet monté et réglé</b> (valeur kit numérique) + sa plaque gravée à son nom.</p></div>
+      <div class="card"><div class="m">🥈</div><h3>Vice-champion</h3>
+        <p>Un <b>kit châssis complet</b> — plaques carbone + jeu de TPU imprimés à sa couleur.</p></div>
+      <div class="card"><div class="m">🥉</div><h3>Troisième</h3>
+        <p>Un <b>pack batteries</b> (4 × 3S 560 mAh) + chargeur.</p></div>
+    </div>
+    <div class="grid g3" style="margin-top:18px">
+      <div class="card"><h3>🎁 Tirage au sort</h3><p>À chaque manche, un lot tiré parmi <b>tous les présents</b> — hélices, sangles, pièces TPU, goodies. Être là suffit.</p></div>
+      <div class="card"><h3>📈 Meilleure progression</h3><p>Pour celui qui gagne le plus de places entre sa première et sa dernière manche. Récompense le débutant, pas le rapide.</p></div>
+      <div class="card"><h3>💥 Prix du plus beau crash</h3><p>Vote du public sur les rushs de la saison. Lot de consolation… et pièces de rechange.</p></div>
+    </div>
+
+    <div class="callout g" id="ecoute" style="margin-top:34px">
+      <b style="color:var(--gold);font-size:16px">📡 Restez à l'écoute.</b><br>
+      Le calendrier de la saison 1, les manches flash et l'ouverture des inscriptions sont annoncés
+      par la liste de diffusion. Laisse ton adresse — c'est le seul endroit où les manches
+      impromptues sont annoncées, et elles tombent souvent à 48 h.
+      <form class="sub" id="subform">
+        <input type="text"  id="sub_nom"   placeholder="Ton pseudo de pilote" autocomplete="nickname">
+        <input type="email" id="sub_mail"  placeholder="ton@email.fr" required autocomplete="email">
+        <button class="btn g" type="submit">Me tenir au courant</button>
+      </form>
+      <p class="note" style="margin-top:12px">Pas de backend&nbsp;: le bouton ouvre simplement ton
+        logiciel de mail avec le message pré-rempli. Rien n'est stocké sur ce site.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ───────────────────────────────── faq -->
+<section id="faq">
+  <div class="wrap">
+    <span class="tag">Questions</span>
+    <h2>Ce qu'on nous demande le plus</h2>
+    <details><summary>Je n'ai jamais soudé de ma vie.</summary>
+      <p>C'est le cas de la majorité des participants. La première heure sert exactement à ça&nbsp;:
+        on soude sur une carte d'entraînement jusqu'à ce que le geste soit là. Personne ne touche
+        au vrai stack avant d'être prêt.</p></details>
+    <details><summary>Il faut apporter du matériel&nbsp;?</summary>
+      <p>Non. Outillage, fers, radiocommandes, lunettes, simulateur, filet, batteries de test&nbsp;:
+        tout est sur place. Si tu as déjà une radio ou des lunettes, apporte-les — on les bind avec
+        ton drone, c'est plus confortable ensuite.</p></details>
+    <details><summary>À partir de quel âge&nbsp;?</summary>
+      <p>12 ans, et jusqu'à 16 ans accompagné d'un adulte (qui peut monter avec, sur le même poste).
+        Le fer à souder est à 350 °C — on ne fait pas semblant sur la sécurité.</p></details>
+    <details><summary>Et si je casse quelque chose&nbsp;?</summary>
+      <p>Ça arrive, y compris au premier vol. Les pièces imprimées (supports, bumpers, protections)
+        sont remplacées gratuitement pendant un an&nbsp;: elles sortent de l'imprimante d'à côté.
+        Les hélices sont consommables, il y en a une réserve.</p></details>
+    <details><summary>Je peux venir avec mon propre kit&nbsp;?</summary>
+      <p>Oui — formule « Build complet » à 129 €, tu apportes tes pièces et on les monte ensemble.
+        Envoie-nous la liste avant, on vérifie que tout est compatible et qu'il ne manque rien.</p></details>
+    <details><summary>Le drone est-il programmable&nbsp;?</summary>
+      <p>Celui monté à l'atelier tourne sous Betaflight&nbsp;: il vole, il ne se programme pas.
+        Le projet Stratos développe en parallèle une carte et un firmware ouverts (vol programmé,
+        figures, essaim) — c'est documenté dans le dépôt, et c'est le sujet d'un atelier avancé
+        à venir. On ne vend pas aujourd'hui ce qui n'est pas encore volé.</p></details>
+    <details><summary>Que se passe-t-il si la session n'est pas remplie&nbsp;?</summary>
+      <p>Une session part à partir de 3 inscrits. En dessous, elle est reportée à la date suivante
+        et l'acompte est intégralement rendu si la nouvelle date ne te convient pas.</p></details>
+  </div>
+</section>
+
+<!-- ───────────────────────────────── infos + réserver -->
+<section id="infos">
+  <div class="wrap">
+    <span class="tag">Infos pratiques</span>
+    <h2>Où, quand, avec qui</h2>
+    <div class="grid g4" style="margin-top:24px">
+      <div class="card"><div class="ic">📍</div><h3>Lieu</h3><p>Bordeaux et alentours. Déplacement possible dans toute la France pour les groupes (écoles, fablabs, CE).</p></div>
+      <div class="card"><div class="ic">👥</div><h3>Effectif</h3><p>6 participants maximum par session, 1 poste de soudure chacun. À partir de 3 inscrits.</p></div>
+      <div class="card"><div class="ic">🗓️</div><h3>Dates</h3><p>Sessions le samedi. Le calendrier est envoyé par la liste de diffusion — voir « restez à l'écoute ».</p></div>
+      <div class="card"><div class="ic">🧯</div><h3>Sécurité</h3><p>Vol en filet uniquement pour les premiers décollages, hélices démontées pour tous les essais moteurs, LiPo en sac de charge.</p></div>
+    </div>
+
+    <div id="reserver" style="margin-top:44px;border:1px solid var(--line);border-radius:var(--r);
+        background:linear-gradient(180deg,#101822,var(--card));padding:30px">
+      <h2 style="margin-bottom:8px">Réserver une place</h2>
+      <p class="lead" style="margin-bottom:20px">Dis-nous la formule qui t'intéresse et si tu veux
+        repartir avec ton drone — on te renvoie les prochaines dates et le détail du kit.</p>
+      <div class="cta" style="display:flex;gap:12px;flex-wrap:wrap">
+        <a class="btn p" id="mail_place" href="#">✉ Réserver ma place</a>
+        <a class="btn g" id="mail_kit" href="#">🚁 Réserver place + kit</a>
+        <a class="btn" id="mail_groupe" href="#">🏫 Demander un devis groupe</a>
+      </div>
+      <p class="note" style="margin-top:18px">
+        <b>Patrick Ardanny</b> · <a class="acc" href="mailto:stratosdrones001@gmail.com">stratosdrones001@gmail.com</a>
+        · 07 84 84 99 74 · Bordeaux</p>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <span>© 2026 Stratos Drones — atelier build FPV &amp; Stratos FPV League.</span>
+    <a href="../index.html">Le projet</a>
+    <a href="../TinyHoopMK1/viz/drone_viewer.html">Visualisateur 3D</a>
+    <a href="../TinyHoopMK1/build/build.html">Simulateur d'assemblage</a>
+    <a href="affiche-atelier-a3.pdf">Affiche (PDF)</a>
+  </div>
+</footer>
+
+<script>
+// ── menu mobile
+document.getElementById('burger').onclick = () =>
+  document.getElementById('menu').classList.toggle('open');
+document.querySelectorAll('#menu a').forEach(a =>
+  a.addEventListener('click', () => document.getElementById('menu').classList.remove('open')));
+
+// ── classement de la ligue
+// Saison 1 : le tableau se remplit à la première manche. Remplace SEASON par
+// les vrais résultats (points calculés depuis le barème ci-dessus).
+const SEASON = {
+  started: false,          // passe à true quand la manche 1 a eu lieu
+  label: "Saison 1 — le classement s'ouvre à la première manche.",
+  rows: [                  // exemple de rendu, remplacé par les vrais pilotes
+    { p: "—", cat: "Spec Stratos", m: 0, pts: 0 },
+    { p: "—", cat: "Débutant",     m: 0, pts: 0 },
+    { p: "—", cat: "Open",         m: 0, pts: 0 },
+  ],
+};
+(function renderRank(){
+  const tb = document.getElementById('rankbody');
+  SEASON.rows
+    .slice().sort((a,b) => b.pts - a.pts)
+    .forEach((r,i) => {
+      const tr = document.createElement('tr');
+      if (i === 0 && SEASON.started) tr.className = 'top1';
+      tr.innerHTML = `<td class="pos">${i+1}</td><td class="p">${r.p}</td>` +
+                     `<td class="mut">${r.cat}</td><td class="n">${r.m}</td><td class="n">${r.pts}</td>`;
+      tb.appendChild(tr);
+    });
+  document.getElementById('ranknote').innerHTML = SEASON.started
+    ? "Classement mis à jour après chaque manche."
+    : "<b>" + SEASON.label + "</b> Les places sont ouvertes : la manche 1 se court avec les " +
+      "pilotes issus de l'atelier. Inscris-toi à la liste de diffusion pour avoir la date.";
+})();
+
+// ── liens mailto (pré-remplis, sans backend)
+const MAIL = 'stratosdrones001@gmail.com';
+function mailto(subject, body){
+  return 'mailto:' + MAIL + '?subject=' + encodeURIComponent(subject) +
+         '&body=' + encodeURIComponent(body);
+}
+document.getElementById('mail_place').href = mailto(
+  'Atelier build FPV — réservation d\'une place',
+  ["Bonjour,","","Je souhaite réserver une place à l'atelier build FPV.","",
+   "Formule souhaitée : Découverte (3 h, 49 €) / Build complet (journée, 129 €)",
+   "Nombre de personnes : ","Disponibilités : ","","Merci !",""].join('\n'));
+document.getElementById('mail_kit').href = mailto(
+  'Atelier build FPV — place + kit (je repars avec mon drone)',
+  ["Bonjour,","","Je souhaite réserver une place à l'atelier ET un kit pour repartir avec mon drone.","",
+   "Kit souhaité : Analogique (189 €) / Numérique DJI O4 Lite (389 €)",
+   "Options : batterie(s) supp. / hélices / TPU de rechange / chargeur / radio",
+   "Couleur des pièces imprimées : ","Pseudo à graver sur la plaque : ",
+   "Nombre de personnes : ","Disponibilités : ","","Merci !",""].join('\n'));
+document.getElementById('mail_groupe').href = mailto(
+  'Atelier build FPV — demande de devis groupe',
+  ["Bonjour,","","Je représente : (école / fablab / CE / association / autre)",
+   "Nombre de participants : ","Âges : ","Lieu : ","Période envisagée : ",
+   "Souhaitez-vous que les participants repartent avec leur drone ? oui / non","",
+   "Merci de m'envoyer une proposition.",""].join('\n'));
+
+// ── formulaire « restez à l'écoute »
+document.getElementById('subform').addEventListener('submit', e => {
+  e.preventDefault();
+  const nom  = document.getElementById('sub_nom').value.trim()  || '(pseudo non précisé)';
+  const mail = document.getElementById('sub_mail').value.trim();
+  location.href = mailto('Stratos FPV League — restez à l\'écoute',
+    ["Bonjour,","","Inscrivez-moi à la liste de diffusion de la ligue FPV",
+     "(calendrier des manches, manches impromptues, ouverture des inscriptions).","",
+     "Pseudo : " + nom, "E-mail : " + mail,
+     "Catégorie visée : Débutant / Spec Stratos / Open","",
+     "Merci !",""].join('\n'));
+});
+</script>
+</body>
+</html>
