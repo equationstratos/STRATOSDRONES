@@ -15,7 +15,7 @@ python3 oasis30/viz/gen_viewer.py    # -> viz/drone_viewer.html + build/build.ht
 | | |
 |---|---|
 | **[`viz/drone_viewer.html`](viz/)** | le visualisateur — ouvrir par double-clic |
-| **[`build/build.html`](build/)** | le simulateur d'assemblage, 23 pièces à emboîter |
+| **[`build/build.html`](build/)** | le simulateur d'assemblage, 25 pièces à emboîter |
 | **[`cad/step/`](cad/step/)** | un `.step` par pièce + `oasisfly30_assembly.step` |
 | **[`cad/stl/`](cad/stl/)** | les `.stl` d'impression (et `stl/viz/` pour le web) |
 | **[`ref/`](ref/)** | les 4 STL Sub250 d'origine + les photos + [`MEASURES.md`](ref/MEASURES.md) |
@@ -73,12 +73,13 @@ normales restent sortantes).
 Même recette que les autres visualisateurs du dépôt — page **autonome**,
 Three.js embarqué, aucun fichier externe, ouvrable par double-clic.
 
-- **23 composants** affichables/masquables, chacun avec son sélecteur de couleur.
+- **25 composants** affichables/masquables, chacun avec son sélecteur de couleur —
+  flanc gauche et flanc droit y figurent séparément.
 - **Sélecteur d'électronique** : *stock Sub250* (RedFox A3 45A AIO + DJI O4 Pro)
   ou *Stratos programmable* (carte TINYHOOP AIO + LoRa 868 + GPS).
 - Clic sur une pièce → surbrillance + description ; vue **éclatée** ;
   fil de fer ; thème clair ; **plein écran** (touche `F`).
-- **Mode assemblage** : les 23 pièces attendent autour du drone, leur logement
+- **Mode assemblage** : les 25 pièces attendent autour du drone, leur logement
   est marqué par un fantôme bleu, un double-clic dans la liste les emboîte.
 
 Les deux pages sortent du **même générateur** : le simulateur ne peut pas
