@@ -41,6 +41,9 @@ hardware/frame/     Parametric OpenSCAD frames → STL:
                       • frame.scad …        open racing-style X-frame
                       • tello_style/ …      closed Tello-size clamshell body
 docs/               Build guide, bring-up, SDK reference, architecture, safety
+oasis30/            OASIS 30 — 3" build on the Sub250 OasisFly30 frame: parametric
+                    gmsh-OCC model (STEP + printable STL), the printed parts the kit
+                    lacks, 3-D viewer + assembly simulator
 atelier/            FPV build-workshop site + print posters (buy-the-drone option, FPV league)
 ```
 
