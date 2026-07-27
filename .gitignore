@@ -3,6 +3,9 @@ build/
 # ...but TinyHoopMK1/build/ is the 3-D assembly simulator, not a CMake build dir
 !TinyHoopMK1/build/
 !TinyHoopMK1/build/**
+# ...idem pour oasis30/build/ : c'est le simulateur d'assemblage
+!oasis30/build/
+!oasis30/build/**
 *.o
 *.a
 *.so
