@@ -57,8 +57,13 @@ ARM_R_IN    = 16.0     # rayon où commence le bras (sous les plaques)
 
 # ─────────────────────────────────────────────── silhouette des plaques
 # demi-largeurs (Y, demi-largeur) — relevées sur dimensions.webp
-PROFILE_WIDE = [(48, 11.0), (42, 13.5), (34, 17.0), (26, 20.0), (14, 21.5),
-                (0, 21.5), (-14, 20.5), (-24, 15.5), (-34, 12.8), (-46, 12.8),
+# Les LOBES à y ≈ ±12 sont ce qui donne de la matière autour des vis de bras :
+# sans eux la fixation extérieure tombe dans le vide (contrôlée par export.py).
+PROFILE_WIDE = [(48, 11.0), (42, 13.5), (34, 17.0), (28, 20.0), (20, 22.0),
+                (15, 26.0), (9, 26.0), (4, 22.0),
+                (0, 21.5),
+                (-4, 22.0), (-9, 26.0), (-15, 26.0), (-20, 21.5),
+                (-26, 16.5), (-34, 12.8), (-46, 12.8),
                 (-58, 14.8), (-64, 11.0), (-67, 6.5)]
 DECK_W      = 30.0     # largeur des plaques étroites (roof + pont)
 DECK_Y0     = -66.0    # extrémité arrière
@@ -67,7 +72,7 @@ DECK_Y1     = 30.0     # extrémité avant — s'arrête avant le berceau camér
 # ─────────────────────────────────────────────── stack et périphériques
 STACK       = 20.0     # FC/ESC AIO : M3 en 20×20
 VTX_STACK   = 25.5     # perçage secondaire VTX/O4 : 25,5×25,5
-STACK_Y     = -6.0     # centre du stack (recul par rapport au centre) # EST
+STACK_Y     =  0.0     # stack centré sur le châssis
 BAY_W       = 26.0     # fenêtre centrale de la plaque basse
 CAM_W       = 21.0     # largeur hors-tout de la caméra O4 Pro
 CAM_H       = 19.0     # hauteur du corps caméra                       # EST
@@ -75,11 +80,14 @@ CAM_TILT    = 30.0     # inclinaison caméra (degrés)
 CAM_Y       = 55.0     # centre de la cage caméra (nez à +65 → 132 mm hors-tout)
 CAM_Z       = 18.0     # hauteur de l'axe optique                      # EST
 XT30_W      = 8.0      # passage du fil de batterie dans le roof
-XT30_Y      = -28.0    # découpe juste derrière la batterie, devant la platine RX
+XT30_L      = 8.0      # longueur de la découpe (courte : le roof arrière est chargé)
+XT30_Y      = -30.0    # découpe arrière du roof, entre la batterie et la platine RX
 STANDOFF_D  = 5.0      # Ø extérieur des entretoises alu
 
 # ─────────────────────────────────────────────── pièces imprimées
 CLR         = 0.25     # jeu d'ajustement universel — le paramètre à toucher
+FILLET      = 2.0      # rayon des congés sur le contour des plaques
+EDGE_MIN    = 3.0      # marge minimale entre un perçage et le bord
 WALL        = 1.6      # épaisseur de paroi standard des pièces TPU
 
 # Écart intérieur de la cage caméra : il doit loger le **berceau**, pas la
@@ -87,7 +95,9 @@ WALL        = 1.6      # épaisseur de paroi standard des pièces TPU
 CAGE_GAP    = CAM_W + 2 * WALL + 2 * CLR             # 24,7 mm
 
 # entretoises : 4 hautes (roof) + 2 courtes (cage caméra)
-STANDOFFS_TOP  = [(13.0, 26.0), (-13.0, 26.0), (13.0, -46.0), (-13.0, -46.0)]
+# ATTENTION : à y = -46 la plaque ne fait que 12,8 mm de demi-largeur ;
+# une entretoise à x = 13 tomberait DANS LE VIDE (vis qui ne tient pas).
+STANDOFFS_TOP  = [(13.0, 26.0), (-13.0, 26.0), (9.0, -34.0), (-9.0, -34.0)]
 STANDOFFS_CAM  = [(13.0, 25.0), (-13.0, 25.0)]   # derrière le berceau  # EST
 
 # ─────────────────────────────────────────────── contrôles

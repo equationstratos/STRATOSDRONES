@@ -20,11 +20,15 @@ SRC = os.path.join(HERE, "..", "ref", "sub250_stl")
 OUT = os.path.join(HERE, "stl")
 
 # fichier source → (nom de sortie, n'garder qu'un composant ?, description)
+# Le fichier « side panels » contient DEUX pièces distinctes posées côte à côte
+# sur une planche d'impression (72 mm et 43 mm) : il faut les séparer, chacune
+# se montant en deux exemplaires, un par côté.
 JOBS = [
-    ("side_panel.stl",         "sub250_side_panel",   False, "Flanc latéral (×2)"),
-    ("foot_pad_x4.stl",        "sub250_foot_pad",     True,  "Patin de pied (×4)"),
-    ("rx_antenna_plate.stl",   "sub250_rx_plate",     False, "Platine d'antennes RX"),
-    ("tail_antenna_mount.stl", "sub250_tail_mount",   False, "Support d'antenne de queue"),
+    ("side_panel.stl",         "sub250_side_panel_a", "comp0", "Flanc latéral, coque (×2)"),
+    ("side_panel.stl",         "sub250_side_panel_b", "comp1", "Flanc latéral, grille (×2)"),
+    ("foot_pad_x4.stl",        "sub250_foot_pad",     "comp0", "Patin de pied (×4)"),
+    ("rx_antenna_plate.stl",   "sub250_rx_plate",     None,    "Platine d'antennes RX"),
+    ("tail_antenna_mount.stl", "sub250_tail_mount",   None,    "Support d'antenne de queue"),
 ]
 
 
@@ -133,13 +137,13 @@ def cluster(tris, cell):
 def main():
     os.makedirs(OUT, exist_ok=True)
     os.makedirs(os.path.join(OUT, "viz"), exist_ok=True)
-    for src, name, single, desc in JOBS:
+    for src, name, pick, desc in JOBS:
         tris = read_stl(os.path.join(SRC, src))
-        if single:
-            comps = components(tris)
-            comps.sort(key=len, reverse=True)
-            print("  %-22s %d composants → on garde le plus gros" % (src, len(comps)))
-            tris = comps[0]
+        if pick:
+            comps = sorted(components(tris), key=len, reverse=True)
+            idx = int(pick[-1])
+            print("  %-22s %d composants → on extrait le n°%d" % (src, len(comps), idx))
+            tris = comps[idx]
         tris = recentre(tris)
         lo, hi = bounds(tris)
         write_stl(os.path.join(OUT, name + ".stl"), tris)

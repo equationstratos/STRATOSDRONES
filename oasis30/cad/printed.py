@@ -77,22 +77,28 @@ def cam_cradle_top():
 
 
 # ══════════════════════════════════════════════════ protège-bras + guide-fils
-def arm_guard():
-    """Clip en C sur le bras + canal pour les 3 fils de phase.
+GUARD_L = 24.0                  # longueur du clip
+GUARD_W = 1.2                   # paroi : fin, c'est un clip, pas un capot
+GUARD_CH = 1.9                  # rayon du canal des 3 fils de phase
 
-    Se pose **après** avoir passé les fils : les hélices ne peuvent plus les
-    trancher, et le canal est côté intérieur (vers le châssis).
+
+def arm_guard():
+    """Selle mince qui se **pose sur le bras**, avec le canal des 3 fils.
+
+    Ouvert par le dessous : il s'enfile sur le bras après avoir passé les fils.
+    Volontairement réduit à ce qu'il faut — le bras (9,5 × 3) plus une paroi de
+    1,2 mm et le canal de câble : ~12 × 24 × 7,5 mm et rien de plus.
     """
-    L = 30.0
     wi = T.ARM_W_MID + 2 * T.CLR                     # largeur intérieure
-    hi = T.ARM_T + 2 * T.CLR
-    outer = rpad(0, 0, 0, wi + 2 * T.WALL, L, hi + 2 * T.WALL + 4.2, 2.0)
-    body = cut(outer, [box(-wi / 2, -L, T.WALL, wi, 2 * L, hi)])       # passage du bras
-    # canal de câble Ø4,2 au-dessus, dans l'axe du bras
-    c = _occ().addCylinder(0, -L / 2 - 1, T.WALL + hi + 2.6, 0, L + 2, 0, 2.1)
-    body = cut(body, [(3, c)])
-    # fente d'encliquetage par le dessous
-    body = cut(body, [box(-2.0, -L, -1, 4.0, 2 * L, T.WALL + 1)])
+    hi = T.ARM_T + 2 * T.CLR                         # hauteur intérieure
+    zc = hi + GUARD_W + GUARD_CH                     # axe du canal
+    H = zc + GUARD_CH + GUARD_W
+    outer = rpad(0, 0, 0, wi + 2 * GUARD_W, GUARD_L, H, 1.6)
+    body = cut(outer, [box(-wi / 2, -GUARD_L, 0, wi, 2 * GUARD_L, hi)])   # le bras
+    ch = _occ().addCylinder(0, -GUARD_L / 2 - 1, zc, 0, GUARD_L + 2, 0, GUARD_CH)
+    body = cut(body, [(3, ch)])                                           # les 3 fils
+    # petite fente d'encliquetage sous le canal, pour glisser les fils en place
+    body = cut(body, [box(-0.7, -GUARD_L, hi, 1.4, 2 * GUARD_L, GUARD_W + 0.2)])
     return body
 
 
@@ -114,7 +120,7 @@ def batt_pad():
 # ══════════════════════════════════════════════════ passe-fil XT30
 def xt30_grommet():
     """S'encliquette dans la découpe du roof et protège le fil de batterie."""
-    w, l, t = T.XT30_W + 2 * T.CLR, 13.0, T.PLATE_T
+    w, l, t = T.XT30_W + 2 * T.CLR, T.XT30_L, T.PLATE_T
     collar = rpad(0, 0, 0, w + 2 * T.WALL, l + 2 * T.WALL, t + 2 * T.WALL, 1.8)
     body = cut(collar, [rpad(0, 0, -1, w - 1.5, l - 1.5, t + 2 * T.WALL + 2, 1.2)[0]])
     # gorge qui vient pincer l'épaisseur du roof

@@ -98,7 +98,26 @@ montage à blanc.
 | Section exacte du flanc Sub250 | — | ses lèvres recouvrent les plaques ; le
   recouvrement est **voulu**, mais son profil réel n'est pas connu |
 
-Et une limite de méthode, pas une cote : le contrôle d'interférence du
+## 6. Deux vis qui tombaient dans le vide
+
+Le contrôle de marge au bord ajouté à `../cad/export.py` compare chaque perçage
+à la silhouette **réelle** de la plaque, interpolée entre les points du profil.
+Il a trouvé deux erreurs qu'un simple coup d'œil ne voit pas :
+
+| Perçage | Position | Marge | Correction |
+|---|---|---|---|
+| Entretoise arrière | x = 13, y = −46 | **−1,7 mm** | rentrée à x = 9, avancée à y = −34 |
+| Vis extérieure de bras | x = 25, y = −16,6 | **−7,3 mm** | rayon ramené de 30 à 25 mm |
+
+La deuxième a révélé une erreur de fond : mon profil de plaque était un fuseau
+lisse, alors que les photos montrent des **lobes** aux racines de bras — c'est
+justement là que se trouve la matière autour des vis de fixation. Le profil a
+été corrigé (demi-largeur 26 mm à y ≈ ±12). Marge la plus juste aujourd'hui :
+**2,3 mm**, et `export.py` échoue si elle repasse en négatif.
+
+## 7. Limites de méthode
+
+Une limite de méthode, pas une cote : le contrôle d'interférence du
 visualisateur compare des **boîtes englobantes alignées sur les axes**. Pour
 une pièce en diagonale — les bras — cette boîte couvre un grand rectangle
 vide et signale des collisions qui n'existent pas. Les paires concernées sont

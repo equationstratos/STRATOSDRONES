@@ -106,6 +106,92 @@ def copy(objs):
     return occ.copy(list(objs))
 
 
+def prism_rounded(pts, z, h, r):
+    """Extrusion d'un polygone dont **les angles sont arrondis**.
+
+    L'arrondi est construit dans le plan (arc tangent aux deux côtés), pas par
+    un congé 3-D : un congé OpenCASCADE sur une pointe aiguë — la queue en
+    chevron du roof, par exemple — échoue et **détruit le solide**. Ici le rayon
+    est simplement réduit là où il ne tient pas, et la pièce sort toujours.
+    """
+    n = len(pts)
+    segs = []          # ('A', p1, c, p2) pour un arc, sommet par sommet
+    for i in range(n):
+        pv, cu, nx = pts[i - 1], pts[i], pts[(i + 1) % n]
+        d1 = (pv[0] - cu[0], pv[1] - cu[1])
+        d2 = (nx[0] - cu[0], nx[1] - cu[1])
+        l1 = math.hypot(*d1) or 1e-9
+        l2 = math.hypot(*d2) or 1e-9
+        u1, u2 = (d1[0] / l1, d1[1] / l1), (d2[0] / l2, d2[1] / l2)
+        cosang = max(-1.0, min(1.0, u1[0] * u2[0] + u1[1] * u2[1]))
+        ang = math.acos(cosang)
+        if ang > math.pi - 1e-3 or ang < 1e-3:        # plat ou replié : pas d'arc
+            segs.append(("P", cu))
+            continue
+        t = min(r / math.tan(ang / 2), 0.45 * l1, 0.45 * l2)
+        ri = t * math.tan(ang / 2)
+        if ri < 1e-4:
+            segs.append(("P", cu))
+            continue
+        p1 = (cu[0] + u1[0] * t, cu[1] + u1[1] * t)
+        p2 = (cu[0] + u2[0] * t, cu[1] + u2[1] * t)
+        bx, by = u1[0] + u2[0], u1[1] + u2[1]
+        bl = math.hypot(bx, by) or 1e-9
+        d = ri / math.sin(ang / 2)
+        c = (cu[0] + bx / bl * d, cu[1] + by / bl * d)
+        segs.append(("A", p1, c, p2))
+
+    pid = lambda p: occ.addPoint(p[0], p[1], z)
+    curves, ends = [], []
+    for s in segs:
+        if s[0] == "P":
+            a = pid(s[1])
+            ends.append((a, a))
+        else:
+            a, cc, b = pid(s[1]), pid(s[2]), pid(s[3])
+            curves.append(("A", a, cc, b))
+            ends.append((a, b))
+    loop = []
+    ai = 0
+    for i, s in enumerate(segs):
+        if s[0] == "A":
+            loop.append(occ.addCircleArc(ends[i][0], curves[ai][2], ends[i][1]))
+            ai += 1
+        nxt = ends[(i + 1) % n][0]
+        if ends[i][1] != nxt:
+            loop.append(occ.addLine(ends[i][1], nxt))
+    surf = occ.addPlaneSurface([occ.addCurveLoop(loop)])
+    return [e for e in occ.extrude([(2, surf)], 0, 0, h) if e[0] == 3]
+
+
+def fillet_vertical(vols, r):
+    """Arrondit les arêtes **verticales** d'une pièce plate (les angles du contour).
+
+    On ne prend que les arêtes rectilignes parallèles à Z, et uniquement celles
+    de la pièce visée (via getBoundary) : les perçages, dont les arêtes sont des
+    cercles, sont naturellement exclus. Si OpenCASCADE refuse un congé — arête
+    trop courte pour le rayon — on rend la pièce telle quelle plutôt que d'échouer.
+    """
+    occ.synchronize()
+    surf = gmsh.model.getBoundary(list(vols), combined=False, oriented=False)
+    edges = gmsh.model.getBoundary(surf, combined=False, oriented=False)
+    keep_e = []
+    for d, t in set(edges):
+        if d != 1:
+            continue
+        b = gmsh.model.getBoundingBox(d, t)
+        if b[5] - b[2] > 1e-6 and b[3] - b[0] < 1e-6 and b[4] - b[1] < 1e-6:
+            keep_e.append(abs(t))
+    if not keep_e:
+        return vols
+    try:
+        out = occ.fillet([t for _, t in vols], keep_e, [r])
+        occ.synchronize()
+        return out
+    except Exception:
+        return vols
+
+
 def occ_ref():
     """Le module `occ` courant — les autres modules passent par ici, car `occ`
     n'est rempli qu'au premier `start()`."""
@@ -123,7 +209,7 @@ def arm_root_holes():
     for sx in (1, -1):
         for sy in (1, -1):
             a = math.radians(ARM_ANGLE) * (1 if sx * sy > 0 else -1)
-            for r in (T.ARM_R_IN + 4.0, T.ARM_R_IN + 14.0):
+            for r in (T.ARM_R_IN + 3.0, T.ARM_R_IN + 9.0):
                 x, y = r * math.cos(a), r * math.sin(a)
                 out.append((sx * abs(x), sy * abs(y)))
     return out
@@ -141,7 +227,7 @@ def vtx_holes():
 def bottom_plate():
     """Plaque basse 2,5 mm — porte les bras, fenêtre centrale pour le stack."""
     z, h = T.Z_BOTTOM, T.PLATE_B
-    body = prism(mirror_profile(T.PROFILE_WIDE), z, h)
+    body = prism_rounded(mirror_profile(T.PROFILE_WIDE), z, h, T.FILLET)
     tools = [
         rpad(0, T.STACK_Y, z - 1, T.BAY_W, 30, h + 2, 6)[0],           # fenêtre stack
         rpad(0, -52, z - 1, 12, 20, h + 2, 5)[0],                      # allègement queue
@@ -158,7 +244,7 @@ def mid_plate():
     """Plaque médiane 2,5 mm — coiffe les bras, porte le stack et l'air unit."""
     z, h = T.Z_MID, T.PLATE_M
     prof = [(y, max(6.0, w - 1.0)) for y, w in T.PROFILE_WIDE]         # légèrement rentrée
-    body = prism(mirror_profile(prof), z, h)
+    body = prism_rounded(mirror_profile(prof), z, h, T.FILLET)
     tools = [rpad(0, T.STACK_Y, z - 1, 17, 17, h + 2, 2)[0]]           # passage câbles stack
     for sy in (1, -1):                                                 # ouïes
         tools.append(rpad(0, sy * 26, z - 1, 9, 16, h + 2, 4)[0])
@@ -181,7 +267,7 @@ def _deck_outline(y0, y1, w):
 def deck_plate():
     """Pont étroit (« splint ») 2,5 mm, posé sur la médiane."""
     z, h = T.Z_DECK, T.PLATE_D
-    body = prism(_deck_outline(-58, 34, T.DECK_W), z, h)
+    body = prism_rounded(_deck_outline(-58, 34, T.DECK_W), z, h, T.FILLET)
     tools = [rpad(0, y, z - 1, 8, 22, h + 2, 4)[0] for y in (16, -16, -40)]
     body = cut(body, tools)
     body = drill(body, T.STANDOFFS_TOP + T.STANDOFFS_CAM, T.M3 / 2, z - 1, h + 2)
@@ -191,14 +277,14 @@ def deck_plate():
 def top_plate():
     """Roof 2,0 mm — fentes de sangle, découpe XT30, montage sur entretoises."""
     z, h = T.Z_TOP, T.PLATE_T
-    body = prism(_deck_outline(T.DECK_Y0, T.DECK_Y1, T.DECK_W), z, h)
+    body = prism_rounded(_deck_outline(T.DECK_Y0, T.DECK_Y1, T.DECK_W), z, h, T.FILLET)
     tools = []
     for y in (22, 2, -18, -52):                                        # fentes de sangle
         for sx in (1, -1):
             tools.append(rpad(sx * 11, y, z - 1, 4.5, 13, h + 2, 2)[0])
     tools.append(rpad(0, 10, z - 1, 9, 22, h + 2, 4)[0])               # allègement central
     tools.append(rpad(0, T.XT30_Y, z - 1, T.XT30_W + 2 * T.CLR,        # passage XT30
-                      13, h + 2, 2)[0])
+                      T.XT30_L, h + 2, 2)[0])
     body = cut(body, tools)
     body = drill(body, T.STANDOFFS_TOP + T.STANDOFFS_CAM, T.M3 / 2, z - 1, h + 2)
     return body
@@ -208,8 +294,9 @@ def _arm_blank(z):
     """La forme brute d'un bras, dirigée vers +X, racine à x = ARM_R_IN."""
     h = T.ARM_T
     wr, wm = T.ARM_W_ROOT / 2, T.ARM_W_MID / 2
-    beam = prism([(T.ARM_R_IN, wr), (T.ARM_R_IN + 12, wm), (ARM_R - 6, wm),
-                  (ARM_R - 6, -wm), (T.ARM_R_IN + 12, -wm), (T.ARM_R_IN, -wr)], z, h)
+    beam = prism_rounded([(T.ARM_R_IN, wr), (T.ARM_R_IN + 12, wm), (ARM_R - 6, wm),
+                          (ARM_R - 6, -wm), (T.ARM_R_IN + 12, -wm), (T.ARM_R_IN, -wr)],
+                         z, h, 1.8)
     pad = rpad(ARM_R, 0, z, T.MOTOR_PAD_D, T.MOTOR_PAD_D, h, 5.0)
     body = fuse(beam + pad)
     body = cut(body, [box(T.ARM_R_IN - 1, -3.0, z - 1, 11.0, 6.0, h + 2)])  # fourche
