@@ -53,8 +53,13 @@ usage des STL de plaques.
 ### Imprimé — ce que Sub250 livre déjà
 
 Repris **tels quels**, jamais redessinés, dans [`ref/sub250_stl/`](ref/sub250_stl/) :
-flanc latéral (×2) · patin de pied (×4) · platine d'antennes RX ·
+flanc latéral · patin de pied (×4) · platine d'antennes RX ·
 support d'antenne de queue.
+
+Le flanc est livré en **un seul fichier, qui est le côté gauche** : `prep_sub250.py`
+en écrit les deux versions imprimables, `cad/stl/flanc_gauche.stl` et
+`cad/stl/flanc_droit.stl` (miroir, enroulement des triangles inversé pour que les
+normales restent sortantes).
 
 ### Imprimé — ce qui manque, et qu'on ajoute
 
@@ -121,7 +126,7 @@ Les 4 pièces Sub250, elles, sont les fichiers d'origine — donc exactes.
 
 `cad/export.py` contrôle 11 cotes à chaque export et **échoue** si l'une dérive.
 Le visualisateur est passé au test d'interférence pièce par pièce : **0 collision**
-sur 82 maillages. Mais ce test compare des boîtes englobantes — il attrape les
+sur 158 maillages. Mais ce test compare des boîtes englobantes — il attrape les
 interpénétrations franches, pas les contacts tangents, et ne remplace pas un
 contrôle booléen. Rien n'a été imprimé ni volé.
 

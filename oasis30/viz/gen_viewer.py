@@ -88,7 +88,7 @@ def stls():
         "grommet": o("xt30_grommet"), "gpsmount": o("gps_mount"),
         "bumper": o("rear_bumper"),
         # ── pièces Sub250 d'origine, telles quelles
-        "sidepanel": o("sub250_side_panel"),
+        "flanc_g": o("flanc_gauche"), "flanc_d": o("flanc_droit"),
         "footpad": o("sub250_foot_pad"),
         "rxplate": o("sub250_rx_plate"), "tailmount": o("sub250_tail_mount"),
         # ── pièces réutilisées du TinyHoop MK1 (mêmes composants du commerce)
@@ -395,18 +395,19 @@ const gBumper = group('bumper');
   m.position.set(0, -65/1000, (M.z.bottom-2.2)/1000); gBumper.add(m); }
 
 /* pièces Sub250 d'origine */
-/* `side_panel.stl` EST le flanc gauche, dans son entier. Le flanc droit est
-   son miroir — un seul fichier à imprimer, retourné dans le trancheur pour la
-   deuxième pièce. La face du flanc est dans le plan X-Z du fichier : la
-   rotation de -90° autour de Z amène sa longueur d'avant en arrière. */
+/* Deux fichiers imprimables distincts : `flanc_gauche.stl` (la pièce Sub250
+   telle quelle) et `flanc_droit.stl` (son miroir, généré par prep_sub250.py).
+   On charge donc les DEUX maillages — pas un `scale.x = -1` sur le même — pour
+   que ce qu'on voit soit exactement ce qui sort du trancheur.
+   La face du flanc est dans le plan X-Z du fichier : la rotation de -90° autour
+   de Z amène sa longueur d'avant en arrière. */
 const gSide = group('sidepanels');
 { const SIDE_X = 13.0;
-  for (const sx of [-1, +1]){                      // -1 = gauche (la pièce), +1 = son miroir
+  for (const [b64, sx] of [[STLB64.flanc_g, -1], [STLB64.flanc_d, +1]]){
     const g = new THREE.Group();
-    const m = mesh(STLB64.sidepanel, SUB250, .06, .78);
+    const m = mesh(b64, SUB250, .06, .78);
     m.rotation.z = -Math.PI/2;
     g.add(m);
-    g.scale.x = sx;
     g.position.set(sx*SIDE_X/1000, -6/1000, 0);
     gSide.add(g);
   }
@@ -633,7 +634,7 @@ const PARTS = [
   ['bumper',     'Bumper arrière',      '×1 · TPU',         'Imprimé', 0x24272d,
    "Capuchon sur la pointe arrière — encaisse les atterrissages ratés."],
   ['sidepanels', 'Flancs latéraux',     '×2 · Sub250',      'Sub250', 0x2ec4b6,
-   "Pièce d'origine Sub250, 99 × 17,7 × 32,5 mm : c'est le flanc GAUCHE. Le droit est son miroir — un seul fichier, retourné dans le trancheur pour la deuxième pièce."],
+   "99 × 17,7 × 32,5 mm. Deux fichiers imprimables : flanc_gauche.stl (la pièce d'origine Sub250) et flanc_droit.stl (son miroir)."],
   ['feet',       'Patins de pied',      '×4 · Sub250',      'Sub250', 0x2ec4b6,
    "Pièce d'origine Sub250 : le fichier livré en contient 4 sur une planche."],
   ['rxplate',    'Platine antennes RX', '×1 · Sub250',      'Sub250', 0xd8dce2,

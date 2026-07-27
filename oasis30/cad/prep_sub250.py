@@ -5,9 +5,10 @@
 Les fichiers de `../ref/sub250_stl/` ne sont jamais modifiés : ils restent la
 référence de forme. Ce script en écrit des copies exploitables dans `stl/` :
 
-  · `side_panel.stl` **est le flanc gauche** — le flanc droit est simplement
-    son miroir, fait à l'affichage (et à l'impression : on retourne la pièce
-    dans le trancheur) ; il n'y a donc qu'un seul fichier à garder ;
+  · `side_panel.stl` **est le flanc gauche** → on en écrit deux fichiers
+    imprimables distincts : `flanc_gauche.stl` (la pièce telle quelle) et
+    `flanc_droit.stl` (son **miroir**, sommets en X négatif et enroulement des
+    triangles inversé pour que les normales restent sortantes) ;
   · `foot_pad_x4.stl` contient **4 patins** posés à plat sur une planche
     d'impression → on en extrait **un seul**, ré-centré ;
   · chaque pièce est ramenée à une origine prévisible (centrée en X/Y, posée
@@ -22,11 +23,12 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 SRC = os.path.join(HERE, "..", "ref", "sub250_stl")
 OUT = os.path.join(HERE, "stl")
 
-# fichier source → (nom de sortie, n'garder qu'un composant ?, description)
-# `side_panel.stl` est le flanc GAUCHE dans son entier : on le garde tel quel,
-# le flanc droit étant son miroir.
+# fichier source → (nom de sortie, extraction, description, miroir ?)
+# `side_panel.stl` est le flanc GAUCHE dans son entier ; le flanc droit en est
+# le miroir, écrit dans son propre fichier pour pouvoir être imprimé tel quel.
 JOBS = [
-    ("side_panel.stl",         "sub250_side_panel",   None,    "Flanc gauche (le droit est son miroir)"),
+    ("side_panel.stl",         "flanc_gauche",        None,    "Flanc GAUCHE (pièce d'origine)"),
+    ("side_panel.stl",         "flanc_droit",         None,    "Flanc DROIT (miroir du gauche)", True),
     ("foot_pad_x4.stl",        "sub250_foot_pad",     "comp0", "Patin de pied (×4)"),
     ("rx_antenna_plate.stl",   "sub250_rx_plate",     None,    "Platine d'antennes RX"),
     ("tail_antenna_mount.stl", "sub250_tail_mount",   None,    "Support d'antenne de queue"),
@@ -111,6 +113,17 @@ def recentre(tris):
     return [tuple((v[0] + dx, v[1] + dy, v[2] + dz) for v in t) for t in tris]
 
 
+def mirror_x(tris):
+    """Miroir par rapport au plan X = 0.
+
+    On inverse aussi l'ordre de deux sommets de chaque triangle : sans ça
+    l'enroulement change de sens et toutes les normales pointent vers
+    l'intérieur — le trancheur voit alors une pièce « retournée ».
+    """
+    return [((-c[0], c[1], c[2]), (-b[0], b[1], b[2]), (-a[0], a[1], a[2]))
+            for a, b, c in tris]
+
+
 def cluster(tris, cell):
     """Décimation par **regroupement de sommets** : on colle les sommets sur une
     grille de `cell` mm, puis on jette les triangles devenus dégénérés.
@@ -138,13 +151,17 @@ def cluster(tris, cell):
 def main():
     os.makedirs(OUT, exist_ok=True)
     os.makedirs(os.path.join(OUT, "viz"), exist_ok=True)
-    for src, name, pick, desc in JOBS:
+    for job in JOBS:
+        src, name, pick, desc = job[:4]
+        mirror = len(job) > 4 and job[4]
         tris = read_stl(os.path.join(SRC, src))
         if pick:
             comps = sorted(components(tris), key=len, reverse=True)
             idx = int(pick[-1])
             print("  %-22s %d composants → on extrait le n°%d" % (src, len(comps), idx))
             tris = comps[idx]
+        if mirror:
+            tris = mirror_x(tris)
         tris = recentre(tris)
         lo, hi = bounds(tris)
         write_stl(os.path.join(OUT, name + ".stl"), tris)
