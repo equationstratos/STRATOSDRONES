@@ -88,7 +88,7 @@ def stls():
         "grommet": o("xt30_grommet"), "gpsmount": o("gps_mount"),
         "bumper": o("rear_bumper"),
         # ── pièces Sub250 d'origine, telles quelles
-        "side_a": o("sub250_side_panel_a"), "side_b": o("sub250_side_panel_b"),
+        "flanc_g": o("flanc_gauche"), "flanc_d": o("flanc_droit"),
         "footpad": o("sub250_foot_pad"),
         "rxplate": o("sub250_rx_plate"), "tailmount": o("sub250_tail_mount"),
         # ── pièces réutilisées du TinyHoop MK1 (mêmes composants du commerce)
@@ -395,29 +395,25 @@ const gBumper = group('bumper');
   m.position.set(0, -65/1000, (M.z.bottom-2.2)/1000); gBumper.add(m); }
 
 /* pièces Sub250 d'origine */
-/* Le fichier Sub250 « side panels » contient DEUX pièces distinctes posées
-   côte à côte sur une planche d'impression : la coque (72 × 17,7 × 32,5) et la
-   grille (43 × 9,3 × 10,8). Elles vont **une de chaque côté** — la coque à
-   gauche, la grille à droite — et pas les deux de chaque côté.
-   Chaque pièce est un mur dont la face est en X-Z dans le fichier : la rotation
-   de -90° autour de Z amène sa longueur d'avant en arrière et son épaisseur
-   en travers, avec la concavité tournée vers le châssis. */
+/* Le fichier Sub250 « side panels » contient les DEUX flancs — gauche et droit
+   — déjà séparés mais réunis dans un seul fichier. `prep_sub250.py` les extrait
+   en `flanc_gauche.stl` et `flanc_droit.stl` ; ils se posent tels quels, chacun
+   de son côté, sans miroir : chaque pièce est déjà de la bonne main.
+   La face du flanc est dans le plan X-Z du fichier ; la rotation de -90° autour
+   de Z amène sa longueur d'avant en arrière. */
 const gSide = group('sidepanels');
 { const SIDE_X = 13.0;
-  const coque = new THREE.Group();                 // ── côté GAUCHE
-  { const m = mesh(STLB64.side_a, SUB250, .06, .78);
+  const poser = (b64, sx, dy, dz) => {
+    const g = new THREE.Group();
+    const m = mesh(b64, SUB250, .06, .78);
     m.rotation.z = -Math.PI/2;
-    coque.add(m); }
-  coque.scale.x = -1;                              // concavité vers l'intérieur
-  coque.position.set(-SIDE_X/1000, -6/1000, 0);
-  gSide.add(coque);
-
-  const grille = new THREE.Group();                // ── côté DROIT
-  { const m = mesh(STLB64.side_b, SUB250, .06, .78);
-    m.rotation.z = -Math.PI/2;
-    grille.add(m); }
-  grille.position.set(SIDE_X/1000, -6/1000, 19/1000);
-  gSide.add(grille);
+    g.add(m);
+    g.position.set(sx*SIDE_X/1000, dy/1000, dz/1000);
+    gSide.add(g);
+    return g;
+  };
+  poser(STLB64.flanc_g, -1, -6, 0);                // flanc GAUCHE
+  poser(STLB64.flanc_d, +1, -6, 19);               // flanc DROIT
 }
 const gFeet = group('feet');
 for (const [i,[sx,sy]] of [[1,1],[-1,1],[-1,-1],[1,-1]].entries()){
@@ -640,8 +636,8 @@ const PARTS = [
    "S'encliquette dans la découpe du roof et protège le fil du bord carbone."],
   ['bumper',     'Bumper arrière',      '×1 · TPU',         'Imprimé', 0x24272d,
    "Capuchon sur la pointe arrière — encaisse les atterrissages ratés."],
-  ['sidepanels', 'Flancs latéraux',     '×2 · Sub250',      'Sub250', 0x2ec4b6,
-   "Pièce d'origine Sub250, reprise telle quelle. 99 × 17,7 × 32,5 mm."],
+  ['sidepanels', 'Flancs latéraux',     'gauche + droit',   'Sub250', 0x2ec4b6,
+   "Pièces d'origine Sub250. Le fichier livré contient les deux flancs réunis : ils sont extraits en flanc_gauche.stl (72 × 17,7 × 32,5) et flanc_droit.stl (43 × 9,3 × 10,8)."],
   ['feet',       'Patins de pied',      '×4 · Sub250',      'Sub250', 0x2ec4b6,
    "Pièce d'origine Sub250 : le fichier livré en contient 4 sur une planche."],
   ['rxplate',    'Platine antennes RX', '×1 · Sub250',      'Sub250', 0xd8dce2,
