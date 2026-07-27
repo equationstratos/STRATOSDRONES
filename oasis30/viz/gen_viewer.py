@@ -397,21 +397,21 @@ const gBumper = group('bumper');
 /* pièces Sub250 d'origine */
 /* Deux fichiers imprimables distincts : `flanc_gauche.stl` (la pièce Sub250
    telle quelle) et `flanc_droit.stl` (son miroir, généré par prep_sub250.py).
-   On charge donc les DEUX maillages — pas un `scale.x = -1` sur le même — pour
-   que ce qu'on voit soit exactement ce qui sort du trancheur.
+   Chacun est un GROUPE à part — donc sa propre ligne dans la liste des
+   composants, avec son affichage et sa couleur.
    La face du flanc est dans le plan X-Z du fichier : la rotation de -90° autour
    de Z amène sa longueur d'avant en arrière. */
-const gSide = group('sidepanels');
-{ const SIDE_X = 13.0;
-  for (const [b64, sx] of [[STLB64.flanc_g, -1], [STLB64.flanc_d, +1]]){
-    const g = new THREE.Group();
-    const m = mesh(b64, SUB250, .06, .78);
-    m.rotation.z = -Math.PI/2;
-    g.add(m);
-    g.position.set(sx*SIDE_X/1000, -6/1000, 0);
-    gSide.add(g);
-  }
+const SIDE_X = 13.0;
+function poserFlanc(nom, b64, sx){
+  const g = group(nom);
+  const m = mesh(b64, SUB250, .06, .78);
+  m.rotation.z = -Math.PI/2;
+  m.position.set(sx*SIDE_X/1000, -6/1000, 0);
+  g.add(m);
+  return g;
 }
+const gFlancG = poserFlanc('flanc_g', STLB64.flanc_g, -1);
+const gFlancD = poserFlanc('flanc_d', STLB64.flanc_d, +1);
 const gFeet = group('feet');
 for (const [i,[sx,sy]] of [[1,1],[-1,1],[-1,-1],[1,-1]].entries()){
   const g = new THREE.Group();
@@ -633,8 +633,10 @@ const PARTS = [
    "S'encliquette dans la découpe du roof et protège le fil du bord carbone."],
   ['bumper',     'Bumper arrière',      '×1 · TPU',         'Imprimé', 0x24272d,
    "Capuchon sur la pointe arrière — encaisse les atterrissages ratés."],
-  ['sidepanels', 'Flancs latéraux',     '×2 · Sub250',      'Sub250', 0x2ec4b6,
-   "99 × 17,7 × 32,5 mm. Deux fichiers imprimables : flanc_gauche.stl (la pièce d'origine Sub250) et flanc_droit.stl (son miroir)."],
+  ['flanc_g',    'Flanc gauche',        '×1 · Sub250',      'Sub250', 0x2ec4b6,
+   "99 × 17,7 × 32,5 mm — la pièce Sub250 d'origine, telle quelle. Fichier : cad/stl/flanc_gauche.stl."],
+  ['flanc_d',    'Flanc droit',         '×1 · Sub250',      'Sub250', 0x2ec4b6,
+   "Le miroir du flanc gauche, dans son propre fichier imprimable : cad/stl/flanc_droit.stl (enroulement des triangles inversé pour garder les normales sortantes)."],
   ['feet',       'Patins de pied',      '×4 · Sub250',      'Sub250', 0x2ec4b6,
    "Pièce d'origine Sub250 : le fichier livré en contient 4 sur une planche."],
   ['rxplate',    'Platine antennes RX', '×1 · Sub250',      'Sub250', 0xd8dce2,
@@ -730,7 +732,8 @@ const EXPLODE = {
   bottom:[0,0,0], arms:[0,0,-14], mid:[0,0,26], deck:[0,0,38], top:[0,0,74],
   standoffs:[0,0,50], cage:[0,0,58], cradle:[0,0,66], motors:[0,0,-28],
   props:[0,0,96], elec:[0,0,18], cap:[0,0,10], guards:[0,0,-40],
-  battpad:[0,0,88], grommet:[0,0,82], bumper:[0,0,-20], sidepanels:[0,0,-8],
+  battpad:[0,0,88], grommet:[0,0,82], bumper:[0,0,-20],
+  flanc_g:[-30,0,-8], flanc_d:[30,0,-8],
   feet:[0,0,-46], rxplate:[0,0,92], tailmount:[0,0,30], antennes:[0,0,100],
   battery:[0,0,112], screws:[0,0,60], cables:[0,0,-34],
 };
