@@ -1,0 +1,32 @@
+[
+  {
+    "html": "affiche-atelier-dark.html",
+    "out": "affiche-atelier-a4",
+    "format": "A4",
+    "scale": 1.0
+  },
+  {
+    "html": "affiche-atelier-dark.html",
+    "out": "affiche-atelier-a3",
+    "format": "A3",
+    "scale": 1.41428
+  },
+  {
+    "html": "affiche-atelier-light.html",
+    "out": "affiche-atelier-a4-claire",
+    "format": "A4",
+    "scale": 1.0
+  },
+  {
+    "html": "affiche-ligue-dark.html",
+    "out": "affiche-ligue-a4",
+    "format": "A4",
+    "scale": 1.0
+  },
+  {
+    "html": "affiche-ligue-dark.html",
+    "out": "affiche-ligue-a3",
+    "format": "A3",
+    "scale": 1.41428
+  }
+]
