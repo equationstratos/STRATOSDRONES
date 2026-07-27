@@ -7,8 +7,8 @@ référence de forme. Ce script en écrit des copies exploitables dans `stl/` :
 
   · `side_panel.stl` **est le flanc gauche** → on en écrit deux fichiers
     imprimables distincts : `flanc_gauche.stl` (la pièce telle quelle) et
-    `flanc_droit.stl` (son **miroir**, sommets en X négatif et enroulement des
-    triangles inversé pour que les normales restent sortantes) ;
+    `flanc_droit.stl` (son **miroir sur Y**, avec l'enroulement des triangles
+    inversé pour que les normales restent sortantes) ;
   · `foot_pad_x4.stl` contient **4 patins** posés à plat sur une planche
     d'impression → on en extrait **un seul**, ré-centré ;
   · chaque pièce est ramenée à une origine prévisible (centrée en X/Y, posée
@@ -113,14 +113,19 @@ def recentre(tris):
     return [tuple((v[0] + dx, v[1] + dy, v[2] + dz) for v in t) for t in tris]
 
 
-def mirror_x(tris):
-    """Miroir par rapport au plan X = 0.
+def mirror_y(tris):
+    """Miroir par rapport au plan **Y = 0** du fichier.
+
+    C'est bien Y et pas X : la face du flanc est dans le plan X-Z, donc son
+    épaisseur (Y) est ce qui devient la gauche-droite du drone une fois la
+    pièce tournée en place. Un miroir sur X retournerait la pièce d'avant en
+    arrière — ce n'est pas la même pièce.
 
     On inverse aussi l'ordre de deux sommets de chaque triangle : sans ça
     l'enroulement change de sens et toutes les normales pointent vers
     l'intérieur — le trancheur voit alors une pièce « retournée ».
     """
-    return [((-c[0], c[1], c[2]), (-b[0], b[1], b[2]), (-a[0], a[1], a[2]))
+    return [((c[0], -c[1], c[2]), (b[0], -b[1], b[2]), (a[0], -a[1], a[2]))
             for a, b, c in tris]
 
 
@@ -161,7 +166,7 @@ def main():
             print("  %-22s %d composants → on extrait le n°%d" % (src, len(comps), idx))
             tris = comps[idx]
         if mirror:
-            tris = mirror_x(tris)
+            tris = mirror_y(tris)
         tris = recentre(tris)
         lo, hi = bounds(tris)
         write_stl(os.path.join(OUT, name + ".stl"), tris)
