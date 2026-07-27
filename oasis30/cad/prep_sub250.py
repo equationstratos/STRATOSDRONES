@@ -5,6 +5,9 @@
 Les fichiers de `../ref/sub250_stl/` ne sont jamais modifiés : ils restent la
 référence de forme. Ce script en écrit des copies exploitables dans `stl/` :
 
+  · `side_panel.stl` contient **les deux flancs** (gauche et droit) dans un
+    seul fichier → on les extrait en `flanc_gauche.stl` et `flanc_droit.stl`,
+    écrits aussi dans `../ref/sub250_stl/` en coordonnées d'origine ;
   · `foot_pad_x4.stl` contient **4 patins** posés à plat sur une planche
     d'impression → on en extrait **un seul**, ré-centré ;
   · chaque pièce est ramenée à une origine prévisible (centrée en X/Y, posée
@@ -20,12 +23,12 @@ SRC = os.path.join(HERE, "..", "ref", "sub250_stl")
 OUT = os.path.join(HERE, "stl")
 
 # fichier source → (nom de sortie, n'garder qu'un composant ?, description)
-# Le fichier « side panels » contient DEUX pièces distinctes posées côte à côte
-# sur une planche d'impression (72 mm et 43 mm) : il faut les séparer, chacune
-# se montant en deux exemplaires, un par côté.
+# Le fichier « side panels » livré par Sub250 contient DEUX pièces déjà
+# séparées, mais dans un seul fichier : ce sont le flanc gauche et le flanc
+# droit. On les extrait en deux fichiers distincts et nommés.
 JOBS = [
-    ("side_panel.stl",         "sub250_side_panel_a", "comp0", "Flanc latéral, coque (×2)"),
-    ("side_panel.stl",         "sub250_side_panel_b", "comp1", "Flanc latéral, grille (×2)"),
+    ("side_panel.stl",         "flanc_gauche",        "comp0", "Flanc GAUCHE"),
+    ("side_panel.stl",         "flanc_droit",         "comp1", "Flanc DROIT"),
     ("foot_pad_x4.stl",        "sub250_foot_pad",     "comp0", "Patin de pied (×4)"),
     ("rx_antenna_plate.stl",   "sub250_rx_plate",     None,    "Platine d'antennes RX"),
     ("tail_antenna_mount.stl", "sub250_tail_mount",   None,    "Support d'antenne de queue"),
@@ -144,6 +147,10 @@ def main():
             idx = int(pick[-1])
             print("  %-22s %d composants → on extrait le n°%d" % (src, len(comps), idx))
             tris = comps[idx]
+        if name.startswith("flanc_"):
+            # copie « telle quelle » (coordonnées d'origine) à côté du fichier
+            # source : c'est ce fichier-là qu'on envoie à l'imprimante
+            write_stl(os.path.join(SRC, name + ".stl"), tris)
         tris = recentre(tris)
         lo, hi = bounds(tris)
         write_stl(os.path.join(OUT, name + ".stl"), tris)
