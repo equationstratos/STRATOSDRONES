@@ -40,13 +40,12 @@ Les deux variantes sont sélectionnables dans le visualisateur
 
 | Pièce | Qté | Matière | À quoi ça sert |
 |---|---|---|---|
-| `cam_cradle_bottom` | 1 | TPU 95A | tient la caméra O4 Pro inclinée à 30° |
-| `cam_cradle_top` | 1 | TPU 95A | referme dessus, fenêtre d'objectif |
 | `arm_guard` | **4** | TPU 95A | clip de bras + **canal pour les 3 fils de phase** |
 | `batt_pad` | 1 | TPU 95A | patin antidérapant nervuré sous la sangle |
 | `xt30_grommet` | 1 | TPU 95A | passe-fil de la découpe du roof |
 | `rear_bumper` | 1 | TPU 95A | capuchon de la pointe arrière |
 | `gps_mount` | 1 | PLA/PETG | platine GPS surélevée — **variante Stratos seulement** |
+| `cam_cradle_bottom` + `_top` | (0) | TPU 95A | **non montés** — le STEP DJI montre que la caméra O4 Pro a ses propres tourillons et bascule nue entre les joues. À n'imprimer que pour une caméra qui n'en a pas. |
 
 ## Électronique
 
@@ -54,18 +53,30 @@ Les deux variantes sont sélectionnables dans le visualisateur
 |---|---|---|
 | FC / ESC | **RedFox A3 45A AIO** — STM32F722 · ICM42688-P · BLHeli32, montage 20×20 | **STRATOS TINYHOOP AIO** ([`../../hardware/pcb_tinyhoop/`](../../hardware/pcb_tinyhoop/)) |
 | Firmware | Betaflight | `fc_core` ([`../../fc_core/`](../../fc_core/)) — manuel · stabilisé · programmé · essaim |
-| Vidéo | **DJI O4 Pro** (air unit + caméra), montage 20×20 / 25,5 | idem O4 Pro |
+| Vidéo | **DJI O4 Pro** (air unit + caméra), fixation **25,5 × 25,5** | idem O4 Pro |
 | Radio | récepteur **ExpressLRS** 2,4 GHz (CRSF) | idem + **SX1262 LoRa 868** pour le lien PC/essaim |
 | Position | — | flow + ToF, **GPS/compas** sur `gps_mount` |
-| Antennes | antenne O4 Pro + antennes RX à plat | idem |
+| Antennes | **2 antennes O4 Pro** dans les alésages Ø 3 mm du support de queue + antennes RX à plat sur leur platine | idem |
 | Condensateur | 35 V faible ESR, couché sur le pont | idem |
 | Buzzer | optionnel | optionnel |
+
+### Fichiers 3-D des constructeurs
+
+Les STEP de [`../ref/vendor_step/`](../ref/vendor_step/) sont repris tels quels
+et convertis par [`../cad/prep_vendor.py`](../cad/prep_vendor.py) :
+
+| Pièce | Fichier | Cotes lues dans le STEP |
+|---|---|---|
+| Caméra O4 Pro | `DJI_O4_PRO_CAM.step` | 25,4 × 23,8 × 20,0 · tourillons Ø 2,1 en y = ±10 |
+| Air unit O4 Pro | `DJI_O4_AIR_UNIT_PRO.step` | 33,4 carré × 13,0 · fixation 25,5 × 25,5 |
+| Antenne O4 Pro | `DJI_O4_Pro_Antenna_v1.step` | fourreau Ø 3,5 · 85 mm utiles |
+| Moteur XING2 1404 | `XING2_1404.step` | Ø 19,9 × 18,6 · plan de pose z = −4,25 · haut de cloche z = 9,54 |
 
 ## Motorisation — identique aux deux variantes
 
 | Pièce | Qté | Référence |
 |---|---|---|
-| Moteurs | **4** | **1404 · 4500 KV**, entraxe M2 9 × 9 mm |
+| Moteurs | **4** | **XING2 1404 · 4500 KV**, entraxe M2 9 × 9 mm — STEP dans `../ref/vendor_step/` |
 | Hélices | **4** (2 CW + 2 CCW) | **3″ · 76 mm** tri-pale (HQProp / Gemfan) |
 | Batterie | 1-2 | **LiPo 4S 660-720 mAh**, connecteur **XT30** |
 

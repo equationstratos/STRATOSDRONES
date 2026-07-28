@@ -19,8 +19,16 @@ d'assemblage) — rebranché sur le châssis **Sub250 OasisFly30** :
         -> oasis30/build/build.html           (simulateur d'assemblage)
 """
 import base64
+import datetime
 import json
 import os
+import subprocess
+
+# Numéro de révision de la page, à incrémenter à chaque changement visible.
+# Il s'affiche en clair dans le bandeau et dans l'onglet du navigateur : c'est le
+# seul moyen fiable de savoir, d'un coup d'œil, si la page ouverte est à jour ou
+# si le navigateur ressert une version en cache.
+REVISION = "r5"
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 OASIS = os.path.dirname(HERE)
@@ -39,8 +47,9 @@ MODEL = dict(
     name="OASIS 30", sub="Sub250 OasisFly30 · 3\" · 150 mm · 4S",
     wb=T.WB, track_x=T.TRACK_X, track_y=T.TRACK_Y, prop_d=T.PROP_D,
     mx=T.MX, my=T.MY, arm_angle=None,                       # calculé en JS
-    z=dict(bottom=T.Z_BOTTOM, arm=T.Z_ARM, mid=T.Z_MID, deck=T.Z_DECK,
-           standoff=T.Z_DECK + T.PLATE_D, top=T.Z_TOP, total=T.H_TOTAL),
+    z=dict(bottom=T.Z_BOTTOM, arm=T.Z_ARM, arm_t=T.ARM_T, mid=T.Z_MID, deck=T.Z_DECK,
+           standoff=T.Z_DECK + T.PLATE_D, plate_d=T.PLATE_D, top=T.Z_TOP,
+           total=T.H_TOTAL),
     cage=dict(gap=T.CAGE_GAP, t=T.CAGE_T, y=T.CAM_Y, z=T.CAM_Z, tilt=T.CAM_TILT,
               w=T.CAM_W, h=T.CAM_H),
     standoffs=dict(top=T.STANDOFFS_TOP, cam=T.STANDOFFS_CAM),
@@ -51,6 +60,17 @@ MODEL = dict(
            ("Vidéo", "DJI O4 Pro"), ("Batterie", "4S 660-720 mAh XT30"),
            ("Hauteur", "32,5 mm"), ("Masse châssis", "~170 g sans batterie")],
 )
+
+
+def build_stamp():
+    """« r5 · 28/07 14:03 · cb1cdc2 » — révision, date de génération, commit."""
+    now = datetime.datetime.now().strftime("%d/%m %H:%M")
+    try:
+        sha = subprocess.check_output(["git", "-C", REPO, "rev-parse", "--short", "HEAD"],
+                                      stderr=subprocess.DEVNULL).decode().strip()
+    except Exception:
+        sha = "hors dépôt"
+    return "%s · %s · %s" % (REVISION, now, sha)
 
 
 def data_url(path):
@@ -83,7 +103,6 @@ def stls():
         "top": o("top_plate"), "arm": o("arm"), "cage": o("cam_side_plate"),
         "standoff": o("standoff"),
         # ── pièces imprimées Stratos
-        "cradle_b": o("cam_cradle_bottom"), "cradle_t": o("cam_cradle_top"),
         "guard": o("arm_guard"), "battpad": o("batt_pad"),
         "grommet": o("xt30_grommet"), "gpsmount": o("gps_mount"),
         "bumper": o("rear_bumper"),
@@ -91,19 +110,23 @@ def stls():
         "flanc_g": o("flanc_gauche"), "flanc_d": o("flanc_droit"),
         "footpad": o("sub250_foot_pad"),
         "rxplate": o("sub250_rx_plate"), "tailmount": o("sub250_tail_mount"),
+        # ── DJI O4 Pro : STEP du constructeur, converti par prep_vendor.py
+        "o4air": o("dji_air_unit"), "o4cam": o("dji_camera"), "o4ant": o("dji_antenna"),
+        # ── moteur XING2 1404 : STEP du constructeur, même conversion
+        "motor": o("xing2_1404"),
         # ── pièces réutilisées du TinyHoop MK1 (mêmes composants du commerce)
         "prop": t("prop"), "screw": t("screw"), "cap": t("capacitor"),
-        "gps": t("gps_module"), "rxpcb": t("rx_pcb"), "rxant": t("rx_antenna"),
-        "vtxant": t("dji_pro_ant"), "board": t("board"),
+        "gps": t("gps_module"), "rxpcb": t("rx_pcb"), "board": t("board"),
     }
 
 
 TEMPLATE = r"""<!DOCTYPE html>
+<!-- OASIS 30 — page générée par oasis30/viz/gen_viewer.py — build __STAMP__ -->
 <html lang="fr">
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>OASIS 30 · 3D</title>
+<title>OASIS 30 · 3D · __STAMP__</title>
 <style>
   :root{--bg:#0b0e14;--panel:#12161d;--line:#262d38;--ink:#e6edf3;--mut:#8b949e;
         --acc:#2f6fed;--acc2:#63a4ff;--btn:#1b212b;--btnh:#262d38;--ok:#47d18a;}
@@ -120,6 +143,11 @@ TEMPLATE = r"""<!DOCTYPE html>
   header{padding:14px 16px;border-bottom:1px solid var(--line)}
   header h1{margin:0;font-size:15px;letter-spacing:.3px}
   header h1 b{color:var(--acc2)}
+  /* Étiquette de version : elle doit sauter aux yeux, c'est elle qui dit si la
+     page ouverte est bien celle qu'on vient de régénérer. */
+  header h1 #ver{float:right;font-size:10px;font-weight:700;letter-spacing:.4px;
+        background:var(--ok);color:#06210f;border-radius:5px;padding:2px 6px;
+        vertical-align:middle;font-variant-numeric:tabular-nums}
   header p{margin:3px 0 0;color:var(--mut);font-size:11px}
   .sec{padding:12px 16px;border-bottom:1px solid var(--line)}
   .sec h2{margin:0 0 9px;font-size:11px;text-transform:uppercase;letter-spacing:.6px;
@@ -163,6 +191,13 @@ TEMPLATE = r"""<!DOCTYPE html>
   .prow .qt{font-size:10px;color:var(--mut)}
   .prow.done .nm{color:var(--ok)}
   body:not(.build) .buildonly{display:none}
+  body.build .viewonly{display:none}
+  .adjrow{display:grid;grid-template-columns:24px 1fr 46px;align-items:center;gap:6px;
+          font-size:11px;color:var(--mut);margin:2px 0}
+  .adjrow b{color:var(--ink);text-align:right;font-weight:600;font-variant-numeric:tabular-nums}
+  #adjOut{white-space:pre-line;user-select:text;font-size:10.5px;line-height:1.5;
+          background:var(--btn);border:1px solid var(--line);border-radius:6px;
+          padding:6px 8px;margin-top:8px;max-height:120px;overflow:auto}
 </style>
 <script type="importmap">__IMPORTMAP__</script>
 </head>
@@ -170,7 +205,7 @@ TEMPLATE = r"""<!DOCTYPE html>
 <div id="app">
   <aside class="sidebar">
     <header>
-      <h1>OASIS <b>30</b></h1>
+      <h1>OASIS <b>30</b> <span id="ver">__STAMP__</span></h1>
       <p id="subtitle">__SUB__</p>
     </header>
 
@@ -218,6 +253,22 @@ TEMPLATE = r"""<!DOCTYPE html>
         <button id="vSide">Côté</button><button id="vFront">Face</button>
         <button id="wire">Fil de fer</button><button id="theme">Thème clair</button>
       </div>
+    </div>
+
+    <div class="sec viewonly" id="adjSec">
+      <h2>Réglages</h2>
+      <select id="adjSel"></select>
+      <div id="adjRows" style="margin-top:8px"></div>
+      <button id="adjDrag" style="margin-top:8px">Déplacer à la souris : oui</button>
+      <div class="btns" style="margin-top:6px">
+        <button id="adjReset">Remettre à zéro</button>
+        <button id="adjResetAll">Tout remettre à zéro</button>
+      </div>
+      <button id="adjCopy" style="margin-top:6px">Copier les valeurs</button>
+      <div id="adjOut"></div>
+      <div class="note">Attrape une pièce dans la vue et fais-la glisser.
+        <b>Maj</b> enfoncé, elle ne monte ou ne descend que verticalement.
+        Un clic dans le vide fait toujours tourner la scène.</div>
     </div>
 
     <div class="sec">
@@ -326,6 +377,26 @@ const frameRoot = new THREE.Group(); scene.add(frameRoot);
 frameRoot.position.z = M.ground/1000;               // les patins touchent le sol
 const G = {}; try { window.G = G; window.THREE = THREE; } catch(_){}
 function group(name){ const g = new THREE.Group(); G[name]=g; frameRoot.add(g); return g; }
+/* Groupe RÉGLABLE : son origine est posée sur la pièce elle-même, pas au centre
+   du drone — sans ça une rotation ferait tourner la pièce autour du châssis
+   entier au lieu de la faire pivoter sur place. */
+function adjGroup(name, px, py, pz){
+  const g = group(name);
+  g.position.set(px/1000, py/1000, pz/1000);
+  g.userData.pivot = [px, py, pz];
+  g.userData.base = g.position.clone();
+  g.userData.baseRot = g.rotation.clone();
+  return g;
+}
+function addAt(g, m, x, y, z){            // place un maillage dans un groupe réglable
+  const p = g.userData.pivot;
+  m.position.set((x - p[0])/1000, (y - p[1])/1000, (z - p[2])/1000);
+  g.add(m); return m;
+}
+/* Certains STL sortent de la CAO **déjà à leur place** dans le drone (les
+   plaques, les joues de cage) : il ne faut surtout pas leur rajouter l'offset
+   du groupe, sinon la pièce part deux fois plus loin que voulu. */
+function addAbs(g, m){ return addAt(g, m, 0, 0, 0); }
 function keep(m){ m.userData.keepColor = true; return m; }
 
 const CARBON = 0x1a1d21, TPU = 0x24272d, ALU = 0xb9bec7, SUB250 = 0x2ec4b6;
@@ -350,11 +421,15 @@ for (const a of ARM_DIR){
 }
 
 /* cage caméra : le STL est le flanc droit, le gauche est son miroir */
-const gCage = group('cage');
+/* Le STL `cam_side_plate` sort de la CAO **à sa place** (x 12,35→14,85 ·
+   y 43→65 · z 5,5→31) : on ne lui ajoute aucun décalage. Le pivot du groupe est
+   posé sur l'axe de basculement de la caméra, c'est autour de lui que tournent
+   les curseurs de réglage. */
+const gCage = adjGroup('cage', 0, M.cage.y, M.cage.z);
 for (const sx of [1,-1]){
   const m = carbonMesh(STLB64.cage, CARBON);
   m.scale.x = sx*.001;
-  gCage.add(m);
+  addAbs(gCage, m);
 }
 
 /* entretoises */
@@ -366,12 +441,12 @@ for (const [x,y] of M.standoffs.top.concat(M.standoffs.cam)){
 }
 
 /* pièces imprimées Stratos */
-const gCradle = group('cradle');
-{ const cy = M.cage.y - 6;                          // reste dans la cage (nez à y=65)
-  const b = mesh(STLB64.cradle_b, TPU, .1, .82);
-  b.position.set(0, cy/1000, (M.z.deck+2.5)/1000); gCradle.add(b);   // posé SUR le pont
-  const t = mesh(STLB64.cradle_t, TPU, .1, .82);
-  t.position.set(0, cy/1000, (M.z.deck+15.5)/1000); gCradle.add(t); }
+/* Pas de berceau TPU dans le montage : le STEP DJI montre que la caméra O4 Pro
+   porte ses **propres tourillons** Ø 2,1 en y = ±10, et que sa largeur hors
+   tourillons est de 23,8 mm — elle bascule donc directement entre les deux
+   joues carbone, dont l'écart intérieur est de 24,7. C'est ce que montrent les
+   photos du châssis. `cam_cradle_bottom/top` restent dans `cad/` : ils ne
+   servent qu'à une caméra sans tourillons. */
 
 const gGuards = group('guards');
 for (const a of ARM_DIR){
@@ -422,55 +497,51 @@ for (const [i,[sx,sy]] of [[1,1],[-1,1],[-1,-1],[1,-1]].entries()){
   g.position.set(sx*M.mx/1000, sy*M.my/1000, 0);
   gFeet.add(g);
 }
-const gRxPlate = group('rxplate');
-{ const m = mesh(STLB64.rxplate, 0xd8dce2, .06, .7);
-  m.position.set(0, -52/1000, M.z.total/1000); gRxPlate.add(m); }
-/* Étrier de queue Sub250 — calé sur la photo du drone monté (vue arrière) :
-   la pièce se présente DROITE, sa fenêtre rectangulaire vers l'arrière, et
-   descend sous la queue du châssis. Aucune rotation : ses 29,1 mm courent
-   d'avant en arrière, ses 16,3 mm en travers, ses 25,5 mm en hauteur.
-   TAIL_Y / TAIL_Z sont les deux seuls chiffres de calage. */
-const TAIL_Y = -58, TAIL_Z = M.z.bottom - 6;
-const gTail = group('tailmount');
-{ const m = mesh(STLB64.tailmount, SUB250, .06, .78);
-  m.position.set(0, TAIL_Y/1000, TAIL_Z/1000);
-  gTail.add(m); }
+/* Platine d'antennes RX : elle était sur le roof, mais c'est là que se pose
+   l'étrier de queue — la zone libre du roof à l'arrière ne fait que 36 mm et
+   les deux n'y tiennent pas. On la descend donc dans la baie arrière, posée
+   sur le pont, derrière les entretoises. Aucune photo du kit ne montre son
+   montage : c'est la seule position qui dégage tout le reste. */
+const RXP_Y = -52, RXP_Z = M.z.deck + M.z.plate_d;
+const gRxPlate = adjGroup('rxplate', 0, RXP_Y, RXP_Z + 3);
+addAt(gRxPlate, mesh(STLB64.rxplate, 0xd8dce2, .06, .7), 0, RXP_Y, RXP_Z);
+/* Étrier de queue Sub250 — réglable depuis le panneau « Réglages ».
+   Orientation : **45° sur X et −90° sur Z**. Le −90° sur Z met les deux
+   alésages côte à côte (le Y du fichier devient la gauche-droite du drone) ;
+   le 45° sur X relève leur axe pour que les antennes partent **vers l'arrière
+   ET vers le haut**, comme sur la photo du drone monté. Le 90° précédent les
+   sortait à plat, à l'horizontale — c'était faux.
+   Les deux alésages du STL sont **parallèles** (mesuré : écart d'axe < 5°) ;
+   les antennes sortent donc parallèles. Si sur ta machine elles s'écartent en
+   V, c'est le montage qui les cintre, pas la pièce. */
+/* Posé SUR le roof, à l'extrême arrière : basculé à 45°, le point bas du
+   corps tombe à z = 32,25, soit la face haute du roof (32,5). */
+const TAIL_Y = -52, TAIL_Z = 38;
+const gTail = adjGroup('tailmount', 0, TAIL_Y, TAIL_Z);
+gTail.rotation.set(45*D, 0, -90*D); gTail.userData.baseRot = gTail.rotation.clone();
+addAt(gTail, mesh(STLB64.tailmount, SUB250, .06, .78), 0, TAIL_Y, TAIL_Z);
+/* Alésages d'antenne **relevés dans le STL Sub250**, pas devinés : deux perçages
+   Ø 3,0 mm, axe parallèle au Z du fichier, en (x = −4,2 ; y = ±10,7), profonds
+   de 17,3 mm. C'est exactement le diamètre du fourreau d'une antenne DJI. */
+const TAIL_BORE = { x: -4.2, y: 10.7, z0: 0.0, depth: 17.3 };
 
-/* moteurs 1404 — construits en primitives (légers, cotes exactes) */
-// Moteur 1404 : embase de fixation, stator bobiné apparent, cloche ventilée,
-// chapeau et écrou d'hélice. Cotes réelles d'un 1404 (cloche Ø15,8, H ~17,5).
-function motor(){
-  const g = new THREE.Group();
-  const mat = (c,m,r) => new THREE.MeshStandardMaterial({color:c, metalness:m, roughness:r});
-  const cyl = (rt,rb,h,seg,material,z) => { const m = new THREE.Mesh(
-      new THREE.CylinderGeometry(rt,rb,h,seg), material);
-    m.rotation.x = Math.PI/2; m.position.z = z; g.add(m); return m; };
-  cyl(.0058,.0063,.0016, 24, mat(0x24272c,.85,.38), .0008);          // embase
-  for (let i=0;i<4;i++){                                              // 4 bossages M2
-    const a = i/4*Math.PI*2 + Math.PI/4;
-    const b = new THREE.Mesh(new THREE.CylinderGeometry(.0016,.0016,.0016,10),
-      mat(0x24272c,.85,.38));
-    b.rotation.x = Math.PI/2;
-    b.position.set(Math.cos(a)*.0064, Math.sin(a)*.0064, .0008); g.add(b);
-  }
-  cyl(.0068,.0068,.0044, 24, mat(0x8a6a2f,.65,.52), .0038);           // stator bobiné
-  cyl(.0079,.0074,.0074, 30, mat(0x3d4249,.92,.24), .0097);           // cloche
-  for (let i=0;i<9;i++){                                              // ouïes de cloche
-    const a = i/9*Math.PI*2;
-    const v = new THREE.Mesh(new THREE.BoxGeometry(.0013,.0034,.0022), mat(0x101318,.3,.7));
-    v.position.set(Math.cos(a)*.0074, Math.sin(a)*.0074, .0104);
-    v.rotation.z = a; g.add(v);
-  }
-  cyl(.0079,.0079,.0011, 30, mat(0x3d4249,.92,.24), .0139);           // chapeau
-  cyl(.0026,.0026,.0026,  6, mat(0xc9a227,.95,.2),  .0158);           // écrou d'hélice
-  cyl(.0008,.0008,.0040, 12, mat(0xd6d9de,.95,.16), .0165);           // axe
-  return g;
-}
+/* Moteurs XING2 1404 — le STEP du constructeur, converti par prep_vendor.py.
+   Le fichier a l'arbre sur +Z, le plan de pose à z = −4,25 et la sortie de fils
+   vers −Y. On plaque donc ce plan sur la face haute du bras (z = 5,5) et on
+   fait tourner le moteur pour que les fils partent vers le centre du drone :
+   une rotation de (angle du bras − 90°) amène le −Y du fichier sur l'axe du
+   bras, pointe rentrante. */
+const MOTOR_BASE = -4.25;                        // plan de pose dans le fichier
+const MOTOR_Z = M.z.arm + M.z.arm_t - MOTOR_BASE;  // -> le plan tombe sur le bras
+const MOTOR_BELL = 9.54;                         // haut de cloche dans le fichier
 const gMotors = group('motors');
-for (const [sx,sy] of [[1,1],[-1,1],[-1,-1],[1,-1]]){
-  const m = motor(); m.position.set(sx*M.mx/1000, sy*M.my/1000, (M.z.arm+3)/1000);
+for (const [i,[sx,sy]] of [[1,1],[-1,1],[-1,-1],[1,-1]].entries()){
+  const m = mesh(STLB64.motor, 0x2b2f36, .72, .34);
+  m.rotation.z = ARM_DIR[i] - Math.PI/2;
+  m.position.set(sx*M.mx/1000, sy*M.my/1000, MOTOR_Z/1000);
   gMotors.add(m);
 }
+
 /* hélices 3" : le STL 2,5" du TinyHoop remis à l'échelle */
 const gProps = group('props');
 const PROP_SCALE = M.prop_d/63.6;   // le STL est un 2,5\" de 63,6 mm
@@ -480,7 +551,8 @@ for (const [i,[sx,sy]] of [[1,1],[-1,1],[-1,-1],[1,-1]].entries()){
   const m = mesh(STLB64.prop, 0xd8721e, .05, .35, {opacity:.55});
   m.scale.setScalar(.001*PROP_SCALE);
   if (i%2) m.scale.y *= -1;                        // CW / CCW
-  m.position.set(sx*M.mx/1000, sy*M.my/1000, (M.z.arm+18.5)/1000);   // sur le chapeau
+  // posée sur le haut de cloche, mesuré dans le STEP (z = 9,54 du fichier)
+  m.position.set(sx*M.mx/1000, sy*M.my/1000, (MOTOR_Z + MOTOR_BELL + .3)/1000);
   gProps.add(m);
 }
 
@@ -494,14 +566,6 @@ const ELEC = {};
 { // ── variante STOCK : RedFox A3 45A AIO + DJI O4 Pro
   const g = new THREE.Group();
   const fc = pcb(30,30,3.2, 0x0f1a2e); fc.position.set(0,M.stack_y/1000,(M.z.mid+5)/1000); g.add(fc);
-  const air = pcb(30,24,7.5, 0x11532e); air.position.set(0,(M.stack_y+16)/1000,(M.z.mid+13)/1000); g.add(air);
-  const cam = pcb(M.cage.w,20,M.cage.h, 0x1c1f24);
-  cam.position.set(0, (M.cage.y-6)/1000, (M.z.deck+11)/1000);
-  cam.rotation.x = -M.cage.tilt*D; g.add(cam);
-  const lens = new THREE.Mesh(new THREE.CylinderGeometry(.0058,.0062,.008,24),
-    new THREE.MeshStandardMaterial({color:0x0a0b0d, metalness:.5, roughness:.18}));
-  lens.rotation.x = Math.PI/2 - M.cage.tilt*D;
-  lens.position.set(0, (M.cage.y+3)/1000, (M.z.deck+14)/1000); g.add(lens);
   const rx = mesh(STLB64.rxpcb, 0x0f3d0f, .2, .5);
   rx.position.set(0,-30/1000,(M.z.mid+3)/1000); g.add(rx);
   ELEC.stock = g; gElec.add(g);
@@ -511,10 +575,6 @@ const ELEC = {};
   const fc = mesh(STLB64.board, 0x0b6b39, .15, .5);
   fc.position.set(0,M.stack_y/1000,(M.z.mid+4)/1000); g.add(fc);
   const lora = pcb(16,24,3.2, 0x14161b); lora.position.set(0,14/1000,(M.z.mid+11)/1000); g.add(lora);
-  const air = pcb(30,24,7.5, 0x11532e); air.position.set(0,(M.stack_y+16)/1000,(M.z.mid+18)/1000); g.add(air);
-  const cam = pcb(M.cage.w,20,M.cage.h, 0x1c1f24);
-  cam.position.set(0, (M.cage.y-6)/1000, (M.z.deck+11)/1000);
-  cam.rotation.x = -M.cage.tilt*D; g.add(cam);
   const gpsm = mesh(STLB64.gpsmount, TPU, .1, .84);
   gpsm.position.set(0, 30/1000, M.z.deck/1000); g.add(gpsm);
   const gps = mesh(STLB64.gps, 0x0a0c10, .2, .5);
@@ -523,30 +583,124 @@ const ELEC = {};
   rx.position.set(0,-30/1000,(M.z.mid+3)/1000); g.add(rx);
   ELEC.stratos = g; g.visible = false; gElec.add(g);
 }
+/* ─────────────────────────────── DJI O4 Pro — les STEP du constructeur
+   Trois pièces converties par `../cad/prep_vendor.py`, avec leur repère propre :
+
+     · `dji_air_unit` — 33,4 carré × 13,0, centré en X/Y, posé sur z = 0.
+       Le connecteur de nappe sort en −Y et l'USB-C en −X.
+     · `dji_camera`   — l'ORIGINE EST L'AXE DE BASCULE : les deux tourillons
+       Ø 2,1 sont en (x = 0 ; y = ±10 ; z = 0). L'objectif regarde vers −X.
+     · `dji_antenna`  — fourreau Ø 3,5, axe +Z, démarrant à z = 0.
+
+   Deux rotations amènent la caméra dans le drone : −90° sur Z met l'objectif
+   vers l'avant (+Y) et l'axe de bascule sur X ; puis CAM_TILT sur X la cabre.
+   Dans l'ordre XYZ de Three.js, `rotation.set(tilt, 0, −90°)` fait exactement
+   ça. La caméra est alors posée sur l'axe percé dans les joues (0 ; 55 ; 18). */
+const AIR_Z = M.z.mid + 8;                         // au-dessus du stack de vol
+
+const gO4air = group('o4air');
+{ const m = mesh(STLB64.o4air, 0x1a1d22, .35, .42);
+  m.rotation.z = Math.PI;                          // nappe vers l'avant, USB-C à droite
+  m.position.set(0, M.stack_y/1000, AIR_Z/1000);
+  gO4air.add(m); }
+
+/* Groupe réglable dont le pivot EST l'axe de bascule : le curseur RX du panneau
+   « Réglages » règle donc directement l'inclinaison de la caméra. */
+const gO4cam = adjGroup('o4cam', 0, M.cage.y, M.cage.z);
+{ const m = mesh(STLB64.o4cam, 0x1c1f24, .3, .45);
+  m.rotation.set(M.cage.tilt*D, 0, -Math.PI/2);
+  addAt(gO4cam, m, 0, M.cage.y, M.cage.z);
+  /* Nappe caméra : le STEP la donne droite sur 148 mm, ce qui n'a aucun sens
+     une fois montée. On la retrace pliée, de l'arrière de la caméra jusqu'au
+     connecteur de l'air unit. Points en millimètres du drone. */
+  const P = [[0, M.cage.y - 11.0, M.cage.z - 6.4],
+             [0, M.cage.y - 19,   M.cage.z - 6.0],
+             [0, 28,              AIR_Z + 2.0],
+             [1.5, 15,            AIR_Z + 1.5]];
+  const Q = gO4cam.userData.pivot;
+  const rib = new THREE.Mesh(
+    new THREE.TubeGeometry(new THREE.CatmullRomCurve3(
+      P.map(([x,y,z]) => new THREE.Vector3((x-Q[0])/1000, (y-Q[1])/1000, (z-Q[2])/1000))),
+      24, .0016, 5),
+    new THREE.MeshStandardMaterial({color:0x8a5a2b, metalness:.15, roughness:.6}));
+  rib.scale.z = .55;                               // une nappe est plate
+  gO4cam.add(rib); }
+
 const gCap = group('cap');
 { const c = mesh(STLB64.cap, 0x1b3a8f, .25, .45);
   c.rotation.y = Math.PI/2; c.position.set(0,-26/1000,(M.z.deck+M.z.deck-M.z.mid+3.5)/1000); gCap.add(c); }
 
 /* antennes */
-const gAnt = group('antennes');
-{ /* Le drone monté porte DEUX antennes DJI, sortant à l'HORIZONTALE de chaque
-     côté du corps et balayées vers l'arrière — pas une seule antenne dressée
-     à la verticale derrière. (Relevé sur la photo du drone assemblé.) */
-  for (const sx of [1, -1]){
-    const g = new THREE.Group();
-    const m = mesh(STLB64.vtxant, 0x0f1114, .2, .5);
-    m.rotation.y = Math.PI/2;                      // l'axe du fourreau part vers +X
-    m.scale.setScalar(.001 * .62);                 // ~32 mm de fourreau apparent
-    g.add(m);
-    g.rotation.z = (sx > 0 ? -22 : 180 + 22) * D;  // vers l'extérieur, balayées de 22°
-    g.position.set(sx*24/1000, -16/1000, (M.z.deck + 5)/1000);   // sortent au ras du flanc,
-                                                   // sous le disque des hélices
-    gAnt.add(g);
+/* Antennes VTX — ENFILÉES DANS LES ALÉSAGES du support de queue, et rattachées
+   à lui : régler le support emmène les antennes avec, elles ne peuvent plus en
+   sortir. Le STL DJI est un fourreau Ø 3,5 sur les 32 mm du haut et un corps de
+   connecteur en bas ; on le recule de la profondeur du perçage pour que le
+   fourreau remplisse l'alésage et que le connecteur reste **dans** le châssis,
+   côté air unit — c'est le sens du câble sur le vrai drone.
+   Le groupe reste réglable : ses curseurs font varier l'enfoncement. */
+/* UNE ANTENNE PAR GROUPE. Sur les photos du drone monté les deux fourreaux
+   s'écartent en V, alors que les deux alésages du STL Sub250 sont parallèles
+   (mesuré : écart d'axe < 5° sur 17,3 mm). Les deux ne peuvent pas être vrais
+   en même temps : soit le montage cintre les antennes, soit ma lecture de la
+   pièce est fausse. Plutôt que de trancher à ta place, chaque fourreau est un
+   groupe séparé — réglable et déplaçable à la souris, donc écartable en V. */
+const gAntV = {};
+for (const [nom, sy] of [['ant_vtx_g', 1], ['ant_vtx_d', -1]]){
+  const g = adjGroup(nom, 0, 0, 0);
+  gTail.add(g);                                    // repère local du support
+  gAntV[nom] = g;
+  /* Le fourreau du STEP DJI, Ø 3,5 sur 85 mm, axe +Z : il tombe pile dans
+     l'axe de l'alésage, aucune rotation à faire. Le connecteur MMCX a été
+     coupé à la conversion — il est sur l'air unit, à l'autre bout du coaxial. */
+  addAt(g, mesh(STLB64.o4ant, 0x0f1114, .2, .5),
+        TAIL_BORE.x, sy*TAIL_BORE.y, TAIL_BORE.z0);
+
+  /* Coaxial : de l'air unit à l'entrée de l'alésage. La courbe se décrit en
+     millimètres du DRONE, puis se convertit dans le repère du support — sinon
+     régler le support la déformerait. On n'écrit plus l'inverse à la main :
+     `worldToLocal` le fait à partir de la matrice réelle du groupe. */
+  gTail.updateMatrixWorld(true);
+  const toTail = (x, y, z) => gTail.worldToLocal(
+    new THREE.Vector3(x/1000, y/1000, (z + M.ground)/1000));
+  const co = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3([
+      // le coaxial sort de l'air unit, longe l'intérieur du flanc vers
+      // l'arrière, contourne le bord du roof par l'extérieur puis remonte à
+      // l'entrée de l'alésage : le roof n'a pas de passage à cet endroit
+      toTail(sy*11, -17, AIR_Z + 3),     // au ras de la face arrière de l'air unit
+      toTail(sy*16, -36, AIR_Z + 4),
+      toTail(sy*17, -58, M.z.total + 1),
+      toTail(sy*15, -56, M.z.total + 9),
+      // dernier point : l'entrée de l'alésage, exprimée directement dans le
+      // repère du support — c'est une cote relevée, pas une approximation
+      new THREE.Vector3(TAIL_BORE.x/1000, sy*TAIL_BORE.y/1000, 0),
+    ]), 22, .00085, 6),
+    new THREE.MeshStandardMaterial({color:0x101216, metalness:.2, roughness:.55}));
+  g.add(co);
+}
+/* Antennes RX — COUCHÉES dans les gorges de la platine Sub250. Construites en
+   primitives plutôt que reprises du STL TinyHoop : celui-ci a 30 mm de coaxial
+   entre le brin et le connecteur, ce qui envoyait le câble sous la batterie.
+   Ici : le brin de 26 mm dans sa gorge, et un bout de coaxial qui part vers
+   l'avant au ras de la platine — c'est tout ce qu'on voit sur le vrai drone. */
+const RXP_TOP = RXP_Z + 5.9;                      // face haute de la platine
+const gAntR = adjGroup('ant_rx', 0, RXP_Y, RXP_TOP);
+{ const matR = new THREE.MeshStandardMaterial({color:0x141414, metalness:.25, roughness:.5});
+  for (const [dy, sx] of [[4, 1], [-4, -1]]){
+    const el = new THREE.Mesh(new THREE.CylinderGeometry(.0016, .0016, .026, 12), matR);
+    el.rotation.z = Math.PI/2;                     // le brin suit X
+    addAt(gAntR, el, 0, RXP_Y + dy, RXP_TOP + 1.6);
+    // la courbe est décrite en millimètres du drone puis ramenée dans le repère
+    // du groupe (pivot 0 ; −52 ; RXP_TOP) — sinon les curseurs la décaleraient deux fois
+    const P = gAntR.userData.pivot;
+    const at = (x, y, z) => new THREE.Vector3((x-P[0])/1000, (y-P[1])/1000, (z-P[2])/1000);
+    const co = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3([
+        at(sx*13, RXP_Y + dy,      RXP_TOP + 1.6),
+        at(sx*13, RXP_Y + 7 + dy,  RXP_TOP + 1.2),
+        at(sx*11, RXP_Y + 8 + dy,  RXP_TOP - 1.0),   // s'arrête avant l'entretoise
+      ]), 14, .0011, 6), matR);
+    gAntR.add(co);
   }
-  /* Antennes RX : à plat sous leur platine Sub250, sur le roof. */
-  const r = mesh(STLB64.rxant, 0x141414, .25, .5);
-  r.position.set(0, -52/1000, (M.z.total+8)/1000);
-  gAnt.add(r); }
+}
 
 /* batterie 4S 660 mAh + faisceau XT30 */
 const gBatt = group('battery');
@@ -594,13 +748,16 @@ const gWires = group('cables');
 
 /* visserie */
 const gScrews = group('screws');
+/* Vis moteur : elles montent **par-dessous**, tête sous le bras, filet dans
+   l'embase du moteur — le STL a la tête en haut, d'où le demi-tour sur X. */
 for (const [sx,sy] of [[1,1],[-1,1],[-1,-1],[1,-1]]){
   for (const [hx,hy] of [[4.5,4.5],[-4.5,4.5],[-4.5,-4.5],[4.5,-4.5]]){
     const a = Math.atan2(sy*M.my, sx*M.mx);
     const x = sx*M.mx + hx*Math.cos(a) - hy*Math.sin(a);
     const y = sy*M.my + hx*Math.sin(a) + hy*Math.cos(a);
     const s = mesh(STLB64.screw, 0xd6d9de, .9, .25);
-    s.position.set(x/1000, y/1000, (M.z.arm+3.2)/1000); gScrews.add(s);
+    s.rotation.x = Math.PI;
+    s.position.set(x/1000, y/1000, M.z.arm/1000); gScrews.add(s);
   }
 }
 for (const [x,y] of M.standoffs.top.concat(M.standoffs.cam)){
@@ -624,16 +781,18 @@ const PARTS = [
    "20 mm posées sur le pont : le roof arrive pile à 32,5 mm, la hauteur du flanc Sub250."],
   ['top',        'Roof',                '×1 · carbone 2,0', 'Carbone', 0x1a1d21,
    "Plaque haute, fentes de sangle et découpe XT30 pour que le fil descende droit."],
-  ['motors',     'Moteurs 1404',        '×4 · 4500 KV',     'Motorisation', 0x3a3f47,
-   "Vissés par-dessous en M2. Vérifier qu'aucune vis ne touche le bobinage."],
+  ['motors',     'Moteurs XING2 1404',  '×4 · 4500 KV',     'Motorisation', 0x2b2f36,
+   "Le STEP constructeur, tel quel : Ø 19,9 × 18,6 mm, plan de pose à z = −4,25, entraxe M2 9×9. Vissés par-dessous, fils vers le centre. Vérifier qu'aucune vis ne touche le bobinage."],
   ['props',      'Hélices 3″',     '×4 · 76 mm',       'Motorisation', 0xd8721e,
    "Deux CW, deux CCW. Dégagement avant/arrière : 6,7 mm seulement — à monter droit."],
-  ['elec',       'Électronique',        'stack + caméra',   'Électronique', 0x11532e,
-   "Stock : RedFox A3 45A AIO + DJI O4 Pro. Stratos : carte TINYHOOP AIO + LoRa 868 + GPS."],
+  ['o4cam',      'Caméra DJI O4 Pro',   '×1 · STEP DJI',    'Électronique', 0x1c1f24,
+   "Le fichier constructeur, tel quel. Ses deux tourillons Ø 2,1 mm (y = ±10) basculent directement entre les joues carbone : 23,8 mm de large pour 24,7 d'écart. Le curseur RX du panneau « Réglages » change son inclinaison."],
+  ['o4air',      'Air unit DJI O4 Pro', '×1 · STEP DJI',    'Électronique', 0x1a1d22,
+   "Le fichier constructeur, tel quel. 33,5 mm de côté, 13,1 de haut, fixation 25,5 × 25,5 — exactement le perçage VTX du châssis. Nappe vers l'avant, USB-C sur le côté."],
+  ['elec',       'Électronique',        'stack + RX',       'Électronique', 0x11532e,
+   "Stock : RedFox A3 45A AIO. Stratos : carte TINYHOOP AIO + LoRa 868 + GPS. La caméra et l'air unit O4 Pro sont des composants à part, communs aux deux variantes."],
   ['cap',        'Condensateur',        '×1 · 35 V',        'Électronique', 0x1b3a8f,
    "Couché contre la médiane, jamais debout : il ne dépasse pas du châssis."],
-  ['cradle',     'Berceau caméra',      '×2 · TPU',         'Imprimé', 0x24272d,
-   "Deux coquilles qui enserrent la caméra à 30°. Pièce Stratos — absente du kit Sub250."],
   ['guards',     'Protège-bras',        '×4 · TPU',         'Imprimé', 0x24272d,
    "Clip sur le bras avec un canal pour les 3 fils de phase : les hélices ne peuvent plus les trancher."],
   ['battpad',    'Patin de batterie',   '×1 · TPU',         'Imprimé', 0x24272d,
@@ -654,8 +813,12 @@ const PARTS = [
    "Pièce d'origine Sub250 : deux passages d'antenne à l'arrière."],
   ['gpsmount_x', 'Platine GPS',         '×1 · PLA',         'Imprimé', 0x24272d,
    "Uniquement sur la variante Stratos : surélève le GPS pour l'éloigner du VTX."],
-  ['antennes',   'Antennes',            'VTX + RX',         'Électronique', 0x0f1114,
-   "Deux antennes DJI horizontales, une de chaque côté, balayées de 32° vers l'arrière — comme sur le drone monté. Antennes RX à plat sous leur platine Sub250."],
+  ['ant_vtx_g',  'Antenne VTX gauche',  '×1 · DJI',         'Électronique', 0x0f1114,
+   "Fourreau DJI enfilé dans l'alésage Ø 3 mm gauche du support de queue — cote relevée dans le STL Sub250. Rattachée au support : le régler l'emmène avec. Groupe séparé pour pouvoir l'écarter en V."],
+  ['ant_vtx_d',  'Antenne VTX droite',  '×1 · DJI',         'Électronique', 0x0f1114,
+   "Idem à droite, dans son propre groupe : les deux antennes se règlent indépendamment."],
+  ['ant_rx',     'Antennes RX',         'ELRS',             'Électronique', 0x141414,
+   "Antennes du récepteur, à plat sur leur platine Sub250. Réglables elles aussi."],
   ['battery',    'Batterie 4S',         '660-720 mAh',      'Électronique', 0x14161b,
    "XT30, sanglée sur le roof. Le fil descend par la découpe, avec du mou."],
   ['cables',     'Câbles moteur',       '3 × 4 phases',     'Électronique', 0xc0392b,
@@ -704,6 +867,7 @@ function select(k){
   hud('<b>' + p[1] + '</b> · ' + p[2] + '<br>' + p[5]);
 }
 renderer.domElement.addEventListener('pointerdown', e => {
+  if (typeof dragging !== 'undefined' && dragging) return;   // le glissé s'en charge
   const r = renderer.domElement.getBoundingClientRect();
   const ndc = new THREE.Vector2(((e.clientX-r.left)/r.width)*2-1,
                                 -((e.clientY-r.top)/r.height)*2+1);
@@ -712,13 +876,13 @@ renderer.domElement.addEventListener('pointerdown', e => {
   if (!hit){ select(null); return; }
   let o = hit.object, k = null;
   while (o && o !== frameRoot){ const f = Object.keys(G).find(n => G[n] === o); if (f){ k = f; break; } o = o.parent; }
-  if (k) select(k);
+  if (k){ select(k); if (typeof ADJUST !== 'undefined') ADJUST.pick(k); }
 });
 const hudEl = document.getElementById('hud');
 function hud(html){ hudEl.innerHTML = html || defaultHud(); }
 function defaultHud(){
   return BUILD ? 'Clic = surligner · double-clic dans la liste = emboîter'
-               : 'Entraxe 150 mm · 3″ · hauteur 32,5 mm';
+               : 'Entraxe 150 mm · 3″ · hauteur 32,5 mm — attrape une pièce pour la déplacer';
 }
 hud('');
 
@@ -739,14 +903,41 @@ setElec('stock');
 /* ─────────────────────────────── vue éclatée */
 const EXPLODE = {
   bottom:[0,0,0], arms:[0,0,-14], mid:[0,0,26], deck:[0,0,38], top:[0,0,74],
-  standoffs:[0,0,50], cage:[0,0,58], cradle:[0,0,66], motors:[0,0,-28],
+  standoffs:[0,0,50], cage:[0,0,58], o4cam:[0,0,66], o4air:[0,0,30], motors:[0,0,-28],
   props:[0,0,96], elec:[0,0,18], cap:[0,0,10], guards:[0,0,-40],
   battpad:[0,0,88], grommet:[0,0,82], bumper:[0,0,-20],
   flanc_g:[-30,0,-8], flanc_d:[30,0,-8],
-  feet:[0,0,-46], rxplate:[0,0,92], tailmount:[0,0,30], antennes:[0,0,100],
+  feet:[0,0,-46], rxplate:[0,0,92], tailmount:[0,0,30],
   battery:[0,0,112], screws:[0,0,60], cables:[0,0,-34],
+  // ant_vtx est un enfant du support de queue : son décalage est donné dans le
+  // repère du support, donc +Z le sort des alésages au lieu de le monter.
+  ant_vtx_g:[0,0,40], ant_vtx_d:[0,0,40], ant_rx:[0,0,104],
 };
-Object.keys(G).forEach(k => { G[k].userData.home = G[k].position.clone(); });
+/* TOUTES les pièces deviennent réglables, pas seulement les six d'avant.
+   Pour celles dont l'origine était au centre du drone, on la ramène d'abord sur
+   le centre de la pièce : sans ça une rotation la promènerait autour du châssis
+   au lieu de la faire pivoter sur place. Les enfants sont décalés d'autant, donc
+   rien ne bouge à l'écran. */
+{ const box = new THREE.Box3(), c = new THREE.Vector3();
+  for (const k in G){
+    const g = G[k];
+    if (g.userData.pivot) continue;                // déjà posé par adjGroup
+    box.setFromObject(g, true);
+    if (!isFinite(box.min.x)){ g.userData.pivot = [0,0,0]; continue; }
+    box.getCenter(c);
+    const local = g.parent.worldToLocal(c.clone());
+    g.children.forEach(ch => ch.position.sub(local));
+    g.position.add(local);
+    g.userData.pivot = [c.x*1000, c.y*1000, c.z*1000];
+  }
+  for (const k in G){
+    const g = G[k];
+    g.userData.base = g.position.clone();
+    g.userData.baseRot = g.rotation.clone();
+    g.userData.adj = {x:0, y:0, z:0, rx:0, ry:0, rz:0};
+    g.userData.home = g.position.clone();
+  }
+}
 const expSlider = document.getElementById('explode');
 expSlider.oninput = () => {
   const t = expSlider.value/100;
@@ -756,6 +947,151 @@ expSlider.oninput = () => {
     G[k].position.set(h.x + e[0]*t/1000, h.y + e[1]*t/1000, h.z + e[2]*t/1000);
   }
 };
+
+/* ─────────────────────────────── réglages fins (position / rotation)
+   TOUTES les pièces sont réglables. L'origine de chaque groupe est posée sur la
+   pièce elle-même, donc les curseurs de rotation la font pivoter sur place.
+   Le bloc de valeurs en bas est sélectionnable et copiable : c'est ce qu'on
+   recopie dans ce générateur une fois le bon calage trouvé, au lieu de deviner
+   une orientation à l'aveugle. */
+const ADJ_KEYS = PARTS.map(p => p[0]).filter(k => G[k]);
+const ADJ_AX = [['x','X',-90,90,.5,'mm'], ['y','Y',-90,90,.5,'mm'], ['z','Z',-60,90,.5,'mm'],
+                ['rx','RX',-180,180,1,'°'], ['ry','RY',-180,180,1,'°'], ['rz','RZ',-180,180,1,'°']];
+const ADJUST = (function(){
+  const sel = document.getElementById('adjSel');
+  const rows = document.getElementById('adjRows');
+  const out = document.getElementById('adjOut');
+  const inp = {}, lab = {};
+
+  for (const k of ADJ_KEYS){
+    const o = document.createElement('option');
+    o.value = k; o.textContent = PART[k] ? PART[k][1] : k;
+    sel.appendChild(o);
+  }
+  for (const [key, nm, lo, hi, step] of ADJ_AX){
+    const row = document.createElement('div'); row.className = 'adjrow';
+    const s = document.createElement('span'); s.textContent = nm;
+    const r = document.createElement('input');
+    r.type = 'range'; r.min = lo; r.max = hi; r.step = step; r.value = 0;
+    const b = document.createElement('b'); b.textContent = '0';
+    row.append(s, r, b); rows.appendChild(row);
+    inp[key] = r; lab[key] = b;
+    r.oninput = () => { const a = G[sel.value].userData.adj;
+      for (const [q] of ADJ_AX) a[q] = +inp[q].value;
+      applyTo(sel.value); load(); readout(); };
+  }
+
+  /* Écrit la transformation d'une pièce à partir de son objet `adj`. */
+  function applyTo(k){
+    const g = G[k], a = g.userData.adj, base = g.userData.base, br = g.userData.baseRot;
+    g.position.set(base.x + a.x/1000, base.y + a.y/1000, base.z + a.z/1000);
+    g.rotation.set(br.x + a.rx*D, br.y + a.ry*D, br.z + a.rz*D);
+    g.userData.home = g.position.clone();   // l'éclatée repart de la nouvelle place
+  }
+  function load(){
+    const a = G[sel.value].userData.adj;
+    for (const [key,,,,, unit] of ADJ_AX){
+      inp[key].value = a[key];
+      lab[key].textContent = (Math.round(a[key]*10)/10) + (unit === 'mm' ? '' : '°');
+    }
+  }
+  function readout(){
+    const r1 = v => Math.round(v*10)/10;
+    const lines = ADJ_KEYS
+      .filter(k => ADJ_AX.some(([q]) => G[k].userData.adj[q]))
+      .map(k => { const a = G[k].userData.adj;
+        return k + ' : xyz ' + r1(a.x) + ' ' + r1(a.y) + ' ' + r1(a.z) +
+               ' mm · rot ' + r1(a.rx) + ' ' + r1(a.ry) + ' ' + r1(a.rz) + '°'; });
+    out.textContent = lines.length ? lines.join('\n')
+      : "Rien de réglé. Attrape une pièce à la souris ou bouge un curseur, puis « Copier les valeurs » — c'est cette ligne-là qui sert à figer la position dans le code.";
+  }
+  function pick(k){                       // appelé quand on clique une pièce
+    if (!G[k] || sel.value === k) return;
+    sel.value = k; load();
+  }
+  sel.onchange = load;
+  document.getElementById('adjReset').onclick = () => {
+    const a = G[sel.value].userData.adj;
+    for (const [key] of ADJ_AX) a[key] = 0;
+    applyTo(sel.value); load(); readout();
+  };
+  document.getElementById('adjResetAll').onclick = () => {
+    for (const k of ADJ_KEYS){ const a = G[k].userData.adj;
+      for (const [key] of ADJ_AX) a[key] = 0; applyTo(k); }
+    load(); readout();
+  };
+  document.getElementById('adjCopy').onclick = e => {
+    const txt = out.textContent;
+    const done = () => { e.target.textContent = 'Copié ✓';
+      setTimeout(() => e.target.textContent = 'Copier les valeurs', 1400); };
+    if (navigator.clipboard) navigator.clipboard.writeText(txt).then(done, () => {});
+    const r = document.createRange(); r.selectNodeContents(out);
+    const s = getSelection(); s.removeAllRanges(); s.addRange(r);
+  };
+  sel.value = ADJ_KEYS[0]; load(); readout();
+  return { pick, load, readout, applyTo, get target(){ return sel.value; } };
+})();
+
+/* ─────────────────────────────── déplacement à la souris
+   Attraper une pièce et la faire glisser. Le déplacement se fait dans le PLAN
+   DE L'ÉCRAN passant par la pièce : c'est le seul qui reste intuitif quel que
+   soit l'angle de la caméra. `Maj` enfoncé, seule la hauteur est retenue.
+   L'orbite est coupée pendant le glissé et rendue au relâchement ; un clic dans
+   le vide continue de faire tourner la scène. */
+let dragMode = true, dragging = null;
+const dragPlane = new THREE.Plane(), dragHit = new THREE.Vector3(),
+      dragRay = new THREE.Raycaster(), dragStart = new THREE.Vector3();
+function ndcOf(e){
+  const r = renderer.domElement.getBoundingClientRect();
+  return new THREE.Vector2(((e.clientX-r.left)/r.width)*2-1,
+                           -((e.clientY-r.top)/r.height)*2+1);
+}
+renderer.domElement.addEventListener('pointerdown', e => {
+  if (!dragMode || BUILD || e.button !== 0) return;
+  dragRay.setFromCamera(ndcOf(e), camera);
+  const hit = dragRay.intersectObject(frameRoot, true)[0];
+  if (!hit) return;
+  let o = hit.object, k = null;
+  while (o && o !== frameRoot){ const f = Object.keys(G).find(n => G[n] === o); if (f){ k = f; break; } o = o.parent; }
+  if (!k) return;
+  const g = G[k];
+  // plan face à la caméra, passant par le point touché
+  dragPlane.setFromNormalAndCoplanarPoint(
+    camera.getWorldDirection(new THREE.Vector3()).negate(), hit.point);
+  dragStart.copy(hit.point);
+  const a = g.userData.adj;
+  dragging = { k, g, from: {x:a.x, y:a.y, z:a.z} };
+  controls.enabled = false;
+  select(k); ADJUST.pick(k);
+  renderer.domElement.setPointerCapture(e.pointerId);
+  hud('<b>' + (PART[k] ? PART[k][1] : k) + '</b> — glisse pour déplacer · ' +
+      '<b>Maj</b> = hauteur seule · relâche pour poser');
+});
+renderer.domElement.addEventListener('pointermove', e => {
+  if (!dragging) return;
+  dragRay.setFromCamera(ndcOf(e), camera);
+  if (!dragRay.ray.intersectPlane(dragPlane, dragHit)) return;
+  const d = dragHit.clone().sub(dragStart).multiplyScalar(1000);   // m -> mm
+  // la pièce peut vivre dans un repère tourné (les antennes sont dans celui de
+  // l'étrier) : on convertit le déplacement monde en déplacement local
+  const par = dragging.g.parent;
+  const dl = par.worldToLocal(dragHit.clone()).sub(par.worldToLocal(dragStart.clone()))
+              .multiplyScalar(1000);
+  const a = dragging.g.userData.adj, f = dragging.from;
+  if (e.shiftKey){ a.z = f.z + d.z; }
+  else { a.x = f.x + dl.x; a.y = f.y + dl.y; a.z = f.z + dl.z; }
+  ADJUST.applyTo(dragging.k); ADJUST.load(); ADJUST.readout();
+});
+function endDrag(e){
+  if (!dragging) return;
+  dragging = null; controls.enabled = true; hud('');
+  try { renderer.domElement.releasePointerCapture(e.pointerId); } catch(_){}
+}
+renderer.domElement.addEventListener('pointerup', endDrag);
+renderer.domElement.addEventListener('pointercancel', endDrag);
+{ const btn = document.getElementById('adjDrag');
+  btn.onclick = () => { dragMode = !dragMode;
+    btn.textContent = 'Déplacer à la souris : ' + (dragMode ? 'oui' : 'non'); }; }
 
 /* ─────────────────────────────── vues, fil de fer, thème, plein écran */
 function look(dx,dy,dz,d){
@@ -830,7 +1166,8 @@ const ASM = (function(){
         o.material = new THREE.MeshBasicMaterial({color:0x2f6fed, transparent:true,
           opacity:.085, depthWrite:false}); } });
       g.position.copy(G[k].userData.home); g.visible = true;
-      frameRoot.add(g); ghosts.push([k,g]);
+      // dans le repère du PARENT de la pièce — ant_vtx vit dans celui du support
+      (G[k].parent || frameRoot).add(g); ghosts.push([k,g]);
     }
   }
   function refreshGhosts(){
@@ -879,7 +1216,7 @@ function resize(){
 }
 addEventListener('resize', resize); resize();
 (function loop(){ requestAnimationFrame(loop); controls.update(); renderer.render(scene, camera); })();
-try { window.__ready = true; } catch(_){}
+try { window.__ready = true; window.__build = "__STAMP__"; } catch(_){}
 </script>
 </body>
 </html>
@@ -891,17 +1228,20 @@ def main():
             .replace("__IMPORTMAP__", importmap())
             .replace("__MODEL__", json.dumps(MODEL, separators=(",", ":")))
             .replace("__STLS__", json.dumps(stls(), separators=(",", ":")))
-            .replace("__SUB__", MODEL["sub"]))
+            .replace("__SUB__", MODEL["sub"])
+            .replace("__STAMP__", build_stamp()))
     with open(OUT, "w") as f:
         f.write(html.replace("__BUILD_DEFAULT__", "false"))
-    print("écrit %s  (%.1f Mo)" % (os.path.relpath(OUT, REPO), os.path.getsize(OUT)/1e6))
+    print("écrit %s  (%.1f Mo)  build %s"
+          % (os.path.relpath(OUT, REPO), os.path.getsize(OUT)/1e6, build_stamp()))
 
     bdir = os.path.join(OASIS, "build")
     os.makedirs(bdir, exist_ok=True)
     bout = os.path.join(bdir, "build.html")
     with open(bout, "w") as f:
         f.write(html.replace("__BUILD_DEFAULT__", "true"))
-    print("écrit %s  (%.1f Mo)" % (os.path.relpath(bout, REPO), os.path.getsize(bout)/1e6))
+    print("écrit %s  (%.1f Mo)  build %s"
+          % (os.path.relpath(bout, REPO), os.path.getsize(bout)/1e6, build_stamp()))
 
 
 if __name__ == "__main__":

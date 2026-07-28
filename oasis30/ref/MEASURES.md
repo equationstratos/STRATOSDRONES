@@ -115,7 +115,54 @@ justement là que se trouve la matière autour des vis de fixation. Le profil a
 été corrigé (demi-largeur 26 mm à y ≈ ±12). Marge la plus juste aujourd'hui :
 **2,3 mm**, et `export.py` échoue si elle repasse en négatif.
 
-## 7. Limites de méthode
+## 7. Ce que les STEP du commerce ont tranché
+
+Les fichiers de `vendor_step/` sont ceux des constructeurs. Lus dans gmsh, ils
+donnent des cotes **exactes** — pas des estimations — et plusieurs d'entre
+elles règlent des questions restées ouvertes :
+
+| Cote | Valeur lue | Ce qu'elle décide |
+|---|---|---|
+| Largeur caméra hors tourillons | **23,8 mm** | l'écart intérieur de cage (24,7) est bon : la caméra rentre **nue**, il n'y a pas de berceau |
+| Tourillons caméra | Ø 2,1 en (0 ; ±10 ; 0) | l'axe de bascule est bien un M2 percé dans les joues |
+| Profondeur caméra | 25,4 mm | basculée à 30°, son coin arrière-bas descend à z = 3 |
+| Air unit | 33,4 carré × 13,0 | tient dans les 43 mm de large du châssis |
+| Fixation air unit | **25,5 × 25,5** | recoupe le perçage VTX relevé sur la médiane |
+| Fourreau d'antenne | Ø 3,5 | les alésages du support de queue font Ø 3,0 : le TPU serre le fourreau, c'est bien lui qui passe dedans |
+
+**Une contradiction non résolue** : les deux alésages du support de queue sont
+**parallèles** dans le STL Sub250 — mesuré, écart d'axe < 5° sur 17,3 mm de
+profondeur — alors que sur les photos du drone monté les deux fourreaux
+s'écartent nettement en **V**. Soit le montage les cintre, soit ma lecture de la
+pièce est fausse. En attendant de trancher, chaque antenne est un groupe séparé,
+déplaçable à la souris : le V se fait à la main et les valeurs se recopient.
+| Moteur XING2 1404 | Ø 19,9 × 18,6 | plan de pose à z = −4,25, haut de cloche à z = 9,54 |
+| Haut de cloche | **z = 19,3** | plan de pose plaqué sur le bras (5,5) + 9,54 |
+| Hauteur d'hélice | **z = 19,6** | posée sur la cloche, rondelle comprise — j'avais estimé 21,0 |
+
+Les 148 mm de nappe droite du STEP caméra, le connecteur MMCX du STEP antenne
+et les 25 mm de fils droits du STEP moteur sont **retirés à la conversion** : dans le drone ils sont pliés, et
+`viz/gen_viewer.py` les retrace en courbe.
+
+Ce qui reste estimé, malgré ces fichiers : **la position** de l'air unit dans
+la baie (z = 13,5, au-dessus du stack de vol) et le tracé exact de la nappe et
+des coaxiaux. Les pièces sont justes, leur placement est déduit des photos.
+
+## 8. Le maillage web ne doit pas déformer la pièce
+
+Les STL Sub250 sont trop lourds pour une page autonome — 85 541 triangles pour
+le seul support d'antenne de queue. La première décimation collait les sommets
+sur une grille de 0,45 mm : elle escaliérait toutes les arêtes et transformait
+les **alésages Ø 3 mm en blobs octogonaux**. La pièce du visualisateur ne
+ressemblait plus à la pièce d'origine, alors que le STL, lui, était intact.
+
+Elle est remplacée par un regroupement dont le représentant est le
+**barycentre** de la cellule, pas le point de grille : à 0,35 mm, le support
+tombe à 6 183 triangles et reste visuellement indiscernable de l'original.
+La reconstruction de géométrie de gmsh (`classifySurfaces` + `createGeometry`),
+essayée d'abord, échoue sur ces maillages (boucles 1-D non fermées).
+
+## 9. Limites de méthode
 
 Une limite de méthode, pas une cote : le contrôle d'interférence du
 visualisateur compare des **boîtes englobantes alignées sur les axes**. Pour
