@@ -425,16 +425,14 @@ for (const [i,[sx,sy]] of [[1,1],[-1,1],[-1,-1],[1,-1]].entries()){
 const gRxPlate = group('rxplate');
 { const m = mesh(STLB64.rxplate, 0xd8dce2, .06, .7);
   m.position.set(0, -52/1000, M.z.total/1000); gRxPlate.add(m); }
-/* Étrier de queue Sub250. Dans son repère d'origine l'encoche qui enfourche les
-   plaques et l'axe des tubes d'antenne sont suivant +Z. Il faut donc l'amener à
-   ouvrir vers l'AVANT (+Y) pour qu'il vienne se prendre sur la queue du châssis,
-   l'antenne sortant alors vers l'arrière. Vu de côté (nez à droite), c'est une
-   rotation **anti-horaire**, soit un rotation.x croissant.
-   TAIL_RX est le seul chiffre à toucher pour l'ajuster. */
-const TAIL_Y = -67, TAIL_Z = M.z.mid + 1, TAIL_RX = -90;
+/* Étrier de queue Sub250 — calé sur la photo du drone monté (vue arrière) :
+   la pièce se présente DROITE, sa fenêtre rectangulaire vers l'arrière, et
+   descend sous la queue du châssis. Aucune rotation : ses 29,1 mm courent
+   d'avant en arrière, ses 16,3 mm en travers, ses 25,5 mm en hauteur.
+   TAIL_Y / TAIL_Z sont les deux seuls chiffres de calage. */
+const TAIL_Y = -58, TAIL_Z = M.z.bottom - 6;
 const gTail = group('tailmount');
 { const m = mesh(STLB64.tailmount, SUB250, .06, .78);
-  m.rotation.x = TAIL_RX*D;
   m.position.set(0, TAIL_Y/1000, TAIL_Z/1000);
   gTail.add(m); }
 
@@ -531,12 +529,20 @@ const gCap = group('cap');
 
 /* antennes */
 const gAnt = group('antennes');
-{ /* L'antenne VTX s'engage dans le tube HAUT de l'étrier de queue et sort vers
-     l'arrière, légèrement relevée — elle ne traverse plus le roof. */
-  const v = mesh(STLB64.vtxant, 0x0f1114, .2, .5);
-  v.rotation.x = 34*D;                             // engagée dans le tube, vers l'arrière ET vers le haut
-  v.position.set(0, (TAIL_Y - 5)/1000, (TAIL_Z + 15)/1000);
-  gAnt.add(v);
+{ /* Le drone monté porte DEUX antennes DJI, sortant à l'HORIZONTALE de chaque
+     côté du corps et balayées vers l'arrière — pas une seule antenne dressée
+     à la verticale derrière. (Relevé sur la photo du drone assemblé.) */
+  for (const sx of [1, -1]){
+    const g = new THREE.Group();
+    const m = mesh(STLB64.vtxant, 0x0f1114, .2, .5);
+    m.rotation.y = Math.PI/2;                      // l'axe du fourreau part vers +X
+    m.scale.setScalar(.001 * .62);                 // ~32 mm de fourreau apparent
+    g.add(m);
+    g.rotation.z = (sx > 0 ? -22 : 180 + 22) * D;  // vers l'extérieur, balayées de 22°
+    g.position.set(sx*24/1000, -16/1000, (M.z.deck + 5)/1000);   // sortent au ras du flanc,
+                                                   // sous le disque des hélices
+    gAnt.add(g);
+  }
   /* Antennes RX : à plat sous leur platine Sub250, sur le roof. */
   const r = mesh(STLB64.rxant, 0x141414, .25, .5);
   r.position.set(0, -52/1000, (M.z.total+8)/1000);
@@ -649,7 +655,7 @@ const PARTS = [
   ['gpsmount_x', 'Platine GPS',         '×1 · PLA',         'Imprimé', 0x24272d,
    "Uniquement sur la variante Stratos : surélève le GPS pour l'éloigner du VTX."],
   ['antennes',   'Antennes',            'VTX + RX',         'Électronique', 0x0f1114,
-   "Antenne VTX inclinée dans le support de queue, antennes RX à plat sous leur platine."],
+   "Deux antennes DJI horizontales, une de chaque côté, balayées de 32° vers l'arrière — comme sur le drone monté. Antennes RX à plat sous leur platine Sub250."],
   ['battery',    'Batterie 4S',         '660-720 mAh',      'Électronique', 0x14161b,
    "XT30, sanglée sur le roof. Le fil descend par la découpe, avec du mou."],
   ['cables',     'Câbles moteur',       '3 × 4 phases',     'Électronique', 0xc0392b,
