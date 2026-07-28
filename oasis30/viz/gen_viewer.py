@@ -19,8 +19,16 @@ d'assemblage) — rebranché sur le châssis **Sub250 OasisFly30** :
         -> oasis30/build/build.html           (simulateur d'assemblage)
 """
 import base64
+import datetime
 import json
 import os
+import subprocess
+
+# Numéro de révision de la page, à incrémenter à chaque changement visible.
+# Il s'affiche en clair dans le bandeau et dans l'onglet du navigateur : c'est le
+# seul moyen fiable de savoir, d'un coup d'œil, si la page ouverte est à jour ou
+# si le navigateur ressert une version en cache.
+REVISION = "r5"
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 OASIS = os.path.dirname(HERE)
@@ -52,6 +60,17 @@ MODEL = dict(
            ("Vidéo", "DJI O4 Pro"), ("Batterie", "4S 660-720 mAh XT30"),
            ("Hauteur", "32,5 mm"), ("Masse châssis", "~170 g sans batterie")],
 )
+
+
+def build_stamp():
+    """« r5 · 28/07 14:03 · cb1cdc2 » — révision, date de génération, commit."""
+    now = datetime.datetime.now().strftime("%d/%m %H:%M")
+    try:
+        sha = subprocess.check_output(["git", "-C", REPO, "rev-parse", "--short", "HEAD"],
+                                      stderr=subprocess.DEVNULL).decode().strip()
+    except Exception:
+        sha = "hors dépôt"
+    return "%s · %s · %s" % (REVISION, now, sha)
 
 
 def data_url(path):
@@ -102,11 +121,12 @@ def stls():
 
 
 TEMPLATE = r"""<!DOCTYPE html>
+<!-- OASIS 30 — page générée par oasis30/viz/gen_viewer.py — build __STAMP__ -->
 <html lang="fr">
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>OASIS 30 · 3D</title>
+<title>OASIS 30 · 3D · __STAMP__</title>
 <style>
   :root{--bg:#0b0e14;--panel:#12161d;--line:#262d38;--ink:#e6edf3;--mut:#8b949e;
         --acc:#2f6fed;--acc2:#63a4ff;--btn:#1b212b;--btnh:#262d38;--ok:#47d18a;}
@@ -123,6 +143,11 @@ TEMPLATE = r"""<!DOCTYPE html>
   header{padding:14px 16px;border-bottom:1px solid var(--line)}
   header h1{margin:0;font-size:15px;letter-spacing:.3px}
   header h1 b{color:var(--acc2)}
+  /* Étiquette de version : elle doit sauter aux yeux, c'est elle qui dit si la
+     page ouverte est bien celle qu'on vient de régénérer. */
+  header h1 #ver{float:right;font-size:10px;font-weight:700;letter-spacing:.4px;
+        background:var(--ok);color:#06210f;border-radius:5px;padding:2px 6px;
+        vertical-align:middle;font-variant-numeric:tabular-nums}
   header p{margin:3px 0 0;color:var(--mut);font-size:11px}
   .sec{padding:12px 16px;border-bottom:1px solid var(--line)}
   .sec h2{margin:0 0 9px;font-size:11px;text-transform:uppercase;letter-spacing:.6px;
@@ -180,7 +205,7 @@ TEMPLATE = r"""<!DOCTYPE html>
 <div id="app">
   <aside class="sidebar">
     <header>
-      <h1>OASIS <b>30</b></h1>
+      <h1>OASIS <b>30</b> <span id="ver">__STAMP__</span></h1>
       <p id="subtitle">__SUB__</p>
     </header>
 
@@ -1191,7 +1216,7 @@ function resize(){
 }
 addEventListener('resize', resize); resize();
 (function loop(){ requestAnimationFrame(loop); controls.update(); renderer.render(scene, camera); })();
-try { window.__ready = true; } catch(_){}
+try { window.__ready = true; window.__build = "__STAMP__"; } catch(_){}
 </script>
 </body>
 </html>
@@ -1203,17 +1228,20 @@ def main():
             .replace("__IMPORTMAP__", importmap())
             .replace("__MODEL__", json.dumps(MODEL, separators=(",", ":")))
             .replace("__STLS__", json.dumps(stls(), separators=(",", ":")))
-            .replace("__SUB__", MODEL["sub"]))
+            .replace("__SUB__", MODEL["sub"])
+            .replace("__STAMP__", build_stamp()))
     with open(OUT, "w") as f:
         f.write(html.replace("__BUILD_DEFAULT__", "false"))
-    print("écrit %s  (%.1f Mo)" % (os.path.relpath(OUT, REPO), os.path.getsize(OUT)/1e6))
+    print("écrit %s  (%.1f Mo)  build %s"
+          % (os.path.relpath(OUT, REPO), os.path.getsize(OUT)/1e6, build_stamp()))
 
     bdir = os.path.join(OASIS, "build")
     os.makedirs(bdir, exist_ok=True)
     bout = os.path.join(bdir, "build.html")
     with open(bout, "w") as f:
         f.write(html.replace("__BUILD_DEFAULT__", "true"))
-    print("écrit %s  (%.1f Mo)" % (os.path.relpath(bout, REPO), os.path.getsize(bout)/1e6))
+    print("écrit %s  (%.1f Mo)  build %s"
+          % (os.path.relpath(bout, REPO), os.path.getsize(bout)/1e6, build_stamp()))
 
 
 if __name__ == "__main__":

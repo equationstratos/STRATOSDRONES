@@ -93,6 +93,14 @@ sont plus au montage** : ils ne servent qu'à une caméra dépourvue de tourillo
 Même recette que les autres visualisateurs du dépôt — page **autonome**,
 Three.js embarqué, aucun fichier externe, ouvrable par double-clic.
 
+**Étiquette de version.** En haut à droite du bandeau, un badge vert du type
+`r5 · 28/07 12:27 · cb1cdc2` : numéro de révision, date de génération, et le
+commit présent au moment où la page a été produite. Le même texte est dans le
+titre de l'onglet, dans un commentaire à la première ligne du fichier, et dans
+`window.__build`. C'est le seul moyen sûr de savoir si la page ouverte est bien
+la dernière ou si le navigateur ressert une version en cache — le fichier fait
+7 Mo, il est mis en cache volontiers. En cas de doute : **Ctrl+Maj+R**.
+
 - **28 composants** affichables/masquables, chacun avec son sélecteur de couleur —
   flanc gauche et flanc droit y figurent séparément, la caméra et l'air unit O4
   Pro aussi, et **chaque antenne VTX a son propre groupe** pour pouvoir être
