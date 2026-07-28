@@ -234,11 +234,16 @@ TEMPLATE = r"""<!DOCTYPE html>
       <h2>Réglages</h2>
       <select id="adjSel"></select>
       <div id="adjRows" style="margin-top:8px"></div>
-      <div class="btns" style="margin-top:8px">
+      <button id="adjDrag" style="margin-top:8px">Déplacer à la souris : oui</button>
+      <div class="btns" style="margin-top:6px">
         <button id="adjReset">Remettre à zéro</button>
-        <button id="adjCopy">Copier les valeurs</button>
+        <button id="adjResetAll">Tout remettre à zéro</button>
       </div>
+      <button id="adjCopy" style="margin-top:6px">Copier les valeurs</button>
       <div id="adjOut"></div>
+      <div class="note">Attrape une pièce dans la vue et fais-la glisser.
+        <b>Maj</b> enfoncé, elle ne monte ou ne descend que verticalement.
+        Un clic dans le vide fait toujours tourner la scène.</div>
     </div>
 
     <div class="sec">
@@ -608,40 +613,44 @@ const gCap = group('cap');
    fourreau remplisse l'alésage et que le connecteur reste **dans** le châssis,
    côté air unit — c'est le sens du câble sur le vrai drone.
    Le groupe reste réglable : ses curseurs font varier l'enfoncement. */
-const gAntV = adjGroup('ant_vtx', 0, 0, 0);
-gTail.add(gAntV);                                  // repère local du support
-{ /* Le fourreau du STEP DJI, Ø 3,5 sur 85 mm, axe +Z : il tombe pile dans
-     l'axe des alésages, aucune rotation à faire. Le connecteur MMCX a été
-     coupé à la conversion — il n'est pas ici, il est sur l'air unit, à l'autre
-     bout du coaxial tracé juste en dessous. */
-  for (const sy of [1, -1])
-    addAt(gAntV, mesh(STLB64.o4ant, 0x0f1114, .2, .5),
-          TAIL_BORE.x, sy*TAIL_BORE.y, TAIL_BORE.z0);
+/* UNE ANTENNE PAR GROUPE. Sur les photos du drone monté les deux fourreaux
+   s'écartent en V, alors que les deux alésages du STL Sub250 sont parallèles
+   (mesuré : écart d'axe < 5° sur 17,3 mm). Les deux ne peuvent pas être vrais
+   en même temps : soit le montage cintre les antennes, soit ma lecture de la
+   pièce est fausse. Plutôt que de trancher à ta place, chaque fourreau est un
+   groupe séparé — réglable et déplaçable à la souris, donc écartable en V. */
+const gAntV = {};
+for (const [nom, sy] of [['ant_vtx_g', 1], ['ant_vtx_d', -1]]){
+  const g = adjGroup(nom, 0, 0, 0);
+  gTail.add(g);                                    // repère local du support
+  gAntV[nom] = g;
+  /* Le fourreau du STEP DJI, Ø 3,5 sur 85 mm, axe +Z : il tombe pile dans
+     l'axe de l'alésage, aucune rotation à faire. Le connecteur MMCX a été
+     coupé à la conversion — il est sur l'air unit, à l'autre bout du coaxial. */
+  addAt(g, mesh(STLB64.o4ant, 0x0f1114, .2, .5),
+        TAIL_BORE.x, sy*TAIL_BORE.y, TAIL_BORE.z0);
 
   /* Coaxial : de l'air unit à l'entrée de l'alésage. La courbe se décrit en
      millimètres du DRONE, puis se convertit dans le repère du support — sinon
      régler le support la déformerait. On n'écrit plus l'inverse à la main :
-     `worldToLocal` le fait à partir de la matrice réelle du groupe, donc il
-     reste juste si l'orientation par défaut change encore. */
+     `worldToLocal` le fait à partir de la matrice réelle du groupe. */
   gTail.updateMatrixWorld(true);
   const toTail = (x, y, z) => gTail.worldToLocal(
     new THREE.Vector3(x/1000, y/1000, (z + M.ground)/1000));
-  for (const sy of [1, -1]){
-    const co = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3([
-        // le coaxial sort de l'air unit, longe l'intérieur du flanc vers
-        // l'arrière, contourne le bord du roof par l'extérieur puis remonte à
-        // l'entrée de l'alésage : le roof n'a pas de passage à cet endroit
-        toTail(sy*11, -17, AIR_Z + 3),     // au ras de la face arrière de l'air unit
-        toTail(sy*16, -36, AIR_Z + 4),
-        toTail(sy*17, -58, M.z.total + 1),
-        toTail(sy*15, -56, M.z.total + 9),
-        // dernier point : l'entrée de l'alésage, exprimée directement dans le
-        // repère du support — c'est une cote relevée, pas une approximation
-        new THREE.Vector3(TAIL_BORE.x/1000, sy*TAIL_BORE.y/1000, 0),
-      ]), 22, .00085, 6),
-      new THREE.MeshStandardMaterial({color:0x101216, metalness:.2, roughness:.55}));
-    gAntV.add(co);
-  }
+  const co = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3([
+      // le coaxial sort de l'air unit, longe l'intérieur du flanc vers
+      // l'arrière, contourne le bord du roof par l'extérieur puis remonte à
+      // l'entrée de l'alésage : le roof n'a pas de passage à cet endroit
+      toTail(sy*11, -17, AIR_Z + 3),     // au ras de la face arrière de l'air unit
+      toTail(sy*16, -36, AIR_Z + 4),
+      toTail(sy*17, -58, M.z.total + 1),
+      toTail(sy*15, -56, M.z.total + 9),
+      // dernier point : l'entrée de l'alésage, exprimée directement dans le
+      // repère du support — c'est une cote relevée, pas une approximation
+      new THREE.Vector3(TAIL_BORE.x/1000, sy*TAIL_BORE.y/1000, 0),
+    ]), 22, .00085, 6),
+    new THREE.MeshStandardMaterial({color:0x101216, metalness:.2, roughness:.55}));
+  g.add(co);
 }
 /* Antennes RX — COUCHÉES dans les gorges de la platine Sub250. Construites en
    primitives plutôt que reprises du STL TinyHoop : celui-ci a 30 mm de coaxial
@@ -779,8 +788,10 @@ const PARTS = [
    "Pièce d'origine Sub250 : deux passages d'antenne à l'arrière."],
   ['gpsmount_x', 'Platine GPS',         '×1 · PLA',         'Imprimé', 0x24272d,
    "Uniquement sur la variante Stratos : surélève le GPS pour l'éloigner du VTX."],
-  ['ant_vtx',    'Antennes VTX',        '×2 · DJI',         'Électronique', 0x0f1114,
-   "Les deux fourreaux DJI, enfilés dans les alésages Ø 3 mm du support de queue — cotes relevées dans le STL Sub250, pas estimées. Rattachées au support : le régler les emmène avec."],
+  ['ant_vtx_g',  'Antenne VTX gauche',  '×1 · DJI',         'Électronique', 0x0f1114,
+   "Fourreau DJI enfilé dans l'alésage Ø 3 mm gauche du support de queue — cote relevée dans le STL Sub250. Rattachée au support : le régler l'emmène avec. Groupe séparé pour pouvoir l'écarter en V."],
+  ['ant_vtx_d',  'Antenne VTX droite',  '×1 · DJI',         'Électronique', 0x0f1114,
+   "Idem à droite, dans son propre groupe : les deux antennes se règlent indépendamment."],
   ['ant_rx',     'Antennes RX',         'ELRS',             'Électronique', 0x141414,
    "Antennes du récepteur, à plat sur leur platine Sub250. Réglables elles aussi."],
   ['battery',    'Batterie 4S',         '660-720 mAh',      'Électronique', 0x14161b,
@@ -831,6 +842,7 @@ function select(k){
   hud('<b>' + p[1] + '</b> · ' + p[2] + '<br>' + p[5]);
 }
 renderer.domElement.addEventListener('pointerdown', e => {
+  if (typeof dragging !== 'undefined' && dragging) return;   // le glissé s'en charge
   const r = renderer.domElement.getBoundingClientRect();
   const ndc = new THREE.Vector2(((e.clientX-r.left)/r.width)*2-1,
                                 -((e.clientY-r.top)/r.height)*2+1);
@@ -839,13 +851,13 @@ renderer.domElement.addEventListener('pointerdown', e => {
   if (!hit){ select(null); return; }
   let o = hit.object, k = null;
   while (o && o !== frameRoot){ const f = Object.keys(G).find(n => G[n] === o); if (f){ k = f; break; } o = o.parent; }
-  if (k) select(k);
+  if (k){ select(k); if (typeof ADJUST !== 'undefined') ADJUST.pick(k); }
 });
 const hudEl = document.getElementById('hud');
 function hud(html){ hudEl.innerHTML = html || defaultHud(); }
 function defaultHud(){
   return BUILD ? 'Clic = surligner · double-clic dans la liste = emboîter'
-               : 'Entraxe 150 mm · 3″ · hauteur 32,5 mm';
+               : 'Entraxe 150 mm · 3″ · hauteur 32,5 mm — attrape une pièce pour la déplacer';
 }
 hud('');
 
@@ -874,9 +886,33 @@ const EXPLODE = {
   battery:[0,0,112], screws:[0,0,60], cables:[0,0,-34],
   // ant_vtx est un enfant du support de queue : son décalage est donné dans le
   // repère du support, donc +Z le sort des alésages au lieu de le monter.
-  ant_vtx:[0,0,40], ant_rx:[0,0,104],
+  ant_vtx_g:[0,0,40], ant_vtx_d:[0,0,40], ant_rx:[0,0,104],
 };
-Object.keys(G).forEach(k => { G[k].userData.home = G[k].position.clone(); });
+/* TOUTES les pièces deviennent réglables, pas seulement les six d'avant.
+   Pour celles dont l'origine était au centre du drone, on la ramène d'abord sur
+   le centre de la pièce : sans ça une rotation la promènerait autour du châssis
+   au lieu de la faire pivoter sur place. Les enfants sont décalés d'autant, donc
+   rien ne bouge à l'écran. */
+{ const box = new THREE.Box3(), c = new THREE.Vector3();
+  for (const k in G){
+    const g = G[k];
+    if (g.userData.pivot) continue;                // déjà posé par adjGroup
+    box.setFromObject(g, true);
+    if (!isFinite(box.min.x)){ g.userData.pivot = [0,0,0]; continue; }
+    box.getCenter(c);
+    const local = g.parent.worldToLocal(c.clone());
+    g.children.forEach(ch => ch.position.sub(local));
+    g.position.add(local);
+    g.userData.pivot = [c.x*1000, c.y*1000, c.z*1000];
+  }
+  for (const k in G){
+    const g = G[k];
+    g.userData.base = g.position.clone();
+    g.userData.baseRot = g.rotation.clone();
+    g.userData.adj = {x:0, y:0, z:0, rx:0, ry:0, rz:0};
+    g.userData.home = g.position.clone();
+  }
+}
 const expSlider = document.getElementById('explode');
 expSlider.oninput = () => {
   const t = expSlider.value/100;
@@ -888,23 +924,21 @@ expSlider.oninput = () => {
 };
 
 /* ─────────────────────────────── réglages fins (position / rotation)
-   Les pièces dont le calage reste incertain — cage caméra, berceau, étrier de
-   queue, platine RX, antennes — sont des groupes RÉGLABLES : leur origine est
-   posée sur la pièce, donc les curseurs de rotation la font pivoter sur place.
+   TOUTES les pièces sont réglables. L'origine de chaque groupe est posée sur la
+   pièce elle-même, donc les curseurs de rotation la font pivoter sur place.
    Le bloc de valeurs en bas est sélectionnable et copiable : c'est ce qu'on
-   recopie dans `tune.py` / ce générateur une fois le bon réglage trouvé, au
-   lieu de deviner une orientation à l'aveugle. */
-const ADJ_KEYS = Object.keys(G).filter(k => G[k].userData.pivot);
-const ADJ_AX = [['x','X',-60,60,.5,'mm'], ['y','Y',-60,60,.5,'mm'], ['z','Z',-40,60,.5,'mm'],
+   recopie dans ce générateur une fois le bon calage trouvé, au lieu de deviner
+   une orientation à l'aveugle. */
+const ADJ_KEYS = PARTS.map(p => p[0]).filter(k => G[k]);
+const ADJ_AX = [['x','X',-90,90,.5,'mm'], ['y','Y',-90,90,.5,'mm'], ['z','Z',-60,90,.5,'mm'],
                 ['rx','RX',-180,180,1,'°'], ['ry','RY',-180,180,1,'°'], ['rz','RZ',-180,180,1,'°']];
-{
+const ADJUST = (function(){
   const sel = document.getElementById('adjSel');
   const rows = document.getElementById('adjRows');
   const out = document.getElementById('adjOut');
   const inp = {}, lab = {};
 
   for (const k of ADJ_KEYS){
-    G[k].userData.adj = {x:0, y:0, z:0, rx:0, ry:0, rz:0};
     const o = document.createElement('option');
     o.value = k; o.textContent = PART[k] ? PART[k][1] : k;
     sel.appendChild(o);
@@ -917,42 +951,49 @@ const ADJ_AX = [['x','X',-60,60,.5,'mm'], ['y','Y',-60,60,.5,'mm'], ['z','Z',-40
     const b = document.createElement('b'); b.textContent = '0';
     row.append(s, r, b); rows.appendChild(row);
     inp[key] = r; lab[key] = b;
-    r.oninput = apply;
+    r.oninput = () => { const a = G[sel.value].userData.adj;
+      for (const [q] of ADJ_AX) a[q] = +inp[q].value;
+      applyTo(sel.value); load(); readout(); };
   }
 
-  function apply(){
-    const g = G[sel.value], a = g.userData.adj;
-    for (const [key,,,,, unit] of ADJ_AX){
-      a[key] = +inp[key].value;
-      lab[key].textContent = a[key] + (unit === 'mm' ? '' : '°');
-    }
-    const base = g.userData.base, br = g.userData.baseRot;
+  /* Écrit la transformation d'une pièce à partir de son objet `adj`. */
+  function applyTo(k){
+    const g = G[k], a = g.userData.adj, base = g.userData.base, br = g.userData.baseRot;
     g.position.set(base.x + a.x/1000, base.y + a.y/1000, base.z + a.z/1000);
     g.rotation.set(br.x + a.rx*D, br.y + a.ry*D, br.z + a.rz*D);
     g.userData.home = g.position.clone();   // l'éclatée repart de la nouvelle place
-    readout();
   }
   function load(){
     const a = G[sel.value].userData.adj;
     for (const [key,,,,, unit] of ADJ_AX){
       inp[key].value = a[key];
-      lab[key].textContent = a[key] + (unit === 'mm' ? '' : '°');
+      lab[key].textContent = (Math.round(a[key]*10)/10) + (unit === 'mm' ? '' : '°');
     }
   }
   function readout(){
+    const r1 = v => Math.round(v*10)/10;
     const lines = ADJ_KEYS
       .filter(k => ADJ_AX.some(([q]) => G[k].userData.adj[q]))
       .map(k => { const a = G[k].userData.adj;
-        return k + ' : xyz ' + a.x + ' ' + a.y + ' ' + a.z +
-               ' mm · rot ' + a.rx + ' ' + a.ry + ' ' + a.rz + '°'; });
+        return k + ' : xyz ' + r1(a.x) + ' ' + r1(a.y) + ' ' + r1(a.z) +
+               ' mm · rot ' + r1(a.rx) + ' ' + r1(a.ry) + ' ' + r1(a.rz) + '°'; });
     out.textContent = lines.length ? lines.join('\n')
-      : "Rien de réglé. Bouge un curseur, puis « Copier les valeurs » — c'est cette ligne qui sert à figer la position dans le code.";
+      : "Rien de réglé. Attrape une pièce à la souris ou bouge un curseur, puis « Copier les valeurs » — c'est cette ligne-là qui sert à figer la position dans le code.";
+  }
+  function pick(k){                       // appelé quand on clique une pièce
+    if (!G[k] || sel.value === k) return;
+    sel.value = k; load();
   }
   sel.onchange = load;
   document.getElementById('adjReset').onclick = () => {
     const a = G[sel.value].userData.adj;
     for (const [key] of ADJ_AX) a[key] = 0;
-    load(); apply();
+    applyTo(sel.value); load(); readout();
+  };
+  document.getElementById('adjResetAll').onclick = () => {
+    for (const k of ADJ_KEYS){ const a = G[k].userData.adj;
+      for (const [key] of ADJ_AX) a[key] = 0; applyTo(k); }
+    load(); readout();
   };
   document.getElementById('adjCopy').onclick = e => {
     const txt = out.textContent;
@@ -963,7 +1004,69 @@ const ADJ_AX = [['x','X',-60,60,.5,'mm'], ['y','Y',-60,60,.5,'mm'], ['z','Z',-40
     const s = getSelection(); s.removeAllRanges(); s.addRange(r);
   };
   sel.value = ADJ_KEYS[0]; load(); readout();
+  return { pick, load, readout, applyTo, get target(){ return sel.value; } };
+})();
+
+/* ─────────────────────────────── déplacement à la souris
+   Attraper une pièce et la faire glisser. Le déplacement se fait dans le PLAN
+   DE L'ÉCRAN passant par la pièce : c'est le seul qui reste intuitif quel que
+   soit l'angle de la caméra. `Maj` enfoncé, seule la hauteur est retenue.
+   L'orbite est coupée pendant le glissé et rendue au relâchement ; un clic dans
+   le vide continue de faire tourner la scène. */
+let dragMode = true, dragging = null;
+const dragPlane = new THREE.Plane(), dragHit = new THREE.Vector3(),
+      dragRay = new THREE.Raycaster(), dragStart = new THREE.Vector3();
+function ndcOf(e){
+  const r = renderer.domElement.getBoundingClientRect();
+  return new THREE.Vector2(((e.clientX-r.left)/r.width)*2-1,
+                           -((e.clientY-r.top)/r.height)*2+1);
 }
+renderer.domElement.addEventListener('pointerdown', e => {
+  if (!dragMode || BUILD || e.button !== 0) return;
+  dragRay.setFromCamera(ndcOf(e), camera);
+  const hit = dragRay.intersectObject(frameRoot, true)[0];
+  if (!hit) return;
+  let o = hit.object, k = null;
+  while (o && o !== frameRoot){ const f = Object.keys(G).find(n => G[n] === o); if (f){ k = f; break; } o = o.parent; }
+  if (!k) return;
+  const g = G[k];
+  // plan face à la caméra, passant par le point touché
+  dragPlane.setFromNormalAndCoplanarPoint(
+    camera.getWorldDirection(new THREE.Vector3()).negate(), hit.point);
+  dragStart.copy(hit.point);
+  const a = g.userData.adj;
+  dragging = { k, g, from: {x:a.x, y:a.y, z:a.z} };
+  controls.enabled = false;
+  select(k); ADJUST.pick(k);
+  renderer.domElement.setPointerCapture(e.pointerId);
+  hud('<b>' + (PART[k] ? PART[k][1] : k) + '</b> — glisse pour déplacer · ' +
+      '<b>Maj</b> = hauteur seule · relâche pour poser');
+});
+renderer.domElement.addEventListener('pointermove', e => {
+  if (!dragging) return;
+  dragRay.setFromCamera(ndcOf(e), camera);
+  if (!dragRay.ray.intersectPlane(dragPlane, dragHit)) return;
+  const d = dragHit.clone().sub(dragStart).multiplyScalar(1000);   // m -> mm
+  // la pièce peut vivre dans un repère tourné (les antennes sont dans celui de
+  // l'étrier) : on convertit le déplacement monde en déplacement local
+  const par = dragging.g.parent;
+  const dl = par.worldToLocal(dragHit.clone()).sub(par.worldToLocal(dragStart.clone()))
+              .multiplyScalar(1000);
+  const a = dragging.g.userData.adj, f = dragging.from;
+  if (e.shiftKey){ a.z = f.z + d.z; }
+  else { a.x = f.x + dl.x; a.y = f.y + dl.y; a.z = f.z + dl.z; }
+  ADJUST.applyTo(dragging.k); ADJUST.load(); ADJUST.readout();
+});
+function endDrag(e){
+  if (!dragging) return;
+  dragging = null; controls.enabled = true; hud('');
+  try { renderer.domElement.releasePointerCapture(e.pointerId); } catch(_){}
+}
+renderer.domElement.addEventListener('pointerup', endDrag);
+renderer.domElement.addEventListener('pointercancel', endDrag);
+{ const btn = document.getElementById('adjDrag');
+  btn.onclick = () => { dragMode = !dragMode;
+    btn.textContent = 'Déplacer à la souris : ' + (dragMode ? 'oui' : 'non'); }; }
 
 /* ─────────────────────────────── vues, fil de fer, thème, plein écran */
 function look(dx,dy,dz,d){

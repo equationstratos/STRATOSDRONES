@@ -16,7 +16,7 @@ python3 oasis30/viz/gen_viewer.py    # -> viz/drone_viewer.html + build/build.ht
 | | |
 |---|---|
 | **[`viz/drone_viewer.html`](viz/)** | le visualisateur — ouvrir par double-clic |
-| **[`build/build.html`](build/)** | le simulateur d'assemblage, 27 pièces à emboîter |
+| **[`build/build.html`](build/)** | le simulateur d'assemblage, 28 pièces à emboîter |
 | **[`cad/step/`](cad/step/)** | un `.step` par pièce + `oasisfly30_assembly.step` |
 | **[`cad/stl/`](cad/stl/)** | les `.stl` d'impression (et `stl/viz/` pour le web) |
 | **[`ref/`](ref/)** | les 4 STL Sub250 d'origine + les photos + [`MEASURES.md`](ref/MEASURES.md) |
@@ -93,21 +93,27 @@ sont plus au montage** : ils ne servent qu'à une caméra dépourvue de tourillo
 Même recette que les autres visualisateurs du dépôt — page **autonome**,
 Three.js embarqué, aucun fichier externe, ouvrable par double-clic.
 
-- **27 composants** affichables/masquables, chacun avec son sélecteur de couleur —
+- **28 composants** affichables/masquables, chacun avec son sélecteur de couleur —
   flanc gauche et flanc droit y figurent séparément, la caméra et l'air unit O4
-  Pro aussi.
+  Pro aussi, et **chaque antenne VTX a son propre groupe** pour pouvoir être
+  écartée en V indépendamment de l'autre.
 - **Sélecteur d'électronique** : *stock Sub250* (RedFox A3 45A AIO + DJI O4 Pro)
   ou *Stratos programmable* (carte TINYHOOP AIO + LoRa 868 + GPS).
 - Clic sur une pièce → surbrillance + description ; vue **éclatée** ;
   fil de fer ; thème clair ; **plein écran** (touche `F`).
+- **Déplacement à la souris** : attrape n'importe quelle pièce dans la vue et
+  fais-la glisser. Le déplacement se fait dans le plan de l'écran, donc il reste
+  intuitif quel que soit l'angle de la caméra ; **Maj** enfoncé, seule la hauteur
+  bouge. Un clic dans le vide fait toujours tourner la scène.
 - **Panneau « Réglages »** : six curseurs (X/Y/Z en mm, RX/RY/RZ en degrés) sur
-  la cage caméra, la caméra O4 Pro (son pivot **est** l'axe de bascule : le
-  curseur RX règle donc l'inclinaison), le support de queue, la platine RX et
-  les deux jeux d'antennes. Chaque groupe pivote **sur lui-même** — son origine
-  est posée sur la pièce, pas au centre du drone. Les valeurs s'affichent en bas du
-  panneau et se copient d'un bouton : c'est ce qu'on recopie dans le générateur
-  pour figer un calage, au lieu de chercher une orientation à l'aveugle.
-- **Mode assemblage** : les 27 pièces attendent autour du drone, leur logement
+  **chacune des 28 pièces**. Chaque groupe pivote **sur lui-même** — son origine
+  est ramenée au centre de la pièce, pas au centre du drone, sinon une rotation
+  la promènerait autour du châssis. La caméra O4 Pro fait exception voulue : son
+  pivot **est** l'axe de bascule, donc le curseur RX règle son inclinaison.
+  Les valeurs s'affichent en bas du panneau et se copient d'un bouton : c'est ce
+  qu'on recopie dans le générateur pour figer un calage, au lieu de chercher une
+  orientation à l'aveugle.
+- **Mode assemblage** : les 28 pièces attendent autour du drone, leur logement
   est marqué par un fantôme bleu, un double-clic dans la liste les emboîte.
 
 Les deux pages sortent du **même générateur** : le simulateur ne peut pas
@@ -168,7 +174,7 @@ photos et des points d'accroche du châssis.
 
 `cad/export.py` contrôle 11 cotes à chaque export et **échoue** si l'une dérive.
 Le visualisateur est passé au test d'interférence pièce par pièce : **0 collision**
-sur 162 maillages. Mais ce test compare des boîtes englobantes — il attrape les
+sur 90 maillages. Mais ce test compare des boîtes englobantes — il attrape les
 interpénétrations franches, pas les contacts tangents, et ne remplace pas un
 contrôle booléen. Rien n'a été imprimé ni volé.
 

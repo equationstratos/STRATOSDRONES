@@ -129,6 +129,13 @@ elles règlent des questions restées ouvertes :
 | Air unit | 33,4 carré × 13,0 | tient dans les 43 mm de large du châssis |
 | Fixation air unit | **25,5 × 25,5** | recoupe le perçage VTX relevé sur la médiane |
 | Fourreau d'antenne | Ø 3,5 | les alésages du support de queue font Ø 3,0 : le TPU serre le fourreau, c'est bien lui qui passe dedans |
+
+**Une contradiction non résolue** : les deux alésages du support de queue sont
+**parallèles** dans le STL Sub250 — mesuré, écart d'axe < 5° sur 17,3 mm de
+profondeur — alors que sur les photos du drone monté les deux fourreaux
+s'écartent nettement en **V**. Soit le montage les cintre, soit ma lecture de la
+pièce est fausse. En attendant de trancher, chaque antenne est un groupe séparé,
+déplaçable à la souris : le V se fait à la main et les valeurs se recopient.
 | Moteur XING2 1404 | Ø 19,9 × 18,6 | plan de pose à z = −4,25, haut de cloche à z = 9,54 |
 | Haut de cloche | **z = 19,3** | plan de pose plaqué sur le bras (5,5) + 9,54 |
 | Hauteur d'hélice | **z = 19,6** | posée sur la cloche, rondelle comprise — j'avais estimé 21,0 |
