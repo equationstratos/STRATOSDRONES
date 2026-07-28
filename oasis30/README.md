@@ -79,6 +79,12 @@ Three.js embarqué, aucun fichier externe, ouvrable par double-clic.
   ou *Stratos programmable* (carte TINYHOOP AIO + LoRa 868 + GPS).
 - Clic sur une pièce → surbrillance + description ; vue **éclatée** ;
   fil de fer ; thème clair ; **plein écran** (touche `F`).
+- **Panneau « Réglages »** : six curseurs (X/Y/Z en mm, RX/RY/RZ en degrés) sur
+  la cage caméra, le berceau, le support de queue, la platine RX et les deux
+  jeux d'antennes. Chaque groupe pivote **sur lui-même** — son origine est posée
+  sur la pièce, pas au centre du drone. Les valeurs s'affichent en bas du
+  panneau et se copient d'un bouton : c'est ce qu'on recopie dans le générateur
+  pour figer un calage, au lieu de chercher une orientation à l'aveugle.
 - **Mode assemblage** : les 25 pièces attendent autour du drone, leur logement
   est marqué par un fantôme bleu, un double-clic dans la liste les emboîte.
 
@@ -105,11 +111,17 @@ que ceux d'impression — la 3-D montre donc bien ce qui sortira de l'imprimante
 2. Passer les **3 fils de phase** par bras **avant** de clipser les `arm_guard`.
 3. La cage caméra a un écart intérieur de **24,7 mm** : c'est le **berceau TPU**
    qui rentre dedans, pas la caméra nue. Se tromper là oblige à tout démonter.
+   Les deux coquilles du berceau (13 + 12 mm) partent du bas de la joue, à
+   z = 5,5, et sont centrées sur l'axe de bascule (0 ; 55 ; 18).
 4. **Souder l'XT30 en dernier**, condensateur d'abord — plus de place au fer.
 5. Faire passer le fil de batterie par la **découpe du roof** (avec le
    passe-fil) : il descend droit sur les pads de l'ESC au lieu de frotter sur
    un bord carbone.
-6. Antennes **avant** de remonter les flancs : ils cachent les soudures.
+6. Antennes **avant** de remonter les flancs : ils cachent les soudures. Les
+   deux fourreaux vidéo s'enfilent dans les **alésages Ø 3 mm du support de
+   queue** (17,3 mm de profondeur, entraxe 21,4 mm — cotes relevées dans le STL
+   Sub250, pas estimées) ; les brins RX se couchent dans les gorges de leur
+   platine.
 7. `CLR = 0,25 mm` dans `tune.py` est le premier paramètre à toucher si ton
    imprimante sort serré ou lâche.
 
@@ -127,7 +139,7 @@ Les 4 pièces Sub250, elles, sont les fichiers d'origine — donc exactes.
 
 `cad/export.py` contrôle 11 cotes à chaque export et **échoue** si l'une dérive.
 Le visualisateur est passé au test d'interférence pièce par pièce : **0 collision**
-sur 158 maillages. Mais ce test compare des boîtes englobantes — il attrape les
+sur 164 maillages. Mais ce test compare des boîtes englobantes — il attrape les
 interpénétrations franches, pas les contacts tangents, et ne remplace pas un
 contrôle booléen. Rien n'a été imprimé ni volé.
 

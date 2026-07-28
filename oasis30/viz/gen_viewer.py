@@ -94,7 +94,7 @@ def stls():
         # ── pièces réutilisées du TinyHoop MK1 (mêmes composants du commerce)
         "prop": t("prop"), "screw": t("screw"), "cap": t("capacitor"),
         "gps": t("gps_module"), "rxpcb": t("rx_pcb"), "rxant": t("rx_antenna"),
-        "vtxant": t("dji_pro_ant"), "board": t("board"),
+        "board": t("board"),
     }
 
 
@@ -163,6 +163,13 @@ TEMPLATE = r"""<!DOCTYPE html>
   .prow .qt{font-size:10px;color:var(--mut)}
   .prow.done .nm{color:var(--ok)}
   body:not(.build) .buildonly{display:none}
+  body.build .viewonly{display:none}
+  .adjrow{display:grid;grid-template-columns:24px 1fr 46px;align-items:center;gap:6px;
+          font-size:11px;color:var(--mut);margin:2px 0}
+  .adjrow b{color:var(--ink);text-align:right;font-weight:600;font-variant-numeric:tabular-nums}
+  #adjOut{white-space:pre-line;user-select:text;font-size:10.5px;line-height:1.5;
+          background:var(--btn);border:1px solid var(--line);border-radius:6px;
+          padding:6px 8px;margin-top:8px;max-height:120px;overflow:auto}
 </style>
 <script type="importmap">__IMPORTMAP__</script>
 </head>
@@ -218,6 +225,17 @@ TEMPLATE = r"""<!DOCTYPE html>
         <button id="vSide">Côté</button><button id="vFront">Face</button>
         <button id="wire">Fil de fer</button><button id="theme">Thème clair</button>
       </div>
+    </div>
+
+    <div class="sec viewonly" id="adjSec">
+      <h2>Réglages</h2>
+      <select id="adjSel"></select>
+      <div id="adjRows" style="margin-top:8px"></div>
+      <div class="btns" style="margin-top:8px">
+        <button id="adjReset">Remettre à zéro</button>
+        <button id="adjCopy">Copier les valeurs</button>
+      </div>
+      <div id="adjOut"></div>
     </div>
 
     <div class="sec">
@@ -326,6 +344,26 @@ const frameRoot = new THREE.Group(); scene.add(frameRoot);
 frameRoot.position.z = M.ground/1000;               // les patins touchent le sol
 const G = {}; try { window.G = G; window.THREE = THREE; } catch(_){}
 function group(name){ const g = new THREE.Group(); G[name]=g; frameRoot.add(g); return g; }
+/* Groupe RÉGLABLE : son origine est posée sur la pièce elle-même, pas au centre
+   du drone — sans ça une rotation ferait tourner la pièce autour du châssis
+   entier au lieu de la faire pivoter sur place. */
+function adjGroup(name, px, py, pz){
+  const g = group(name);
+  g.position.set(px/1000, py/1000, pz/1000);
+  g.userData.pivot = [px, py, pz];
+  g.userData.base = g.position.clone();
+  g.userData.baseRot = g.rotation.clone();
+  return g;
+}
+function addAt(g, m, x, y, z){            // place un maillage dans un groupe réglable
+  const p = g.userData.pivot;
+  m.position.set((x - p[0])/1000, (y - p[1])/1000, (z - p[2])/1000);
+  g.add(m); return m;
+}
+/* Certains STL sortent de la CAO **déjà à leur place** dans le drone (les
+   plaques, les joues de cage) : il ne faut surtout pas leur rajouter l'offset
+   du groupe, sinon la pièce part deux fois plus loin que voulu. */
+function addAbs(g, m){ return addAt(g, m, 0, 0, 0); }
 function keep(m){ m.userData.keepColor = true; return m; }
 
 const CARBON = 0x1a1d21, TPU = 0x24272d, ALU = 0xb9bec7, SUB250 = 0x2ec4b6;
@@ -350,11 +388,15 @@ for (const a of ARM_DIR){
 }
 
 /* cage caméra : le STL est le flanc droit, le gauche est son miroir */
-const gCage = group('cage');
+/* Le STL `cam_side_plate` sort de la CAO **à sa place** (x 12,35→14,85 ·
+   y 43→65 · z 5,5→31) : on ne lui ajoute aucun décalage. Le pivot du groupe est
+   posé sur l'axe de basculement de la caméra, c'est autour de lui que tournent
+   les curseurs de réglage. */
+const gCage = adjGroup('cage', 0, M.cage.y, M.cage.z);
 for (const sx of [1,-1]){
   const m = carbonMesh(STLB64.cage, CARBON);
   m.scale.x = sx*.001;
-  gCage.add(m);
+  addAbs(gCage, m);
 }
 
 /* entretoises */
@@ -366,12 +408,13 @@ for (const [x,y] of M.standoffs.top.concat(M.standoffs.cam)){
 }
 
 /* pièces imprimées Stratos */
-const gCradle = group('cradle');
-{ const cy = M.cage.y - 6;                          // reste dans la cage (nez à y=65)
-  const b = mesh(STLB64.cradle_b, TPU, .1, .82);
-  b.position.set(0, cy/1000, (M.z.deck+2.5)/1000); gCradle.add(b);   // posé SUR le pont
-  const t = mesh(STLB64.cradle_t, TPU, .1, .82);
-  t.position.set(0, cy/1000, (M.z.deck+15.5)/1000); gCradle.add(t); }
+/* Berceau : les deux coquilles s'empilent (13 mm + 12 mm = 25 mm) dans une cage
+   haute de 25,5 — elles partent donc du bas de la joue, z = 5,5, et le tout est
+   centré sur l'axe de bascule (0 ; 55 ; 18). */
+const gCradle = adjGroup('cradle', 0, M.cage.y, M.cage.z);
+{ const cy = M.cage.y, cz = M.z.mid;
+  addAt(gCradle, mesh(STLB64.cradle_b, TPU, .1, .82), 0, cy, cz);
+  addAt(gCradle, mesh(STLB64.cradle_t, TPU, .1, .82), 0, cy, cz + 13); }
 
 const gGuards = group('guards');
 for (const a of ARM_DIR){
@@ -422,19 +465,21 @@ for (const [i,[sx,sy]] of [[1,1],[-1,1],[-1,-1],[1,-1]].entries()){
   g.position.set(sx*M.mx/1000, sy*M.my/1000, 0);
   gFeet.add(g);
 }
-const gRxPlate = group('rxplate');
-{ const m = mesh(STLB64.rxplate, 0xd8dce2, .06, .7);
-  m.position.set(0, -52/1000, M.z.total/1000); gRxPlate.add(m); }
-/* Étrier de queue Sub250 — calé sur la photo du drone monté (vue arrière) :
-   la pièce se présente DROITE, sa fenêtre rectangulaire vers l'arrière, et
-   descend sous la queue du châssis. Aucune rotation : ses 29,1 mm courent
-   d'avant en arrière, ses 16,3 mm en travers, ses 25,5 mm en hauteur.
-   TAIL_Y / TAIL_Z sont les deux seuls chiffres de calage. */
-const TAIL_Y = -58, TAIL_Z = M.z.bottom - 6;
-const gTail = group('tailmount');
-{ const m = mesh(STLB64.tailmount, SUB250, .06, .78);
-  m.position.set(0, TAIL_Y/1000, TAIL_Z/1000);
-  gTail.add(m); }
+const gRxPlate = adjGroup('rxplate', 0, -52, M.z.total + 3);
+addAt(gRxPlate, mesh(STLB64.rxplate, 0xd8dce2, .06, .7), 0, -52, M.z.total);
+/* Étrier de queue Sub250 — réglable depuis le panneau « Réglages ».
+   Orientation : 90° sur X **puis −90° sur Z**. C'est ce couple qui amène les
+   deux alésages d'antenne côte à côte, axe vers l'arrière, comme sur la photo
+   du châssis nu : le Y du fichier devient la gauche-droite du drone et son Z
+   part vers l'arrière. Le seul 90° sur X les mettait l'un au-dessus de l'autre. */
+const TAIL_Y = -44, TAIL_Z = 8;
+const gTail = adjGroup('tailmount', 0, TAIL_Y, TAIL_Z);
+gTail.rotation.set(90*D, 0, -90*D); gTail.userData.baseRot = gTail.rotation.clone();
+addAt(gTail, mesh(STLB64.tailmount, SUB250, .06, .78), 0, TAIL_Y, TAIL_Z);
+/* Alésages d'antenne **relevés dans le STL Sub250**, pas devinés : deux perçages
+   Ø 3,0 mm, axe parallèle au Z du fichier, en (x = −4,2 ; y = ±10,7), profonds
+   de 17,3 mm. C'est exactement le diamètre du fourreau d'une antenne DJI. */
+const TAIL_BORE = { x: -4.2, y: 10.7, z0: 0.0, depth: 17.3 };
 
 /* moteurs 1404 — construits en primitives (légers, cotes exactes) */
 // Moteur 1404 : embase de fixation, stator bobiné apparent, cloche ventilée,
@@ -496,12 +541,12 @@ const ELEC = {};
   const fc = pcb(30,30,3.2, 0x0f1a2e); fc.position.set(0,M.stack_y/1000,(M.z.mid+5)/1000); g.add(fc);
   const air = pcb(30,24,7.5, 0x11532e); air.position.set(0,(M.stack_y+16)/1000,(M.z.mid+13)/1000); g.add(air);
   const cam = pcb(M.cage.w,20,M.cage.h, 0x1c1f24);
-  cam.position.set(0, (M.cage.y-6)/1000, (M.z.deck+11)/1000);
+  cam.position.set(0, M.cage.y/1000, M.cage.z/1000);        // sur l'axe de bascule
   cam.rotation.x = -M.cage.tilt*D; g.add(cam);
   const lens = new THREE.Mesh(new THREE.CylinderGeometry(.0058,.0062,.008,24),
     new THREE.MeshStandardMaterial({color:0x0a0b0d, metalness:.5, roughness:.18}));
   lens.rotation.x = Math.PI/2 - M.cage.tilt*D;
-  lens.position.set(0, (M.cage.y+3)/1000, (M.z.deck+14)/1000); g.add(lens);
+  lens.position.set(0, (M.cage.y+9.5)/1000, (M.cage.z+5.5)/1000); g.add(lens);
   const rx = mesh(STLB64.rxpcb, 0x0f3d0f, .2, .5);
   rx.position.set(0,-30/1000,(M.z.mid+3)/1000); g.add(rx);
   ELEC.stock = g; gElec.add(g);
@@ -513,7 +558,7 @@ const ELEC = {};
   const lora = pcb(16,24,3.2, 0x14161b); lora.position.set(0,14/1000,(M.z.mid+11)/1000); g.add(lora);
   const air = pcb(30,24,7.5, 0x11532e); air.position.set(0,(M.stack_y+16)/1000,(M.z.mid+18)/1000); g.add(air);
   const cam = pcb(M.cage.w,20,M.cage.h, 0x1c1f24);
-  cam.position.set(0, (M.cage.y-6)/1000, (M.z.deck+11)/1000);
+  cam.position.set(0, M.cage.y/1000, M.cage.z/1000);        // sur l'axe de bascule
   cam.rotation.x = -M.cage.tilt*D; g.add(cam);
   const gpsm = mesh(STLB64.gpsmount, TPU, .1, .84);
   gpsm.position.set(0, 30/1000, M.z.deck/1000); g.add(gpsm);
@@ -528,25 +573,53 @@ const gCap = group('cap');
   c.rotation.y = Math.PI/2; c.position.set(0,-26/1000,(M.z.deck+M.z.deck-M.z.mid+3.5)/1000); gCap.add(c); }
 
 /* antennes */
-const gAnt = group('antennes');
-{ /* Le drone monté porte DEUX antennes DJI, sortant à l'HORIZONTALE de chaque
-     côté du corps et balayées vers l'arrière — pas une seule antenne dressée
-     à la verticale derrière. (Relevé sur la photo du drone assemblé.) */
-  for (const sx of [1, -1]){
-    const g = new THREE.Group();
-    const m = mesh(STLB64.vtxant, 0x0f1114, .2, .5);
-    m.rotation.y = Math.PI/2;                      // l'axe du fourreau part vers +X
-    m.scale.setScalar(.001 * .62);                 // ~32 mm de fourreau apparent
-    g.add(m);
-    g.rotation.z = (sx > 0 ? -22 : 180 + 22) * D;  // vers l'extérieur, balayées de 22°
-    g.position.set(sx*24/1000, -16/1000, (M.z.deck + 5)/1000);   // sortent au ras du flanc,
-                                                   // sous le disque des hélices
-    gAnt.add(g);
+/* Antennes VTX — ENFILÉES DANS LES ALÉSAGES du support de queue, et rattachées
+   à lui : régler le support emmène les antennes avec, elles ne peuvent plus en
+   sortir. Le STL DJI est un fourreau Ø 3,5 sur les 32 mm du haut et un corps de
+   connecteur en bas ; on le recule de la profondeur du perçage pour que le
+   fourreau remplisse l'alésage et que le connecteur reste **dans** le châssis,
+   côté air unit — c'est le sens du câble sur le vrai drone.
+   Le groupe reste réglable : ses curseurs font varier l'enfoncement. */
+const gAntV = adjGroup('ant_vtx', 0, 0, 0);
+gTail.add(gAntV);                                  // repère local du support
+{ /* D'une antenne DJI O4 on ne voit que le fourreau : un jonc noir de Ø 3,4 mm.
+     Le connecteur, lui, reste branché sur l'air unit — le modéliser ici le
+     ferait traverser l'ESC et le condensateur pour rien. Longueur 44 mm :
+     17,3 dans l'alésage, le reste en saillie derrière le drone. */
+  const matA = new THREE.MeshStandardMaterial({color:0x0f1114, metalness:.2, roughness:.5});
+  const L = 44, R = .0017;
+  for (const sy of [1, -1]){
+    const t = new THREE.Mesh(new THREE.CylinderGeometry(R, R, L/1000, 14), matA);
+    t.rotation.x = Math.PI/2;                      // l'axe du jonc suit celui de l'alésage
+    addAt(gAntV, t, TAIL_BORE.x, sy*TAIL_BORE.y, TAIL_BORE.z0 + L/2);
+    const tip = new THREE.Mesh(new THREE.SphereGeometry(R, 12, 8), matA);
+    addAt(gAntV, tip, TAIL_BORE.x, sy*TAIL_BORE.y, TAIL_BORE.z0 + L);
   }
-  /* Antennes RX : à plat sous leur platine Sub250, sur le roof. */
-  const r = mesh(STLB64.rxant, 0x141414, .25, .5);
-  r.position.set(0, -52/1000, (M.z.total+8)/1000);
-  gAnt.add(r); }
+}
+/* Antennes RX — COUCHÉES dans les gorges de la platine Sub250. Construites en
+   primitives plutôt que reprises du STL TinyHoop : celui-ci a 30 mm de coaxial
+   entre le brin et le connecteur, ce qui envoyait le câble sous la batterie.
+   Ici : le brin de 26 mm dans sa gorge, et un bout de coaxial qui part vers
+   l'avant au ras de la platine — c'est tout ce qu'on voit sur le vrai drone. */
+const RXP_TOP = M.z.total + 5.9;                  // face haute de la platine
+const gAntR = adjGroup('ant_rx', 0, -52, RXP_TOP);
+{ const matR = new THREE.MeshStandardMaterial({color:0x141414, metalness:.25, roughness:.5});
+  for (const [dy, sx] of [[4, 1], [-4, -1]]){
+    const el = new THREE.Mesh(new THREE.CylinderGeometry(.0016, .0016, .026, 12), matR);
+    el.rotation.z = Math.PI/2;                     // le brin suit X
+    addAt(gAntR, el, 0, -52 + dy, RXP_TOP + 1.6);
+    // la courbe est décrite en millimètres du drone puis ramenée dans le repère
+    // du groupe (pivot 0 ; −52 ; RXP_TOP) — sinon les curseurs la décaleraient deux fois
+    const P = gAntR.userData.pivot;
+    const at = (x, y, z) => new THREE.Vector3((x-P[0])/1000, (y-P[1])/1000, (z-P[2])/1000);
+    const co = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3([
+        at(sx*13, -52 + dy, RXP_TOP + 1.6),
+        at(sx*13, -45 + dy, RXP_TOP + 1.2),
+        at(sx*11, -40 + dy, RXP_TOP - 1.0),
+      ]), 14, .0011, 6), matR);
+    gAntR.add(co);
+  }
+}
 
 /* batterie 4S 660 mAh + faisceau XT30 */
 const gBatt = group('battery');
@@ -654,8 +727,10 @@ const PARTS = [
    "Pièce d'origine Sub250 : deux passages d'antenne à l'arrière."],
   ['gpsmount_x', 'Platine GPS',         '×1 · PLA',         'Imprimé', 0x24272d,
    "Uniquement sur la variante Stratos : surélève le GPS pour l'éloigner du VTX."],
-  ['antennes',   'Antennes',            'VTX + RX',         'Électronique', 0x0f1114,
-   "Deux antennes DJI horizontales, une de chaque côté, balayées de 32° vers l'arrière — comme sur le drone monté. Antennes RX à plat sous leur platine Sub250."],
+  ['ant_vtx',    'Antennes VTX',        '×2 · DJI',         'Électronique', 0x0f1114,
+   "Les deux fourreaux DJI, enfilés dans les alésages Ø 3 mm du support de queue — cotes relevées dans le STL Sub250, pas estimées. Rattachées au support : le régler les emmène avec."],
+  ['ant_rx',     'Antennes RX',         'ELRS',             'Électronique', 0x141414,
+   "Antennes du récepteur, à plat sur leur platine Sub250. Réglables elles aussi."],
   ['battery',    'Batterie 4S',         '660-720 mAh',      'Électronique', 0x14161b,
    "XT30, sanglée sur le roof. Le fil descend par la découpe, avec du mou."],
   ['cables',     'Câbles moteur',       '3 × 4 phases',     'Électronique', 0xc0392b,
@@ -743,8 +818,11 @@ const EXPLODE = {
   props:[0,0,96], elec:[0,0,18], cap:[0,0,10], guards:[0,0,-40],
   battpad:[0,0,88], grommet:[0,0,82], bumper:[0,0,-20],
   flanc_g:[-30,0,-8], flanc_d:[30,0,-8],
-  feet:[0,0,-46], rxplate:[0,0,92], tailmount:[0,0,30], antennes:[0,0,100],
+  feet:[0,0,-46], rxplate:[0,0,92], tailmount:[0,0,30],
   battery:[0,0,112], screws:[0,0,60], cables:[0,0,-34],
+  // ant_vtx est un enfant du support de queue : son décalage est donné dans le
+  // repère du support, donc +Z le sort des alésages au lieu de le monter.
+  ant_vtx:[0,0,40], ant_rx:[0,0,104],
 };
 Object.keys(G).forEach(k => { G[k].userData.home = G[k].position.clone(); });
 const expSlider = document.getElementById('explode');
@@ -756,6 +834,84 @@ expSlider.oninput = () => {
     G[k].position.set(h.x + e[0]*t/1000, h.y + e[1]*t/1000, h.z + e[2]*t/1000);
   }
 };
+
+/* ─────────────────────────────── réglages fins (position / rotation)
+   Les pièces dont le calage reste incertain — cage caméra, berceau, étrier de
+   queue, platine RX, antennes — sont des groupes RÉGLABLES : leur origine est
+   posée sur la pièce, donc les curseurs de rotation la font pivoter sur place.
+   Le bloc de valeurs en bas est sélectionnable et copiable : c'est ce qu'on
+   recopie dans `tune.py` / ce générateur une fois le bon réglage trouvé, au
+   lieu de deviner une orientation à l'aveugle. */
+const ADJ_KEYS = Object.keys(G).filter(k => G[k].userData.pivot);
+const ADJ_AX = [['x','X',-60,60,.5,'mm'], ['y','Y',-60,60,.5,'mm'], ['z','Z',-40,60,.5,'mm'],
+                ['rx','RX',-180,180,1,'°'], ['ry','RY',-180,180,1,'°'], ['rz','RZ',-180,180,1,'°']];
+{
+  const sel = document.getElementById('adjSel');
+  const rows = document.getElementById('adjRows');
+  const out = document.getElementById('adjOut');
+  const inp = {}, lab = {};
+
+  for (const k of ADJ_KEYS){
+    G[k].userData.adj = {x:0, y:0, z:0, rx:0, ry:0, rz:0};
+    const o = document.createElement('option');
+    o.value = k; o.textContent = PART[k] ? PART[k][1] : k;
+    sel.appendChild(o);
+  }
+  for (const [key, nm, lo, hi, step] of ADJ_AX){
+    const row = document.createElement('div'); row.className = 'adjrow';
+    const s = document.createElement('span'); s.textContent = nm;
+    const r = document.createElement('input');
+    r.type = 'range'; r.min = lo; r.max = hi; r.step = step; r.value = 0;
+    const b = document.createElement('b'); b.textContent = '0';
+    row.append(s, r, b); rows.appendChild(row);
+    inp[key] = r; lab[key] = b;
+    r.oninput = apply;
+  }
+
+  function apply(){
+    const g = G[sel.value], a = g.userData.adj;
+    for (const [key,,,,, unit] of ADJ_AX){
+      a[key] = +inp[key].value;
+      lab[key].textContent = a[key] + (unit === 'mm' ? '' : '°');
+    }
+    const base = g.userData.base, br = g.userData.baseRot;
+    g.position.set(base.x + a.x/1000, base.y + a.y/1000, base.z + a.z/1000);
+    g.rotation.set(br.x + a.rx*D, br.y + a.ry*D, br.z + a.rz*D);
+    g.userData.home = g.position.clone();   // l'éclatée repart de la nouvelle place
+    readout();
+  }
+  function load(){
+    const a = G[sel.value].userData.adj;
+    for (const [key,,,,, unit] of ADJ_AX){
+      inp[key].value = a[key];
+      lab[key].textContent = a[key] + (unit === 'mm' ? '' : '°');
+    }
+  }
+  function readout(){
+    const lines = ADJ_KEYS
+      .filter(k => ADJ_AX.some(([q]) => G[k].userData.adj[q]))
+      .map(k => { const a = G[k].userData.adj;
+        return k + ' : xyz ' + a.x + ' ' + a.y + ' ' + a.z +
+               ' mm · rot ' + a.rx + ' ' + a.ry + ' ' + a.rz + '°'; });
+    out.textContent = lines.length ? lines.join('\n')
+      : "Rien de réglé. Bouge un curseur, puis « Copier les valeurs » — c'est cette ligne qui sert à figer la position dans le code.";
+  }
+  sel.onchange = load;
+  document.getElementById('adjReset').onclick = () => {
+    const a = G[sel.value].userData.adj;
+    for (const [key] of ADJ_AX) a[key] = 0;
+    load(); apply();
+  };
+  document.getElementById('adjCopy').onclick = e => {
+    const txt = out.textContent;
+    const done = () => { e.target.textContent = 'Copié ✓';
+      setTimeout(() => e.target.textContent = 'Copier les valeurs', 1400); };
+    if (navigator.clipboard) navigator.clipboard.writeText(txt).then(done, () => {});
+    const r = document.createRange(); r.selectNodeContents(out);
+    const s = getSelection(); s.removeAllRanges(); s.addRange(r);
+  };
+  sel.value = ADJ_KEYS[0]; load(); readout();
+}
 
 /* ─────────────────────────────── vues, fil de fer, thème, plein écran */
 function look(dx,dy,dz,d){
@@ -830,7 +986,8 @@ const ASM = (function(){
         o.material = new THREE.MeshBasicMaterial({color:0x2f6fed, transparent:true,
           opacity:.085, depthWrite:false}); } });
       g.position.copy(G[k].userData.home); g.visible = true;
-      frameRoot.add(g); ghosts.push([k,g]);
+      // dans le repère du PARENT de la pièce — ant_vtx vit dans celui du support
+      (G[k].parent || frameRoot).add(g); ghosts.push([k,g]);
     }
   }
   function refreshGhosts(){
