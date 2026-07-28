@@ -8,6 +8,7 @@ d'assemblage** dans le navigateur.
 
 ```bash
 python3 oasis30/cad/prep_sub250.py   # prépare les STL Sub250 d'origine
+python3 oasis30/cad/prep_dji_o4.py   # convertit les STEP DJI O4 Pro (--ref pour le maillage fin)
 python3 oasis30/cad/export.py        # -> cad/step/*.step + cad/stl/*.stl + contrôles
 python3 oasis30/viz/gen_viewer.py    # -> viz/drone_viewer.html + build/build.html
 ```
@@ -15,10 +16,11 @@ python3 oasis30/viz/gen_viewer.py    # -> viz/drone_viewer.html + build/build.ht
 | | |
 |---|---|
 | **[`viz/drone_viewer.html`](viz/)** | le visualisateur — ouvrir par double-clic |
-| **[`build/build.html`](build/)** | le simulateur d'assemblage, 25 pièces à emboîter |
+| **[`build/build.html`](build/)** | le simulateur d'assemblage, 27 pièces à emboîter |
 | **[`cad/step/`](cad/step/)** | un `.step` par pièce + `oasisfly30_assembly.step` |
 | **[`cad/stl/`](cad/stl/)** | les `.stl` d'impression (et `stl/viz/` pour le web) |
 | **[`ref/`](ref/)** | les 4 STL Sub250 d'origine + les photos + [`MEASURES.md`](ref/MEASURES.md) |
+| **[`ref/vendor_step/`](ref/vendor_step/)** | les 3 STEP **DJI O4 Pro** — caméra, air unit, antenne |
 | **[`hardware/README.md`](hardware/)** | la nomenclature complète, deux variantes |
 
 ## Géométrie
@@ -61,31 +63,48 @@ en écrit les deux versions imprimables, `cad/stl/flanc_gauche.stl` et
 `cad/stl/flanc_droit.stl` (miroir, enroulement des triangles inversé pour que les
 normales restent sortantes).
 
+### Vidéo — les STEP DJI, repris tels quels
+
+Le dossier [`ref/vendor_step/`](ref/vendor_step/) contient les fichiers du
+constructeur : **caméra O4 Pro**, **air unit O4 Pro** et **antenne O4 Pro**.
+`cad/prep_dji_o4.py` en tire les STL du visualisateur. Ce sont eux qui ont
+tranché deux points du montage :
+
+- la caméra porte ses **propres tourillons** Ø 2,1 mm en y = ±10, et mesure
+  **23,8 mm** hors tourillons : elle bascule directement entre les deux joues
+  carbone, dont l'écart intérieur fait 24,7 — **il n'y a pas de berceau** ;
+- l'air unit fait **33,5 mm de côté** et se fixe en **25,5 × 25,5**, ce qui
+  recoupe le perçage VTX relevé sur le châssis.
+
 ### Imprimé — ce qui manque, et qu'on ajoute
 
-`cam_cradle_bottom` + `cam_cradle_top` (berceau caméra O4 Pro incliné à 30°) ·
 `arm_guard` ×4 (clip de bras **avec canal pour les 3 fils de phase**) ·
 `batt_pad` (patin antidérapant nervuré) · `xt30_grommet` (passe-fil du roof) ·
 `gps_mount` (variante Stratos) · `rear_bumper` (capuchon de pointe arrière).
+
+`cam_cradle_bottom` + `cam_cradle_top` restent exportés dans `cad/`, mais **ne
+sont plus au montage** : ils ne servent qu'à une caméra dépourvue de tourillons.
 
 ## Le visualisateur
 
 Même recette que les autres visualisateurs du dépôt — page **autonome**,
 Three.js embarqué, aucun fichier externe, ouvrable par double-clic.
 
-- **25 composants** affichables/masquables, chacun avec son sélecteur de couleur —
-  flanc gauche et flanc droit y figurent séparément.
+- **27 composants** affichables/masquables, chacun avec son sélecteur de couleur —
+  flanc gauche et flanc droit y figurent séparément, la caméra et l'air unit O4
+  Pro aussi.
 - **Sélecteur d'électronique** : *stock Sub250* (RedFox A3 45A AIO + DJI O4 Pro)
   ou *Stratos programmable* (carte TINYHOOP AIO + LoRa 868 + GPS).
 - Clic sur une pièce → surbrillance + description ; vue **éclatée** ;
   fil de fer ; thème clair ; **plein écran** (touche `F`).
 - **Panneau « Réglages »** : six curseurs (X/Y/Z en mm, RX/RY/RZ en degrés) sur
-  la cage caméra, le berceau, le support de queue, la platine RX et les deux
-  jeux d'antennes. Chaque groupe pivote **sur lui-même** — son origine est posée
-  sur la pièce, pas au centre du drone. Les valeurs s'affichent en bas du
+  la cage caméra, la caméra O4 Pro (son pivot **est** l'axe de bascule : le
+  curseur RX règle donc l'inclinaison), le support de queue, la platine RX et
+  les deux jeux d'antennes. Chaque groupe pivote **sur lui-même** — son origine
+  est posée sur la pièce, pas au centre du drone. Les valeurs s'affichent en bas du
   panneau et se copient d'un bouton : c'est ce qu'on recopie dans le générateur
   pour figer un calage, au lieu de chercher une orientation à l'aveugle.
-- **Mode assemblage** : les 25 pièces attendent autour du drone, leur logement
+- **Mode assemblage** : les 27 pièces attendent autour du drone, leur logement
   est marqué par un fantôme bleu, un double-clic dans la liste les emboîte.
 
 Les deux pages sortent du **même générateur** : le simulateur ne peut pas
@@ -95,8 +114,8 @@ que ceux d'impression — la 3-D montre donc bien ce qui sortira de l'imprimante
 
 ## Réglages d'impression
 
-- **TPU 95A** pour tout ce qui commence par `cam_cradle`, `arm_guard`,
-  `batt_pad`, `xt30_grommet`, `rear_bumper` — buse 0,4 · couche 0,2 ·
+- **TPU 95A** pour `arm_guard`, `batt_pad`, `xt30_grommet`, `rear_bumper`
+  (et `cam_cradle_*` si tu montes une caméra sans tourillons) — buse 0,4 · couche 0,2 ·
   3 périmètres · 20 % gyroïde · **sans support** · 25-30 mm/s.
 - **PLA-CF ou PETG** pour `gps_mount`.
 - **Plaques et bras d'essai** : PLA-CF, couche 0,15, **4 périmètres**, 40 %
@@ -109,10 +128,10 @@ que ceux d'impression — la 3-D montre donc bien ce qui sortira de l'imprimante
 1. **Moteurs d'abord**, vis M2 par le dessous, frein-filet, et vérifier
    qu'aucune vis ne touche le bobinage.
 2. Passer les **3 fils de phase** par bras **avant** de clipser les `arm_guard`.
-3. La cage caméra a un écart intérieur de **24,7 mm** : c'est le **berceau TPU**
-   qui rentre dedans, pas la caméra nue. Se tromper là oblige à tout démonter.
-   Les deux coquilles du berceau (13 + 12 mm) partent du bas de la joue, à
-   z = 5,5, et sont centrées sur l'axe de bascule (0 ; 55 ; 18).
+3. La cage caméra a un écart intérieur de **24,7 mm** et la caméra O4 Pro fait
+   **23,8 mm** hors tourillons : elle rentre nue, sur l'axe M2 percé dans les
+   joues à (0 ; 55 ; 18). Basculée à 30°, son coin arrière-bas descend à z = 3 —
+   c'est normal, la médiane ne fait plus que 11 mm de large à cette hauteur.
 4. **Souder l'XT30 en dernier**, condensateur d'abord — plus de place au fer.
 5. Faire passer le fil de batterie par la **découpe du roof** (avec le
    passe-fil) : il descend droit sur les pads de l'ESC au lieu de frotter sur
@@ -135,11 +154,14 @@ liste ce qui reste estimé). Les **détails de contour, d'allègements et de
 perçages secondaires sont plausibles, pas relevés** : avant de lancer une
 découpe carbone, faire un montage à blanc sur le vrai châssis.
 
-Les 4 pièces Sub250, elles, sont les fichiers d'origine — donc exactes.
+Les 4 pièces Sub250 et les 3 pièces DJI O4 Pro, elles, sont les fichiers
+d'origine — donc exactes. En revanche **leur placement dans le drone** reste
+mon travail : les cotes des pièces sont justes, leur position est déduite des
+photos et des points d'accroche du châssis.
 
 `cad/export.py` contrôle 11 cotes à chaque export et **échoue** si l'une dérive.
 Le visualisateur est passé au test d'interférence pièce par pièce : **0 collision**
-sur 164 maillages. Mais ce test compare des boîtes englobantes — il attrape les
+sur 162 maillages. Mais ce test compare des boîtes englobantes — il attrape les
 interpénétrations franches, pas les contacts tangents, et ne remplace pas un
 contrôle booléen. Rien n'a été imprimé ni volé.
 

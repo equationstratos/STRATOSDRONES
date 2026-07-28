@@ -83,7 +83,6 @@ def stls():
         "top": o("top_plate"), "arm": o("arm"), "cage": o("cam_side_plate"),
         "standoff": o("standoff"),
         # ── pièces imprimées Stratos
-        "cradle_b": o("cam_cradle_bottom"), "cradle_t": o("cam_cradle_top"),
         "guard": o("arm_guard"), "battpad": o("batt_pad"),
         "grommet": o("xt30_grommet"), "gpsmount": o("gps_mount"),
         "bumper": o("rear_bumper"),
@@ -91,10 +90,11 @@ def stls():
         "flanc_g": o("flanc_gauche"), "flanc_d": o("flanc_droit"),
         "footpad": o("sub250_foot_pad"),
         "rxplate": o("sub250_rx_plate"), "tailmount": o("sub250_tail_mount"),
+        # ── DJI O4 Pro : STEP du constructeur, converti par prep_dji_o4.py
+        "o4air": o("dji_air_unit"), "o4cam": o("dji_camera"), "o4ant": o("dji_antenna"),
         # ── pièces réutilisées du TinyHoop MK1 (mêmes composants du commerce)
         "prop": t("prop"), "screw": t("screw"), "cap": t("capacitor"),
-        "gps": t("gps_module"), "rxpcb": t("rx_pcb"), "rxant": t("rx_antenna"),
-        "board": t("board"),
+        "gps": t("gps_module"), "rxpcb": t("rx_pcb"), "board": t("board"),
     }
 
 
@@ -408,13 +408,12 @@ for (const [x,y] of M.standoffs.top.concat(M.standoffs.cam)){
 }
 
 /* pièces imprimées Stratos */
-/* Berceau : les deux coquilles s'empilent (13 mm + 12 mm = 25 mm) dans une cage
-   haute de 25,5 — elles partent donc du bas de la joue, z = 5,5, et le tout est
-   centré sur l'axe de bascule (0 ; 55 ; 18). */
-const gCradle = adjGroup('cradle', 0, M.cage.y, M.cage.z);
-{ const cy = M.cage.y, cz = M.z.mid;
-  addAt(gCradle, mesh(STLB64.cradle_b, TPU, .1, .82), 0, cy, cz);
-  addAt(gCradle, mesh(STLB64.cradle_t, TPU, .1, .82), 0, cy, cz + 13); }
+/* Pas de berceau TPU dans le montage : le STEP DJI montre que la caméra O4 Pro
+   porte ses **propres tourillons** Ø 2,1 en y = ±10, et que sa largeur hors
+   tourillons est de 23,8 mm — elle bascule donc directement entre les deux
+   joues carbone, dont l'écart intérieur est de 24,7. C'est ce que montrent les
+   photos du châssis. `cam_cradle_bottom/top` restent dans `cad/` : ils ne
+   servent qu'à une caméra sans tourillons. */
 
 const gGuards = group('guards');
 for (const a of ARM_DIR){
@@ -539,14 +538,6 @@ const ELEC = {};
 { // ── variante STOCK : RedFox A3 45A AIO + DJI O4 Pro
   const g = new THREE.Group();
   const fc = pcb(30,30,3.2, 0x0f1a2e); fc.position.set(0,M.stack_y/1000,(M.z.mid+5)/1000); g.add(fc);
-  const air = pcb(30,24,7.5, 0x11532e); air.position.set(0,(M.stack_y+16)/1000,(M.z.mid+13)/1000); g.add(air);
-  const cam = pcb(M.cage.w,20,M.cage.h, 0x1c1f24);
-  cam.position.set(0, M.cage.y/1000, M.cage.z/1000);        // sur l'axe de bascule
-  cam.rotation.x = -M.cage.tilt*D; g.add(cam);
-  const lens = new THREE.Mesh(new THREE.CylinderGeometry(.0058,.0062,.008,24),
-    new THREE.MeshStandardMaterial({color:0x0a0b0d, metalness:.5, roughness:.18}));
-  lens.rotation.x = Math.PI/2 - M.cage.tilt*D;
-  lens.position.set(0, (M.cage.y+9.5)/1000, (M.cage.z+5.5)/1000); g.add(lens);
   const rx = mesh(STLB64.rxpcb, 0x0f3d0f, .2, .5);
   rx.position.set(0,-30/1000,(M.z.mid+3)/1000); g.add(rx);
   ELEC.stock = g; gElec.add(g);
@@ -556,10 +547,6 @@ const ELEC = {};
   const fc = mesh(STLB64.board, 0x0b6b39, .15, .5);
   fc.position.set(0,M.stack_y/1000,(M.z.mid+4)/1000); g.add(fc);
   const lora = pcb(16,24,3.2, 0x14161b); lora.position.set(0,14/1000,(M.z.mid+11)/1000); g.add(lora);
-  const air = pcb(30,24,7.5, 0x11532e); air.position.set(0,(M.stack_y+16)/1000,(M.z.mid+18)/1000); g.add(air);
-  const cam = pcb(M.cage.w,20,M.cage.h, 0x1c1f24);
-  cam.position.set(0, M.cage.y/1000, M.cage.z/1000);        // sur l'axe de bascule
-  cam.rotation.x = -M.cage.tilt*D; g.add(cam);
   const gpsm = mesh(STLB64.gpsmount, TPU, .1, .84);
   gpsm.position.set(0, 30/1000, M.z.deck/1000); g.add(gpsm);
   const gps = mesh(STLB64.gps, 0x0a0c10, .2, .5);
@@ -568,6 +555,49 @@ const ELEC = {};
   rx.position.set(0,-30/1000,(M.z.mid+3)/1000); g.add(rx);
   ELEC.stratos = g; g.visible = false; gElec.add(g);
 }
+/* ─────────────────────────────── DJI O4 Pro — les STEP du constructeur
+   Trois pièces converties par `../cad/prep_dji_o4.py`, avec leur repère propre :
+
+     · `dji_air_unit` — 33,4 carré × 13,0, centré en X/Y, posé sur z = 0.
+       Le connecteur de nappe sort en −Y et l'USB-C en −X.
+     · `dji_camera`   — l'ORIGINE EST L'AXE DE BASCULE : les deux tourillons
+       Ø 2,1 sont en (x = 0 ; y = ±10 ; z = 0). L'objectif regarde vers −X.
+     · `dji_antenna`  — fourreau Ø 3,5, axe +Z, démarrant à z = 0.
+
+   Deux rotations amènent la caméra dans le drone : −90° sur Z met l'objectif
+   vers l'avant (+Y) et l'axe de bascule sur X ; puis CAM_TILT sur X la cabre.
+   Dans l'ordre XYZ de Three.js, `rotation.set(tilt, 0, −90°)` fait exactement
+   ça. La caméra est alors posée sur l'axe percé dans les joues (0 ; 55 ; 18). */
+const AIR_Z = M.z.mid + 8;                         // au-dessus du stack de vol
+
+const gO4air = group('o4air');
+{ const m = mesh(STLB64.o4air, 0x1a1d22, .35, .42);
+  m.rotation.z = Math.PI;                          // nappe vers l'avant, USB-C à droite
+  m.position.set(0, M.stack_y/1000, AIR_Z/1000);
+  gO4air.add(m); }
+
+/* Groupe réglable dont le pivot EST l'axe de bascule : le curseur RX du panneau
+   « Réglages » règle donc directement l'inclinaison de la caméra. */
+const gO4cam = adjGroup('o4cam', 0, M.cage.y, M.cage.z);
+{ const m = mesh(STLB64.o4cam, 0x1c1f24, .3, .45);
+  m.rotation.set(M.cage.tilt*D, 0, -Math.PI/2);
+  addAt(gO4cam, m, 0, M.cage.y, M.cage.z);
+  /* Nappe caméra : le STEP la donne droite sur 148 mm, ce qui n'a aucun sens
+     une fois montée. On la retrace pliée, de l'arrière de la caméra jusqu'au
+     connecteur de l'air unit. Points en millimètres du drone. */
+  const P = [[0, M.cage.y - 11.0, M.cage.z - 6.4],
+             [0, M.cage.y - 19,   M.cage.z - 6.0],
+             [0, 28,              AIR_Z + 2.0],
+             [1.5, 15,            AIR_Z + 1.5]];
+  const Q = gO4cam.userData.pivot;
+  const rib = new THREE.Mesh(
+    new THREE.TubeGeometry(new THREE.CatmullRomCurve3(
+      P.map(([x,y,z]) => new THREE.Vector3((x-Q[0])/1000, (y-Q[1])/1000, (z-Q[2])/1000))),
+      24, .0016, 5),
+    new THREE.MeshStandardMaterial({color:0x8a5a2b, metalness:.15, roughness:.6}));
+  rib.scale.z = .55;                               // une nappe est plate
+  gO4cam.add(rib); }
+
 const gCap = group('cap');
 { const c = mesh(STLB64.cap, 0x1b3a8f, .25, .45);
   c.rotation.y = Math.PI/2; c.position.set(0,-26/1000,(M.z.deck+M.z.deck-M.z.mid+3.5)/1000); gCap.add(c); }
@@ -582,18 +612,29 @@ const gCap = group('cap');
    Le groupe reste réglable : ses curseurs font varier l'enfoncement. */
 const gAntV = adjGroup('ant_vtx', 0, 0, 0);
 gTail.add(gAntV);                                  // repère local du support
-{ /* D'une antenne DJI O4 on ne voit que le fourreau : un jonc noir de Ø 3,4 mm.
-     Le connecteur, lui, reste branché sur l'air unit — le modéliser ici le
-     ferait traverser l'ESC et le condensateur pour rien. Longueur 44 mm :
-     17,3 dans l'alésage, le reste en saillie derrière le drone. */
-  const matA = new THREE.MeshStandardMaterial({color:0x0f1114, metalness:.2, roughness:.5});
-  const L = 44, R = .0017;
+{ /* Le fourreau du STEP DJI, Ø 3,5 sur 85 mm, axe +Z : il tombe pile dans
+     l'axe des alésages, aucune rotation à faire. Le connecteur MMCX a été
+     coupé à la conversion — il n'est pas ici, il est sur l'air unit, à l'autre
+     bout du coaxial tracé juste en dessous. */
+  for (const sy of [1, -1])
+    addAt(gAntV, mesh(STLB64.o4ant, 0x0f1114, .2, .5),
+          TAIL_BORE.x, sy*TAIL_BORE.y, TAIL_BORE.z0);
+
+  /* Coaxial : de l'air unit à l'entrée de l'alésage. La courbe se décrit en
+     millimètres du DRONE, puis se convertit dans le repère du support — sinon
+     régler le support la déformerait. Le support envoie X_fichier sur −Z,
+     Y_fichier sur +X et Z_fichier sur −Y, d'où l'inverse ci-dessous. */
+  const toTail = (x, y, z) => new THREE.Vector3(
+    (TAIL_Z - z)/1000, x/1000, (TAIL_Y - y)/1000);
   for (const sy of [1, -1]){
-    const t = new THREE.Mesh(new THREE.CylinderGeometry(R, R, L/1000, 14), matA);
-    t.rotation.x = Math.PI/2;                      // l'axe du jonc suit celui de l'alésage
-    addAt(gAntV, t, TAIL_BORE.x, sy*TAIL_BORE.y, TAIL_BORE.z0 + L/2);
-    const tip = new THREE.Mesh(new THREE.SphereGeometry(R, 12, 8), matA);
-    addAt(gAntV, tip, TAIL_BORE.x, sy*TAIL_BORE.y, TAIL_BORE.z0 + L);
+    const co = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3([
+        toTail(sy*11, -17,   AIR_Z + 3),   // au ras de la face arrière de l'air unit
+        toTail(sy*15, -24,   AIR_Z + 1),
+        toTail(sy*14, -34,   TAIL_Z + 6),
+        toTail(sy*TAIL_BORE.y, TAIL_Y, TAIL_Z - TAIL_BORE.x),
+      ]), 22, .00085, 6),
+      new THREE.MeshStandardMaterial({color:0x101216, metalness:.2, roughness:.55}));
+    gAntV.add(co);
   }
 }
 /* Antennes RX — COUCHÉES dans les gorges de la platine Sub250. Construites en
@@ -701,12 +742,14 @@ const PARTS = [
    "Vissés par-dessous en M2. Vérifier qu'aucune vis ne touche le bobinage."],
   ['props',      'Hélices 3″',     '×4 · 76 mm',       'Motorisation', 0xd8721e,
    "Deux CW, deux CCW. Dégagement avant/arrière : 6,7 mm seulement — à monter droit."],
-  ['elec',       'Électronique',        'stack + caméra',   'Électronique', 0x11532e,
-   "Stock : RedFox A3 45A AIO + DJI O4 Pro. Stratos : carte TINYHOOP AIO + LoRa 868 + GPS."],
+  ['o4cam',      'Caméra DJI O4 Pro',   '×1 · STEP DJI',    'Électronique', 0x1c1f24,
+   "Le fichier constructeur, tel quel. Ses deux tourillons Ø 2,1 mm (y = ±10) basculent directement entre les joues carbone : 23,8 mm de large pour 24,7 d'écart. Le curseur RX du panneau « Réglages » change son inclinaison."],
+  ['o4air',      'Air unit DJI O4 Pro', '×1 · STEP DJI',    'Électronique', 0x1a1d22,
+   "Le fichier constructeur, tel quel. 33,5 mm de côté, 13,1 de haut, fixation 25,5 × 25,5 — exactement le perçage VTX du châssis. Nappe vers l'avant, USB-C sur le côté."],
+  ['elec',       'Électronique',        'stack + RX',       'Électronique', 0x11532e,
+   "Stock : RedFox A3 45A AIO. Stratos : carte TINYHOOP AIO + LoRa 868 + GPS. La caméra et l'air unit O4 Pro sont des composants à part, communs aux deux variantes."],
   ['cap',        'Condensateur',        '×1 · 35 V',        'Électronique', 0x1b3a8f,
    "Couché contre la médiane, jamais debout : il ne dépasse pas du châssis."],
-  ['cradle',     'Berceau caméra',      '×2 · TPU',         'Imprimé', 0x24272d,
-   "Deux coquilles qui enserrent la caméra à 30°. Pièce Stratos — absente du kit Sub250."],
   ['guards',     'Protège-bras',        '×4 · TPU',         'Imprimé', 0x24272d,
    "Clip sur le bras avec un canal pour les 3 fils de phase : les hélices ne peuvent plus les trancher."],
   ['battpad',    'Patin de batterie',   '×1 · TPU',         'Imprimé', 0x24272d,
@@ -814,7 +857,7 @@ setElec('stock');
 /* ─────────────────────────────── vue éclatée */
 const EXPLODE = {
   bottom:[0,0,0], arms:[0,0,-14], mid:[0,0,26], deck:[0,0,38], top:[0,0,74],
-  standoffs:[0,0,50], cage:[0,0,58], cradle:[0,0,66], motors:[0,0,-28],
+  standoffs:[0,0,50], cage:[0,0,58], o4cam:[0,0,66], o4air:[0,0,30], motors:[0,0,-28],
   props:[0,0,96], elec:[0,0,18], cap:[0,0,10], guards:[0,0,-40],
   battpad:[0,0,88], grommet:[0,0,82], bumper:[0,0,-20],
   flanc_g:[-30,0,-8], flanc_d:[30,0,-8],

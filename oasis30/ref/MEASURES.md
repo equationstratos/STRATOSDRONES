@@ -115,7 +115,30 @@ justement là que se trouve la matière autour des vis de fixation. Le profil a
 été corrigé (demi-largeur 26 mm à y ≈ ±12). Marge la plus juste aujourd'hui :
 **2,3 mm**, et `export.py` échoue si elle repasse en négatif.
 
-## 7. Limites de méthode
+## 7. Ce que les STEP DJI ont tranché
+
+Les trois fichiers de `vendor_step/` sont ceux de DJI. Lus dans gmsh, ils
+donnent des cotes **exactes** — pas des estimations — et deux d'entre elles
+règlent des questions restées ouvertes :
+
+| Cote | Valeur lue | Ce qu'elle décide |
+|---|---|---|
+| Largeur caméra hors tourillons | **23,8 mm** | l'écart intérieur de cage (24,7) est bon : la caméra rentre **nue**, il n'y a pas de berceau |
+| Tourillons caméra | Ø 2,1 en (0 ; ±10 ; 0) | l'axe de bascule est bien un M2 percé dans les joues |
+| Profondeur caméra | 25,4 mm | basculée à 30°, son coin arrière-bas descend à z = 3 |
+| Air unit | 33,4 carré × 13,0 | tient dans les 43 mm de large du châssis |
+| Fixation air unit | **25,5 × 25,5** | recoupe le perçage VTX relevé sur la médiane |
+| Fourreau d'antenne | Ø 3,5 | les alésages du support de queue font Ø 3,0 : le TPU serre le fourreau, c'est bien lui qui passe dedans |
+
+Les 148 mm de nappe droite du STEP caméra et le connecteur MMCX du STEP
+antenne sont **retirés à la conversion** : dans le drone ils sont pliés, et
+`viz/gen_viewer.py` les retrace en courbe.
+
+Ce qui reste estimé, malgré ces fichiers : **la position** de l'air unit dans
+la baie (z = 13,5, au-dessus du stack de vol) et le tracé exact de la nappe et
+des coaxiaux. Les pièces sont justes, leur placement est déduit des photos.
+
+## 8. Limites de méthode
 
 Une limite de méthode, pas une cote : le contrôle d'interférence du
 visualisateur compare des **boîtes englobantes alignées sur les axes**. Pour
