@@ -115,11 +115,11 @@ justement là que se trouve la matière autour des vis de fixation. Le profil a
 été corrigé (demi-largeur 26 mm à y ≈ ±12). Marge la plus juste aujourd'hui :
 **2,3 mm**, et `export.py` échoue si elle repasse en négatif.
 
-## 7. Ce que les STEP DJI ont tranché
+## 7. Ce que les STEP du commerce ont tranché
 
-Les trois fichiers de `vendor_step/` sont ceux de DJI. Lus dans gmsh, ils
-donnent des cotes **exactes** — pas des estimations — et deux d'entre elles
-règlent des questions restées ouvertes :
+Les fichiers de `vendor_step/` sont ceux des constructeurs. Lus dans gmsh, ils
+donnent des cotes **exactes** — pas des estimations — et plusieurs d'entre
+elles règlent des questions restées ouvertes :
 
 | Cote | Valeur lue | Ce qu'elle décide |
 |---|---|---|
@@ -129,9 +129,12 @@ règlent des questions restées ouvertes :
 | Air unit | 33,4 carré × 13,0 | tient dans les 43 mm de large du châssis |
 | Fixation air unit | **25,5 × 25,5** | recoupe le perçage VTX relevé sur la médiane |
 | Fourreau d'antenne | Ø 3,5 | les alésages du support de queue font Ø 3,0 : le TPU serre le fourreau, c'est bien lui qui passe dedans |
+| Moteur XING2 1404 | Ø 19,9 × 18,6 | plan de pose à z = −4,25, haut de cloche à z = 9,54 |
+| Haut de cloche | **z = 19,3** | plan de pose plaqué sur le bras (5,5) + 9,54 |
+| Hauteur d'hélice | **z = 19,6** | posée sur la cloche, rondelle comprise — j'avais estimé 21,0 |
 
-Les 148 mm de nappe droite du STEP caméra et le connecteur MMCX du STEP
-antenne sont **retirés à la conversion** : dans le drone ils sont pliés, et
+Les 148 mm de nappe droite du STEP caméra, le connecteur MMCX du STEP antenne
+et les 25 mm de fils droits du STEP moteur sont **retirés à la conversion** : dans le drone ils sont pliés, et
 `viz/gen_viewer.py` les retrace en courbe.
 
 Ce qui reste estimé, malgré ces fichiers : **la position** de l'air unit dans

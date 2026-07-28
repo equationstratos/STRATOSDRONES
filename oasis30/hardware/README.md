@@ -60,22 +60,23 @@ Les deux variantes sont sélectionnables dans le visualisateur
 | Condensateur | 35 V faible ESR, couché sur le pont | idem |
 | Buzzer | optionnel | optionnel |
 
-### Fichiers 3-D du constructeur
+### Fichiers 3-D des constructeurs
 
-Les trois STEP DJI de [`../ref/vendor_step/`](../ref/vendor_step/) sont repris
-tels quels et convertis par [`../cad/prep_dji_o4.py`](../cad/prep_dji_o4.py) :
+Les STEP de [`../ref/vendor_step/`](../ref/vendor_step/) sont repris tels quels
+et convertis par [`../cad/prep_vendor.py`](../cad/prep_vendor.py) :
 
 | Pièce | Fichier | Cotes lues dans le STEP |
 |---|---|---|
 | Caméra O4 Pro | `DJI_O4_PRO_CAM.step` | 25,4 × 23,8 × 20,0 · tourillons Ø 2,1 en y = ±10 |
 | Air unit O4 Pro | `DJI_O4_AIR_UNIT_PRO.step` | 33,4 carré × 13,0 · fixation 25,5 × 25,5 |
 | Antenne O4 Pro | `DJI_O4_Pro_Antenna_v1.step` | fourreau Ø 3,5 · 85 mm utiles |
+| Moteur XING2 1404 | `XING2_1404.step` | Ø 19,9 × 18,6 · plan de pose z = −4,25 · haut de cloche z = 9,54 |
 
 ## Motorisation — identique aux deux variantes
 
 | Pièce | Qté | Référence |
 |---|---|---|
-| Moteurs | **4** | **1404 · 4500 KV**, entraxe M2 9 × 9 mm |
+| Moteurs | **4** | **XING2 1404 · 4500 KV**, entraxe M2 9 × 9 mm — STEP dans `../ref/vendor_step/` |
 | Hélices | **4** (2 CW + 2 CCW) | **3″ · 76 mm** tri-pale (HQProp / Gemfan) |
 | Batterie | 1-2 | **LiPo 4S 660-720 mAh**, connecteur **XT30** |
 

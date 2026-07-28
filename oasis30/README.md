@@ -8,7 +8,7 @@ d'assemblage** dans le navigateur.
 
 ```bash
 python3 oasis30/cad/prep_sub250.py   # prépare les STL Sub250 d'origine
-python3 oasis30/cad/prep_dji_o4.py   # convertit les STEP DJI O4 Pro (--ref pour le maillage fin)
+python3 oasis30/cad/prep_vendor.py   # convertit les STEP du commerce (--ref pour le maillage fin)
 python3 oasis30/cad/export.py        # -> cad/step/*.step + cad/stl/*.stl + contrôles
 python3 oasis30/viz/gen_viewer.py    # -> viz/drone_viewer.html + build/build.html
 ```
@@ -20,7 +20,7 @@ python3 oasis30/viz/gen_viewer.py    # -> viz/drone_viewer.html + build/build.ht
 | **[`cad/step/`](cad/step/)** | un `.step` par pièce + `oasisfly30_assembly.step` |
 | **[`cad/stl/`](cad/stl/)** | les `.stl` d'impression (et `stl/viz/` pour le web) |
 | **[`ref/`](ref/)** | les 4 STL Sub250 d'origine + les photos + [`MEASURES.md`](ref/MEASURES.md) |
-| **[`ref/vendor_step/`](ref/vendor_step/)** | les 3 STEP **DJI O4 Pro** — caméra, air unit, antenne |
+| **[`ref/vendor_step/`](ref/vendor_step/)** | les STEP du commerce — **DJI O4 Pro** et **moteur XING2 1404** |
 | **[`hardware/README.md`](hardware/)** | la nomenclature complète, deux variantes |
 
 ## Géométrie
@@ -28,7 +28,7 @@ python3 oasis30/viz/gen_viewer.py    # -> viz/drone_viewer.html + build/build.ht
 | | |
 |---|---|
 | Entraxe | **150 mm** en diagonale — **125 × 82,9** (X large, pas carré) |
-| Moteurs | aux points **(±62,5 ; ±41,46)**, entraxe M2 9×9 |
+| Moteurs | **XING2 1404** aux points **(±62,5 ; ±41,46)**, entraxe M2 9×9 |
 | Hélices | **3″ · 76,2 mm** |
 | Longueur hors-tout | **132 mm** · hauteur **32,5 mm** |
 | Plaques | basse **2,5** · médiane **2,5** · pont **2,5** · roof **2,0** |
@@ -63,18 +63,21 @@ en écrit les deux versions imprimables, `cad/stl/flanc_gauche.stl` et
 `cad/stl/flanc_droit.stl` (miroir, enroulement des triangles inversé pour que les
 normales restent sortantes).
 
-### Vidéo — les STEP DJI, repris tels quels
+### Du commerce — les STEP constructeur, repris tels quels
 
-Le dossier [`ref/vendor_step/`](ref/vendor_step/) contient les fichiers du
-constructeur : **caméra O4 Pro**, **air unit O4 Pro** et **antenne O4 Pro**.
-`cad/prep_dji_o4.py` en tire les STL du visualisateur. Ce sont eux qui ont
-tranché deux points du montage :
+Le dossier [`ref/vendor_step/`](ref/vendor_step/) contient les fichiers
+d'origine : **caméra O4 Pro**, **air unit O4 Pro**, **antenne O4 Pro** et
+**moteur XING2 1404**. `cad/prep_vendor.py` en tire les STL du visualisateur.
+Ce sont eux qui ont tranché trois points du montage :
 
 - la caméra porte ses **propres tourillons** Ø 2,1 mm en y = ±10, et mesure
   **23,8 mm** hors tourillons : elle bascule directement entre les deux joues
   carbone, dont l'écart intérieur fait 24,7 — **il n'y a pas de berceau** ;
 - l'air unit fait **33,5 mm de côté** et se fixe en **25,5 × 25,5**, ce qui
-  recoupe le perçage VTX relevé sur le châssis.
+  recoupe le perçage VTX relevé sur le châssis ;
+- le moteur fait **Ø 19,9 × 18,6 mm** et son plan de pose est à z = −4,25 dans
+  son fichier : plaqué sur la face haute du bras, il met le haut de cloche à
+  **z = 19,3**, donc l'hélice à **19,6** — et non aux 21 mm que j'estimais.
 
 ### Imprimé — ce qui manque, et qu'on ajoute
 

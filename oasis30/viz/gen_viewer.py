@@ -39,7 +39,7 @@ MODEL = dict(
     name="OASIS 30", sub="Sub250 OasisFly30 · 3\" · 150 mm · 4S",
     wb=T.WB, track_x=T.TRACK_X, track_y=T.TRACK_Y, prop_d=T.PROP_D,
     mx=T.MX, my=T.MY, arm_angle=None,                       # calculé en JS
-    z=dict(bottom=T.Z_BOTTOM, arm=T.Z_ARM, mid=T.Z_MID, deck=T.Z_DECK,
+    z=dict(bottom=T.Z_BOTTOM, arm=T.Z_ARM, arm_t=T.ARM_T, mid=T.Z_MID, deck=T.Z_DECK,
            standoff=T.Z_DECK + T.PLATE_D, top=T.Z_TOP, total=T.H_TOTAL),
     cage=dict(gap=T.CAGE_GAP, t=T.CAGE_T, y=T.CAM_Y, z=T.CAM_Z, tilt=T.CAM_TILT,
               w=T.CAM_W, h=T.CAM_H),
@@ -90,8 +90,10 @@ def stls():
         "flanc_g": o("flanc_gauche"), "flanc_d": o("flanc_droit"),
         "footpad": o("sub250_foot_pad"),
         "rxplate": o("sub250_rx_plate"), "tailmount": o("sub250_tail_mount"),
-        # ── DJI O4 Pro : STEP du constructeur, converti par prep_dji_o4.py
+        # ── DJI O4 Pro : STEP du constructeur, converti par prep_vendor.py
         "o4air": o("dji_air_unit"), "o4cam": o("dji_camera"), "o4ant": o("dji_antenna"),
+        # ── moteur XING2 1404 : STEP du constructeur, même conversion
+        "motor": o("xing2_1404"),
         # ── pièces réutilisées du TinyHoop MK1 (mêmes composants du commerce)
         "prop": t("prop"), "screw": t("screw"), "cap": t("capacitor"),
         "gps": t("gps_module"), "rxpcb": t("rx_pcb"), "board": t("board"),
@@ -480,41 +482,23 @@ addAt(gTail, mesh(STLB64.tailmount, SUB250, .06, .78), 0, TAIL_Y, TAIL_Z);
    de 17,3 mm. C'est exactement le diamètre du fourreau d'une antenne DJI. */
 const TAIL_BORE = { x: -4.2, y: 10.7, z0: 0.0, depth: 17.3 };
 
-/* moteurs 1404 — construits en primitives (légers, cotes exactes) */
-// Moteur 1404 : embase de fixation, stator bobiné apparent, cloche ventilée,
-// chapeau et écrou d'hélice. Cotes réelles d'un 1404 (cloche Ø15,8, H ~17,5).
-function motor(){
-  const g = new THREE.Group();
-  const mat = (c,m,r) => new THREE.MeshStandardMaterial({color:c, metalness:m, roughness:r});
-  const cyl = (rt,rb,h,seg,material,z) => { const m = new THREE.Mesh(
-      new THREE.CylinderGeometry(rt,rb,h,seg), material);
-    m.rotation.x = Math.PI/2; m.position.z = z; g.add(m); return m; };
-  cyl(.0058,.0063,.0016, 24, mat(0x24272c,.85,.38), .0008);          // embase
-  for (let i=0;i<4;i++){                                              // 4 bossages M2
-    const a = i/4*Math.PI*2 + Math.PI/4;
-    const b = new THREE.Mesh(new THREE.CylinderGeometry(.0016,.0016,.0016,10),
-      mat(0x24272c,.85,.38));
-    b.rotation.x = Math.PI/2;
-    b.position.set(Math.cos(a)*.0064, Math.sin(a)*.0064, .0008); g.add(b);
-  }
-  cyl(.0068,.0068,.0044, 24, mat(0x8a6a2f,.65,.52), .0038);           // stator bobiné
-  cyl(.0079,.0074,.0074, 30, mat(0x3d4249,.92,.24), .0097);           // cloche
-  for (let i=0;i<9;i++){                                              // ouïes de cloche
-    const a = i/9*Math.PI*2;
-    const v = new THREE.Mesh(new THREE.BoxGeometry(.0013,.0034,.0022), mat(0x101318,.3,.7));
-    v.position.set(Math.cos(a)*.0074, Math.sin(a)*.0074, .0104);
-    v.rotation.z = a; g.add(v);
-  }
-  cyl(.0079,.0079,.0011, 30, mat(0x3d4249,.92,.24), .0139);           // chapeau
-  cyl(.0026,.0026,.0026,  6, mat(0xc9a227,.95,.2),  .0158);           // écrou d'hélice
-  cyl(.0008,.0008,.0040, 12, mat(0xd6d9de,.95,.16), .0165);           // axe
-  return g;
-}
+/* Moteurs XING2 1404 — le STEP du constructeur, converti par prep_vendor.py.
+   Le fichier a l'arbre sur +Z, le plan de pose à z = −4,25 et la sortie de fils
+   vers −Y. On plaque donc ce plan sur la face haute du bras (z = 5,5) et on
+   fait tourner le moteur pour que les fils partent vers le centre du drone :
+   une rotation de (angle du bras − 90°) amène le −Y du fichier sur l'axe du
+   bras, pointe rentrante. */
+const MOTOR_BASE = -4.25;                        // plan de pose dans le fichier
+const MOTOR_Z = M.z.arm + M.z.arm_t - MOTOR_BASE;  // -> le plan tombe sur le bras
+const MOTOR_BELL = 9.54;                         // haut de cloche dans le fichier
 const gMotors = group('motors');
-for (const [sx,sy] of [[1,1],[-1,1],[-1,-1],[1,-1]]){
-  const m = motor(); m.position.set(sx*M.mx/1000, sy*M.my/1000, (M.z.arm+3)/1000);
+for (const [i,[sx,sy]] of [[1,1],[-1,1],[-1,-1],[1,-1]].entries()){
+  const m = mesh(STLB64.motor, 0x2b2f36, .72, .34);
+  m.rotation.z = ARM_DIR[i] - Math.PI/2;
+  m.position.set(sx*M.mx/1000, sy*M.my/1000, MOTOR_Z/1000);
   gMotors.add(m);
 }
+
 /* hélices 3" : le STL 2,5" du TinyHoop remis à l'échelle */
 const gProps = group('props');
 const PROP_SCALE = M.prop_d/63.6;   // le STL est un 2,5\" de 63,6 mm
@@ -524,7 +508,8 @@ for (const [i,[sx,sy]] of [[1,1],[-1,1],[-1,-1],[1,-1]].entries()){
   const m = mesh(STLB64.prop, 0xd8721e, .05, .35, {opacity:.55});
   m.scale.setScalar(.001*PROP_SCALE);
   if (i%2) m.scale.y *= -1;                        // CW / CCW
-  m.position.set(sx*M.mx/1000, sy*M.my/1000, (M.z.arm+18.5)/1000);   // sur le chapeau
+  // posée sur le haut de cloche, mesuré dans le STEP (z = 9,54 du fichier)
+  m.position.set(sx*M.mx/1000, sy*M.my/1000, (MOTOR_Z + MOTOR_BELL + .3)/1000);
   gProps.add(m);
 }
 
@@ -556,7 +541,7 @@ const ELEC = {};
   ELEC.stratos = g; g.visible = false; gElec.add(g);
 }
 /* ─────────────────────────────── DJI O4 Pro — les STEP du constructeur
-   Trois pièces converties par `../cad/prep_dji_o4.py`, avec leur repère propre :
+   Trois pièces converties par `../cad/prep_vendor.py`, avec leur repère propre :
 
      · `dji_air_unit` — 33,4 carré × 13,0, centré en X/Y, posé sur z = 0.
        Le connecteur de nappe sort en −Y et l'USB-C en −X.
@@ -708,13 +693,16 @@ const gWires = group('cables');
 
 /* visserie */
 const gScrews = group('screws');
+/* Vis moteur : elles montent **par-dessous**, tête sous le bras, filet dans
+   l'embase du moteur — le STL a la tête en haut, d'où le demi-tour sur X. */
 for (const [sx,sy] of [[1,1],[-1,1],[-1,-1],[1,-1]]){
   for (const [hx,hy] of [[4.5,4.5],[-4.5,4.5],[-4.5,-4.5],[4.5,-4.5]]){
     const a = Math.atan2(sy*M.my, sx*M.mx);
     const x = sx*M.mx + hx*Math.cos(a) - hy*Math.sin(a);
     const y = sy*M.my + hx*Math.sin(a) + hy*Math.cos(a);
     const s = mesh(STLB64.screw, 0xd6d9de, .9, .25);
-    s.position.set(x/1000, y/1000, (M.z.arm+3.2)/1000); gScrews.add(s);
+    s.rotation.x = Math.PI;
+    s.position.set(x/1000, y/1000, M.z.arm/1000); gScrews.add(s);
   }
 }
 for (const [x,y] of M.standoffs.top.concat(M.standoffs.cam)){
@@ -738,8 +726,8 @@ const PARTS = [
    "20 mm posées sur le pont : le roof arrive pile à 32,5 mm, la hauteur du flanc Sub250."],
   ['top',        'Roof',                '×1 · carbone 2,0', 'Carbone', 0x1a1d21,
    "Plaque haute, fentes de sangle et découpe XT30 pour que le fil descende droit."],
-  ['motors',     'Moteurs 1404',        '×4 · 4500 KV',     'Motorisation', 0x3a3f47,
-   "Vissés par-dessous en M2. Vérifier qu'aucune vis ne touche le bobinage."],
+  ['motors',     'Moteurs XING2 1404',  '×4 · 4500 KV',     'Motorisation', 0x2b2f36,
+   "Le STEP constructeur, tel quel : Ø 19,9 × 18,6 mm, plan de pose à z = −4,25, entraxe M2 9×9. Vissés par-dessous, fils vers le centre. Vérifier qu'aucune vis ne touche le bobinage."],
   ['props',      'Hélices 3″',     '×4 · 76 mm',       'Motorisation', 0xd8721e,
    "Deux CW, deux CCW. Dégagement avant/arrière : 6,7 mm seulement — à monter droit."],
   ['o4cam',      'Caméra DJI O4 Pro',   '×1 · STEP DJI',    'Électronique', 0x1c1f24,
