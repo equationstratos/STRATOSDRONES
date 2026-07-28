@@ -126,22 +126,32 @@ def shift(tris, d):
 
 
 def cluster(tris, cell):
-    """Décimation par regroupement de sommets — même méthode que
-    `prep_sub250.py` : aucune bibliothèque de simplification n'est disponible
-    ici. Grossier, mais les STL de référence de `stl/` restent intacts."""
-    snap = lambda v: (round(v[0] / cell) * cell, round(v[1] / cell) * cell,
-                      round(v[2] / cell) * cell)
-    out, seen = [], set()
-    for t in tris:
-        a, b, c = snap(t[0]), snap(t[1]), snap(t[2])
-        if a == b or b == c or a == c:
-            continue
-        k = tuple(sorted((a, b, c)))
-        if k in seen:
-            continue
-        seen.add(k)
-        out.append((a, b, c))
-    return out
+    """Décimation par regroupement de sommets, représentant = **BARYCENTRE**.
+
+    Même méthode que `prep_sub250.py` : les sommets sont rangés dans des
+    cellules de `cell` mm et chaque cellule est remplacée par la **moyenne** des
+    sommets qu'elle contient — pas par le point de grille. Coller sur la grille
+    escaliérait les arêtes et arrondissait les perçages en polygones.
+    """
+    import numpy as np
+
+    V = np.asarray(tris, dtype=np.float64).reshape(-1, 3)
+    key = np.floor(V / cell).astype(np.int64)
+    _, inv = np.unique(key, axis=0, return_inverse=True)
+    n = int(inv.max()) + 1
+    cen = np.zeros((n, 3))
+    cnt = np.zeros(n)
+    np.add.at(cen, inv, V)
+    np.add.at(cnt, inv, 1)
+    cen /= cnt[:, None]
+
+    idx = inv.reshape(-1, 3)
+    keep = ((idx[:, 0] != idx[:, 1]) & (idx[:, 1] != idx[:, 2])
+            & (idx[:, 0] != idx[:, 2]))
+    idx = idx[keep]
+    _, uniq = np.unique(np.sort(idx, axis=1), axis=0, return_index=True)
+    idx = idx[np.sort(uniq)]
+    return [tuple(map(tuple, cen[t])) for t in idx]
 
 
 def build(job, viz):
