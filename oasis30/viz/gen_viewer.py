@@ -40,7 +40,8 @@ MODEL = dict(
     wb=T.WB, track_x=T.TRACK_X, track_y=T.TRACK_Y, prop_d=T.PROP_D,
     mx=T.MX, my=T.MY, arm_angle=None,                       # calculé en JS
     z=dict(bottom=T.Z_BOTTOM, arm=T.Z_ARM, arm_t=T.ARM_T, mid=T.Z_MID, deck=T.Z_DECK,
-           standoff=T.Z_DECK + T.PLATE_D, top=T.Z_TOP, total=T.H_TOTAL),
+           standoff=T.Z_DECK + T.PLATE_D, plate_d=T.PLATE_D, top=T.Z_TOP,
+           total=T.H_TOTAL),
     cage=dict(gap=T.CAGE_GAP, t=T.CAGE_T, y=T.CAM_Y, z=T.CAM_Z, tilt=T.CAM_TILT,
               w=T.CAM_W, h=T.CAM_H),
     standoffs=dict(top=T.STANDOFFS_TOP, cam=T.STANDOFFS_CAM),
@@ -466,16 +467,28 @@ for (const [i,[sx,sy]] of [[1,1],[-1,1],[-1,-1],[1,-1]].entries()){
   g.position.set(sx*M.mx/1000, sy*M.my/1000, 0);
   gFeet.add(g);
 }
-const gRxPlate = adjGroup('rxplate', 0, -52, M.z.total + 3);
-addAt(gRxPlate, mesh(STLB64.rxplate, 0xd8dce2, .06, .7), 0, -52, M.z.total);
+/* Platine d'antennes RX : elle était sur le roof, mais c'est là que se pose
+   l'étrier de queue — la zone libre du roof à l'arrière ne fait que 36 mm et
+   les deux n'y tiennent pas. On la descend donc dans la baie arrière, posée
+   sur le pont, derrière les entretoises. Aucune photo du kit ne montre son
+   montage : c'est la seule position qui dégage tout le reste. */
+const RXP_Y = -52, RXP_Z = M.z.deck + M.z.plate_d;
+const gRxPlate = adjGroup('rxplate', 0, RXP_Y, RXP_Z + 3);
+addAt(gRxPlate, mesh(STLB64.rxplate, 0xd8dce2, .06, .7), 0, RXP_Y, RXP_Z);
 /* Étrier de queue Sub250 — réglable depuis le panneau « Réglages ».
-   Orientation : 90° sur X **puis −90° sur Z**. C'est ce couple qui amène les
-   deux alésages d'antenne côte à côte, axe vers l'arrière, comme sur la photo
-   du châssis nu : le Y du fichier devient la gauche-droite du drone et son Z
-   part vers l'arrière. Le seul 90° sur X les mettait l'un au-dessus de l'autre. */
-const TAIL_Y = -44, TAIL_Z = 8;
+   Orientation : **45° sur X et −90° sur Z**. Le −90° sur Z met les deux
+   alésages côte à côte (le Y du fichier devient la gauche-droite du drone) ;
+   le 45° sur X relève leur axe pour que les antennes partent **vers l'arrière
+   ET vers le haut**, comme sur la photo du drone monté. Le 90° précédent les
+   sortait à plat, à l'horizontale — c'était faux.
+   Les deux alésages du STL sont **parallèles** (mesuré : écart d'axe < 5°) ;
+   les antennes sortent donc parallèles. Si sur ta machine elles s'écartent en
+   V, c'est le montage qui les cintre, pas la pièce. */
+/* Posé SUR le roof, à l'extrême arrière : basculé à 45°, le point bas du
+   corps tombe à z = 32,25, soit la face haute du roof (32,5). */
+const TAIL_Y = -52, TAIL_Z = 38;
 const gTail = adjGroup('tailmount', 0, TAIL_Y, TAIL_Z);
-gTail.rotation.set(90*D, 0, -90*D); gTail.userData.baseRot = gTail.rotation.clone();
+gTail.rotation.set(45*D, 0, -90*D); gTail.userData.baseRot = gTail.rotation.clone();
 addAt(gTail, mesh(STLB64.tailmount, SUB250, .06, .78), 0, TAIL_Y, TAIL_Z);
 /* Alésages d'antenne **relevés dans le STL Sub250**, pas devinés : deux perçages
    Ø 3,0 mm, axe parallèle au Z du fichier, en (x = −4,2 ; y = ±10,7), profonds
@@ -607,16 +620,24 @@ gTail.add(gAntV);                                  // repère local du support
 
   /* Coaxial : de l'air unit à l'entrée de l'alésage. La courbe se décrit en
      millimètres du DRONE, puis se convertit dans le repère du support — sinon
-     régler le support la déformerait. Le support envoie X_fichier sur −Z,
-     Y_fichier sur +X et Z_fichier sur −Y, d'où l'inverse ci-dessous. */
-  const toTail = (x, y, z) => new THREE.Vector3(
-    (TAIL_Z - z)/1000, x/1000, (TAIL_Y - y)/1000);
+     régler le support la déformerait. On n'écrit plus l'inverse à la main :
+     `worldToLocal` le fait à partir de la matrice réelle du groupe, donc il
+     reste juste si l'orientation par défaut change encore. */
+  gTail.updateMatrixWorld(true);
+  const toTail = (x, y, z) => gTail.worldToLocal(
+    new THREE.Vector3(x/1000, y/1000, (z + M.ground)/1000));
   for (const sy of [1, -1]){
     const co = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3([
-        toTail(sy*11, -17,   AIR_Z + 3),   // au ras de la face arrière de l'air unit
-        toTail(sy*15, -24,   AIR_Z + 1),
-        toTail(sy*14, -34,   TAIL_Z + 6),
-        toTail(sy*TAIL_BORE.y, TAIL_Y, TAIL_Z - TAIL_BORE.x),
+        // le coaxial sort de l'air unit, longe l'intérieur du flanc vers
+        // l'arrière, contourne le bord du roof par l'extérieur puis remonte à
+        // l'entrée de l'alésage : le roof n'a pas de passage à cet endroit
+        toTail(sy*11, -17, AIR_Z + 3),     // au ras de la face arrière de l'air unit
+        toTail(sy*16, -36, AIR_Z + 4),
+        toTail(sy*17, -58, M.z.total + 1),
+        toTail(sy*15, -56, M.z.total + 9),
+        // dernier point : l'entrée de l'alésage, exprimée directement dans le
+        // repère du support — c'est une cote relevée, pas une approximation
+        new THREE.Vector3(TAIL_BORE.x/1000, sy*TAIL_BORE.y/1000, 0),
       ]), 22, .00085, 6),
       new THREE.MeshStandardMaterial({color:0x101216, metalness:.2, roughness:.55}));
     gAntV.add(co);
@@ -627,21 +648,21 @@ gTail.add(gAntV);                                  // repère local du support
    entre le brin et le connecteur, ce qui envoyait le câble sous la batterie.
    Ici : le brin de 26 mm dans sa gorge, et un bout de coaxial qui part vers
    l'avant au ras de la platine — c'est tout ce qu'on voit sur le vrai drone. */
-const RXP_TOP = M.z.total + 5.9;                  // face haute de la platine
-const gAntR = adjGroup('ant_rx', 0, -52, RXP_TOP);
+const RXP_TOP = RXP_Z + 5.9;                      // face haute de la platine
+const gAntR = adjGroup('ant_rx', 0, RXP_Y, RXP_TOP);
 { const matR = new THREE.MeshStandardMaterial({color:0x141414, metalness:.25, roughness:.5});
   for (const [dy, sx] of [[4, 1], [-4, -1]]){
     const el = new THREE.Mesh(new THREE.CylinderGeometry(.0016, .0016, .026, 12), matR);
     el.rotation.z = Math.PI/2;                     // le brin suit X
-    addAt(gAntR, el, 0, -52 + dy, RXP_TOP + 1.6);
+    addAt(gAntR, el, 0, RXP_Y + dy, RXP_TOP + 1.6);
     // la courbe est décrite en millimètres du drone puis ramenée dans le repère
     // du groupe (pivot 0 ; −52 ; RXP_TOP) — sinon les curseurs la décaleraient deux fois
     const P = gAntR.userData.pivot;
     const at = (x, y, z) => new THREE.Vector3((x-P[0])/1000, (y-P[1])/1000, (z-P[2])/1000);
     const co = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3([
-        at(sx*13, -52 + dy, RXP_TOP + 1.6),
-        at(sx*13, -45 + dy, RXP_TOP + 1.2),
-        at(sx*11, -40 + dy, RXP_TOP - 1.0),
+        at(sx*13, RXP_Y + dy,      RXP_TOP + 1.6),
+        at(sx*13, RXP_Y + 7 + dy,  RXP_TOP + 1.2),
+        at(sx*11, RXP_Y + 8 + dy,  RXP_TOP - 1.0),   // s'arrête avant l'entretoise
       ]), 14, .0011, 6), matR);
     gAntR.add(co);
   }

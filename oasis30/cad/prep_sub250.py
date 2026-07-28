@@ -130,27 +130,37 @@ def mirror_y(tris):
 
 
 def cluster(tris, cell):
-    """Décimation par **regroupement de sommets** : on colle les sommets sur une
-    grille de `cell` mm, puis on jette les triangles devenus dégénérés.
+    """Décimation par **regroupement de sommets**, représentant = BARYCENTRE.
+
+    Les sommets sont rangés dans des cellules de `cell` mm, puis chaque cellule
+    est remplacée par la **moyenne** des sommets qu'elle contient — pas par le
+    point de grille. C'est toute la différence : coller sur la grille escaliérait
+    les arêtes et transformait les alésages Ø 3 de l'étrier de queue en blobs
+    octogonaux. Le barycentre suit la surface, les cercles restent ronds.
 
     Aucune bibliothèque de décimation n'est disponible ici (fast_simplification
-    et open3d sont absents) ; cette méthode est grossière mais suffit largement
-    pour l'affichage — les STL d'impression, eux, restent intacts.
+    et open3d sont absents) et la reconstruction de géométrie de gmsh échoue sur
+    ces maillages. Les STL d'impression, eux, restent intacts.
     """
-    snap = lambda v: (round(v[0] / cell) * cell,
-                      round(v[1] / cell) * cell,
-                      round(v[2] / cell) * cell)
-    out, seen = [], set()
-    for t in tris:
-        a, b, c = snap(t[0]), snap(t[1]), snap(t[2])
-        if a == b or b == c or a == c:
-            continue                      # triangle écrasé par la grille
-        k = tuple(sorted((a, b, c)))
-        if k in seen:
-            continue                      # doublon exact
-        seen.add(k)
-        out.append((a, b, c))
-    return out
+    import numpy as np
+
+    V = np.asarray(tris, dtype=np.float64).reshape(-1, 3)
+    key = np.floor(V / cell).astype(np.int64)
+    _, inv = np.unique(key, axis=0, return_inverse=True)
+    n = int(inv.max()) + 1
+    cen = np.zeros((n, 3))
+    cnt = np.zeros(n)
+    np.add.at(cen, inv, V)
+    np.add.at(cnt, inv, 1)
+    cen /= cnt[:, None]
+
+    idx = inv.reshape(-1, 3)
+    keep = ((idx[:, 0] != idx[:, 1]) & (idx[:, 1] != idx[:, 2])
+            & (idx[:, 0] != idx[:, 2]))          # triangles écrasés
+    idx = idx[keep]
+    _, uniq = np.unique(np.sort(idx, axis=1), axis=0, return_index=True)
+    idx = idx[np.sort(uniq)]                     # doublons exacts
+    return [tuple(map(tuple, cen[t])) for t in idx]
 
 
 def main():
@@ -170,7 +180,7 @@ def main():
         tris = recentre(tris)
         lo, hi = bounds(tris)
         write_stl(os.path.join(OUT, name + ".stl"), tris)
-        light = cluster(tris, 0.45) if len(tris) > 8000 else tris
+        light = cluster(tris, 0.35) if len(tris) > 8000 else tris
         write_stl(os.path.join(OUT, "viz", name + ".stl"), light)
         print("  %-22s %6d tris (viz %5d)  %5.1f × %5.1f × %5.1f mm   %s"
               % (name, len(tris), len(light),

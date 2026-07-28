@@ -141,7 +141,21 @@ Ce qui reste estimé, malgré ces fichiers : **la position** de l'air unit dans
 la baie (z = 13,5, au-dessus du stack de vol) et le tracé exact de la nappe et
 des coaxiaux. Les pièces sont justes, leur placement est déduit des photos.
 
-## 8. Limites de méthode
+## 8. Le maillage web ne doit pas déformer la pièce
+
+Les STL Sub250 sont trop lourds pour une page autonome — 85 541 triangles pour
+le seul support d'antenne de queue. La première décimation collait les sommets
+sur une grille de 0,45 mm : elle escaliérait toutes les arêtes et transformait
+les **alésages Ø 3 mm en blobs octogonaux**. La pièce du visualisateur ne
+ressemblait plus à la pièce d'origine, alors que le STL, lui, était intact.
+
+Elle est remplacée par un regroupement dont le représentant est le
+**barycentre** de la cellule, pas le point de grille : à 0,35 mm, le support
+tombe à 6 183 triangles et reste visuellement indiscernable de l'original.
+La reconstruction de géométrie de gmsh (`classifySurfaces` + `createGeometry`),
+essayée d'abord, échoue sur ces maillages (boucles 1-D non fermées).
+
+## 9. Limites de méthode
 
 Une limite de méthode, pas une cote : le contrôle d'interférence du
 visualisateur compare des **boîtes englobantes alignées sur les axes**. Pour

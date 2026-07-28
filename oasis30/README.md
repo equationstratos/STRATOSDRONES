@@ -142,8 +142,12 @@ que ceux d'impression — la 3-D montre donc bien ce qui sortira de l'imprimante
 6. Antennes **avant** de remonter les flancs : ils cachent les soudures. Les
    deux fourreaux vidéo s'enfilent dans les **alésages Ø 3 mm du support de
    queue** (17,3 mm de profondeur, entraxe 21,4 mm — cotes relevées dans le STL
-   Sub250, pas estimées) ; les brins RX se couchent dans les gorges de leur
-   platine.
+   Sub250, pas estimées). Le support se pose **sur le roof, à l'extrême
+   arrière, basculé à 45°** : les antennes partent vers l'arrière *et vers le
+   haut*, comme sur le drone monté. Ses deux alésages sont **parallèles** — si
+   les tiennes s'écartent en V, c'est le montage qui les cintre.
+   La platine RX descend alors dans la **baie arrière**, posée sur le pont :
+   les deux ne tiennent pas sur les 36 mm de roof libres à l'arrière.
 7. `CLR = 0,25 mm` dans `tune.py` est le premier paramètre à toucher si ton
    imprimante sort serré ou lâche.
 
